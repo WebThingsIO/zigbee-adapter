@@ -1,6 +1,6 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.2.1",
+  "version": "0.3.0-pre1",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "main": "index.js",
   "keywords": [
@@ -9,16 +9,18 @@
     "adapter",
     "zigbee"
   ],
-  "homepage": "https://iot.mozilla.org/",
+  "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mozilla-iot/gateway.git"
+    "url": "https://github.com/mozilla-iot/zigbee-adapter.git"
   },
   "bugs": {
-    "url": "https://github.com/mozilla-iot/gateway/issues"
+    "url": "https://github.com/mozilla-iot/zigbee-adapter/issues"
   },
   "files": [
+    "LICENSE",
+    "SHA256SUMS",
     "index.js",
     "zb-adapter.js",
     "zb-at.js",
