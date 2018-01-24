@@ -238,7 +238,7 @@ class ZigbeeProperty extends Property {
   }
 
   /**
-   * @method setLevelAttr
+   * @method setLevelValue
    *
    * Convert the 'level' property value (a percentage) into the ZCL
    * 'moveToLevel' command along with a light level.
@@ -285,6 +285,10 @@ class ZigbeeProperty extends Property {
    * the value passed in.
    */
   setValue(value) {
+    if (!this.setAttrFromValue) {
+      return Promise.resolve();
+    }
+
     var deferredSet = this.deferredSet;
     if (!deferredSet) {
       deferredSet = new Deferred();

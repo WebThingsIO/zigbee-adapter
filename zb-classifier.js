@@ -359,7 +359,7 @@ class ZigbeeClassifier {
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
-    node.type = Constants.THING_TYPE_SMARTPLUG;
+    node.type = Constants.THING_TYPE_SMART_PLUG;
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
@@ -371,7 +371,7 @@ class ZigbeeClassifier {
   }
 
   initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
-    node.type = Constants.THING_TYPE_SMARTPLUG;
+    node.type = Constants.THING_TYPE_SMART_PLUG;
     this.addOnProperty(node, seMeteringEndpoint);
     if (genLevelCtrlEndpoint) {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
