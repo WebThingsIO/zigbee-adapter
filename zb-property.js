@@ -10,6 +10,7 @@
 
 'use strict';
 
+const Color = require('color');
 const Deferred = require('../deferred');
 const Property = require('../property');
 const utils = require('../utils');
@@ -65,8 +66,18 @@ class ZigbeeProperty extends Property {
         throw err;
       }
     }
-    this.attr = attr;
-    this.attrId = zclId.attr(clusterId, attr).value;
+    let attrs = attr.split(',');
+    if (attrs.length > 1) {
+      this.attr = attrs;
+      this.attrId = [];
+      for (let attr of attrs) {
+        this.attrId.push(zclId.attr(clusterId, attr).value);
+      }
+    } else {
+      this.attr = attr;
+      this.attrId = zclId.attr(clusterId, attr).value;
+    }
+    this.fireAndForget = false;
   }
 
   asDict() {
@@ -76,6 +87,7 @@ class ZigbeeProperty extends Property {
     dict.clusterId = this.clusterId;
     dict.attr = this.attr;
     dict.value = this.value;
+    dict.fireAndForget = this.fireAndForget;
     if (this.hasOwnProperty('level')) {
       dict.level = this.level;
     }
@@ -109,6 +121,35 @@ class ZigbeeProperty extends Property {
 
   parseAttrEntry(attrEntry) {
     return this.parseValueFromAttr(attrEntry);
+  }
+
+  /**
+   * @method parseColorAttr
+   *
+   * Converts the ZCL 'currentHue' and 'currentSaturation attributes (uint8's)
+   * into an RGB color string.
+   */
+  parseColorAttr(attrEntries) {
+    let hue = 0;
+    let sat = 0;
+    for (let attrEntry of attrEntries) {
+      switch (attrEntry.attrId) {
+        case 0:
+          hue = attrEntry.attrData;
+          break;
+        case 1:
+          sat = attrEntry.attrData;
+          break;
+      }
+    }
+    let level = 0;
+    let levelProperty = this.device.findProperty('_level');
+    if (levelProperty) {
+      level = levelProperty.value;
+    }
+    let color = new Color({h: hue, s: sat, v: level});
+    let colorStr = color.rgb().hex();
+    return [colorStr, colorStr];
   }
 
   /**
@@ -238,6 +279,37 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method setColorValue
+   *
+   * Convert the 'color' property value (an RGB hex string) into hue
+   * and saturation values.
+   */
+  setColorValue(propertyValue) {
+    let color = new Color(propertyValue);
+    let hsv = color.hsv().color;
+    let hue = hsv[0];     // 0-359
+    let sat = hsv[1];     // 0-100
+    let level = hsv[2];  // 0-100
+
+    let levelProperty = this.device.findProperty('_level');
+    if (levelProperty) {
+      this.device.sendZclFrameWaitExplicitRx(
+        levelProperty,
+        levelProperty.valueToZclData(level));
+    }
+
+    return [{
+        frameCntl: {frameType: 1},
+        cmd: 'moveToHueAndSaturation',
+        payload: [Math.round(hue/360 * 254),
+                  Math.round(sat/100 * 254),
+                  10],  // 10ths of a second
+      },
+      'hsv: [' + hue + ', ' + sat + ', ' + level + ']'
+    ];
+  }
+
+  /**
    * @method setLevelValue
    *
    * Convert the 'level' property value (a percentage) into the ZCL
@@ -295,6 +367,12 @@ class ZigbeeProperty extends Property {
       this.deferredSet = deferredSet;
     }
 
+    this.device.sendZclFrameWaitExplicitRxResolve(
+      this, this.valueToZclData(value));
+    return deferredSet.promise;
+  }
+
+  valueToZclData(value) {
     this.setCachedValue(value);
 
     let [zclData, logData] = this.setAttrFromValue(value);
@@ -307,9 +385,7 @@ class ZigbeeProperty extends Property {
                 'zcl:', logData,
                 'value:', value);
 
-    this.device.sendZclFrameWaitExplicitRxResolve(this, zclData);
-
-    return deferredSet.promise;
+    return zclData;
   }
 }
 
