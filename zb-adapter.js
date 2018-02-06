@@ -136,7 +136,6 @@ class ZigbeeAdapter extends Adapter {
 
     this.frameDumped = false;
     this.isPairing = false;
-    this.pairingTimeout = null;
 
     this.xb = new xbeeApi.XBeeAPI({
       api_mode: 1,
@@ -1090,7 +1089,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   startPairing(timeoutSeconds) {
-    console.log('Pairing mode started');
+    console.log('Pairing mode started, timeout =', timeoutSeconds);
     this.isPairing = true;
     this.permitJoin(timeoutSeconds);
   }
