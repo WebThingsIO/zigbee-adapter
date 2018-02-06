@@ -126,7 +126,7 @@ class ZigbeeProperty extends Property {
   /**
    * @method parseColorAttr
    *
-   * Converts the ZCL 'currentHue' and 'currentSaturation attributes (uint8's)
+   * Converts the ZCL 'currentHue' and 'currentSaturation' attributes (uint8's)
    * into an RGB color string.
    */
   parseColorAttr(attrEntries) {

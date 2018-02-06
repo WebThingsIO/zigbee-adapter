@@ -371,7 +371,7 @@ class ZigbeeNode extends Device {
       }
     }
     for (const uce of Object.values(uniqueClusterEndpoint)) {
-      outputFrames.unshift(this.makeBindFrame(uce.endpoing,
+      outputFrames.unshift(this.makeBindFrame(uce.endpoint,
                                               uce.clusterId,
                                               uce.frames));
     }
