@@ -27,6 +27,11 @@ var AT_CMD = at.AT_CMD;
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 
+const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
+const CLUSTER_ID_LIGHTINGCOLORCTRL_HEX =
+  utils.hexStr(CLUSTER_ID_LIGHTINGCOLORCTRL, 4);
+
+
 const WAIT_TIMEOUT_DELAY = 1000;
 const WAIT_RETRY_MAX = 3;   // includes initial send
 
@@ -131,7 +136,6 @@ class ZigbeeAdapter extends Adapter {
 
     this.frameDumped = false;
     this.isPairing = false;
-    this.pairingTimeout = null;
 
     this.xb = new xbeeApi.XBeeAPI({
       api_mode: 1,
@@ -304,11 +308,12 @@ class ZigbeeAdapter extends Adapter {
 
   dumpFrame(label, frame) {
     this.frameDumped = true;
-    var frameTypeStr = C.FRAME_TYPE[frame.type];
+    let frameTypeStr = C.FRAME_TYPE[frame.type];
     if (!frameTypeStr) {
       frameTypeStr = 'Unknown(0x' + frame.type.toString(16) + ')';
     }
-    var atCmdStr;
+    let atCmdStr;
+    let status;
 
     switch (frame.type) {
       case C.FRAME_TYPE.AT_COMMAND:
@@ -342,8 +347,8 @@ class ZigbeeAdapter extends Adapter {
       case C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME:
         if (this.zdo.isZdoFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64, 'ZDO',
-                      this.zdo.getClusterIdAsString(frame.clusterId),
-                      this.zdo.getClusterIdDescription(frame.clusterId));
+                      zdo.getClusterIdAsString(frame.clusterId),
+                      zdo.getClusterIdDescription(frame.clusterId));
         } else if (this.isZhaFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64,
                       'ZHA', frame.clusterId,
@@ -359,9 +364,27 @@ class ZigbeeAdapter extends Adapter {
 
       case C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX:
         if (this.zdo.isZdoFrame(frame)) {
+          if (frame.hasOwnProperty('status')) {
+            status = zclId.status(frame.status);
+          } else {
+            // Frames sent from the device not in response to an ExplicitTx
+            // (like "End Device Announcement") won't have a status.
+            status = {
+              key: 'none',
+              value: undefined,
+            };
+          }
+          if (!status) {
+            // Something that zclId doesn't know about.
+            status = {
+              key: 'unknown',
+              value: frame.status,
+            };
+          }
           console.log(label, 'Explicit Rx', frame.remote64,
-                      'ZDO', frame.clusterId,
-                      this.zdo.getClusterIdDescription(frame.clusterId));
+                    'ZDO', frame.clusterId,
+                    zdo.getClusterIdDescription(frame.clusterId),
+                    'status:', status.key, '(' + status.value + ')');
         } else if (this.isZhaFrame(frame)) {
           console.log(label, 'Explicit Rx', frame.remote64,
                       'ZHA', frame.clusterId,
@@ -535,6 +558,21 @@ class ZigbeeAdapter extends Adapter {
 
   //----- Misc Commands -----------------------------------------------------
 
+  handleBindResponse(frame) {
+    if (frame.status != 0) {
+      // The device doesn't support the bind command, which means that we
+      // can't use configReports, so we have no way of knowing if any
+      // property values change. The Hue bulbs behave this way when using
+      // the ZHA protocol.
+      let node = this.nodes[frame.remote64];
+      if (node) {
+        for (let property of node.properties.values()) {
+          property.fireAndForget = true;
+        }
+      }
+    }
+  }
+
   handleExplicitRx(frame) {
     if (this.zdo.isZdoFrame(frame)) {
       this.zdo.parseZdoFrame(frame);
@@ -588,13 +626,30 @@ class ZigbeeAdapter extends Adapter {
   sendFrames(frames) {
     var commands = [];
     for (var frame of frames) {
-      commands = commands.concat([
-        new Command(SEND_FRAME, frame),
-        new Command(WAIT_FRAME, {
+      let waitFrame;
+      if (frame.type ==
+          C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME) {
+        if (this.zdo.isZdoFrame(frame)) {
+          waitFrame = {
+            type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+            zdoSeq: frame.id,
+            sendOnSuccess: frame.sendOnSuccess,
+          };
+        } else if (this.isZhaFrame(frame)) {
+          waitFrame = {
+            type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+            zclSeqNum: frame.id,
+          };
+        }
+      }
+      if (!waitFrame) {
+        waitFrame = {
           type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
           id: frame.id,
-        }),
-      ]);
+        };
+      }
+      commands.push(new Command(SEND_FRAME, frame));
+      commands.push(new Command(WAIT_FRAME, waitFrame));
     }
     this.queueCommandsAtFront(commands);
   }
@@ -921,7 +976,7 @@ class ZigbeeAdapter extends Adapter {
       // the actual response rather than the Tx Status message
       new Command(WAIT_FRAME, {
         type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-        clusterId: this.zdo.getClusterIdAsString(
+        clusterId: zdo.getClusterIdAsString(
           zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE),
         zdoSeq: simpleDescFrame.id,
       }),
@@ -1034,7 +1089,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   startPairing(timeoutSeconds) {
-    console.log('Pairing mode started');
+    console.log('Pairing mode started, timeout =', timeoutSeconds);
     this.isPairing = true;
     this.permitJoin(timeoutSeconds);
   }
@@ -1147,6 +1202,50 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  //----- Read Attribute ----------------------------------------------------
+
+  readAttribute(node, endpoint, profileId, clusterId, attrId) {
+    this.waitFrameTimeoutFunc = this.readAttributeTimeout.bind(this);
+    node.discoveringAttributes = true;
+    clusterId = zdo.getClusterIdAsInt(clusterId);
+    console.log('**** Starting read attribute for node:', node.id, '*****');
+    let attrIds = [];
+    if (typeof(attrId) === 'undefined') {
+      let attrList = zclId.attrList(clusterId);
+      if (attrList) {
+        attrList.forEach(entry => {
+          attrIds.push(entry.attrId);
+        });
+      }
+    } else {
+      attrIds.push(attrId);
+    }
+    let commands = [];
+    for (attrId of attrIds) {
+      let readFrame = node.makeReadAttributeFrame(endpoint, profileId,
+                                                  clusterId, attrId);
+      let waitFrame = {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'readRsp',
+        zclSeqNum: readFrame.id
+      };
+      commands.push(new Command(SEND_FRAME, readFrame));
+      commands.push(new Command(WAIT_FRAME, waitFrame));
+    }
+    commands.push(FUNC(this, this.doneReadAttribute, [node]));
+    this.queueCommandsAtFront(commands);
+  }
+
+  doneReadAttribute(node) {
+    console.log('***** Read attribute done for node:', node.id, '*****');
+    this.waitFrameTimeoutFunc = null;
+    node.discoveringAttributes = false;
+  }
+
+  readAttributeTimeout(frame) {
+    this.discoverAttributesTimeout(frame);
+  }
+
   //-------------------------------------------------------------------------
 
   nextFrameId() {
@@ -1165,6 +1264,13 @@ class ZigbeeAdapter extends Adapter {
 
   sendFrameWaitFrameAtFront(sendFrame, waitFrame) {
     this.queueCommandsAtFront([
+      new Command(SEND_FRAME, sendFrame),
+      new Command(WAIT_FRAME, waitFrame),
+    ]);
+  }
+
+  sendFrameWaitFrame(sendFrame, waitFrame) {
+    this.queueCommands([
       new Command(SEND_FRAME, sendFrame),
       new Command(WAIT_FRAME, waitFrame),
     ]);
@@ -1211,6 +1317,9 @@ class ZigbeeAdapter extends Adapter {
       }
       var match = true;
       for (var propertyName in this.waitFrame) {
+        if (propertyName === 'sendOnSuccess' || propertyName === 'callback') {
+          continue;
+        }
         if (this.waitFrame[propertyName] != frame[propertyName]) {
           match = false;
           break;
@@ -1220,11 +1329,19 @@ class ZigbeeAdapter extends Adapter {
         if (this.debugFlow) {
           console.log('Wait satisified');
         }
+        let sendOnSuccess = this.waitFrame.sendOnSuccess;
+        let callback = this.waitFrame.callback;
         this.waitFrame = null;
         this.waitRetryCount = 0;
         if (this.waitTimeout) {
           clearTimeout(this.waitTimeout);
           this.waitTimeout = null;
+        }
+        if (sendOnSuccess && frame.status === 0) {
+          this.sendFrames(sendOnSuccess);
+        }
+        if (callback) {
+          callback(frame);
         }
       }
     }
@@ -1245,9 +1362,59 @@ class ZigbeeAdapter extends Adapter {
     var commands = this.getActiveEndpointCommands(node);
     commands = commands.concat([
       FUNC(this, this.populateNodeInfoEndpoints, [node]),
+      FUNC(this, this.populateNodeAttributes, [node]),
       FUNC(this, this.handleDeviceAdded, [node])
     ]);
     this.queueCommandsAtFront(commands);
+  }
+
+  // populateNodeAttrbibutes will read attributes which are required by
+  // the classifier to determine the type of thing its dealing with.
+  populateNodeAttributes(node) {
+    if (this.debugFlow) {
+      console.log('populateNodeAttributes node.addr64 =', node.addr64);
+    }
+
+    let lightingColorCtrlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_LIGHTINGCOLORCTRL_HEX);
+    if (lightingColorCtrlEndpoint) {
+      node.lightingColorCtrlEndpoint = lightingColorCtrlEndpoint;
+      let colorCapabilitiesAttr = zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL,
+                                             'colorCapabilities');
+      if (colorCapabilitiesAttr) {
+        let readFrame = node.makeReadAttributeFrame(
+          lightingColorCtrlEndpoint,
+          ZHA_PROFILE_ID,
+          CLUSTER_ID_LIGHTINGCOLORCTRL,
+          colorCapabilitiesAttr.value);
+        this.sendFrameWaitFrameAtFront(readFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'readRsp',
+          zclSeqNum: readFrame.id,
+          callback: this.populateNodeAttributesReadRsp.bind(this),
+        });
+      }
+    }
+  }
+
+  populateNodeAttributesReadRsp(frame) {
+    let node = this.nodes[frame.remote64];
+    if (!node) {
+      return;
+    }
+    let colorCapabilitiesAttr = zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL,
+      'colorCapabilities');
+    if (!colorCapabilitiesAttr) {
+      return;
+    }
+    for (let attrEntry of frame.zcl.payload) {
+      if (attrEntry.status == 0) {
+        if (attrEntry.attrId == colorCapabilitiesAttr.value) {
+          node.colorCapabilities = attrEntry.attrData;
+        }
+      }
+    }
   }
 
   populateNodeInfoEndpoints(node) {
@@ -1452,6 +1619,8 @@ zch[zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE] =
   ZigbeeAdapter.prototype.handleSimpleDescriptorResponse;
 zch[zdo.CLUSTER_ID.END_DEVICE_ANNOUNCEMENT] =
   ZigbeeAdapter.prototype.handleEndDeviceAnnouncement;
+zch[zdo.CLUSTER_ID.BIND_RESPONSE] =
+  ZigbeeAdapter.prototype.handleBindResponse;
 
 function isDigiPort(port) {
   // Note that 0403:6001 is the default FTDI VID:PID, so we need to further

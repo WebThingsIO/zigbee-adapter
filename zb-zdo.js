@@ -13,13 +13,14 @@
 
 'use strict';
 
-var assert = require('assert');
-var BufferBuilder = require('buffer-builder');
-var BufferReader = require('buffer-reader');
-var utils = require('../utils');
-var xbeeApi = require('xbee-api');
+const assert = require('assert');
+const BufferBuilder = require('buffer-builder');
+const BufferReader = require('buffer-reader');
+const utils = require('../utils');
+const xbeeApi = require('xbee-api');
+const zclId = require('zcl-id');
 
-var C = xbeeApi.constants;
+const C = xbeeApi.constants;
 
 exports = module.exports;
 
@@ -89,31 +90,41 @@ zci[zci.MANAGEMENT_NETWORK_UPDATE_NOTIFY] =
 var zdoBuilder = module.exports.zdoBuilder = {};
 var zdoParser = module.exports.zdoParser = {};
 
+function getClusterIdAsString(clusterId) {
+  if (typeof(clusterId) === 'number') {
+    return utils.hexStr(clusterId, 4);
+  }
+  return '' + clusterId;
+}
+
+function getClusterIdAsInt(clusterId) {
+  if (typeof(clusterId) === 'number' ) {
+    return clusterId;
+  }
+  if (typeof(clusterId) === 'string' && clusterId.match('^[0-9A-Fa-f]+$')) {
+    return parseInt(clusterId, 16);
+  }
+  let cluster = zclId.cluster(clusterId);
+  if (cluster) {
+    return cluster.value;
+  }
+}
+
+function getClusterIdDescription(clusterId) {
+  clusterId = getClusterIdAsInt(clusterId);
+  if (clusterId in zci) {
+    return zci[clusterId];
+  }
+  return '??? 0x' + getClusterIdAsString(clusterId) + ' ???';
+}
+
+exports.getClusterIdAsString = getClusterIdAsString;
+exports.getClusterIdAsInt = getClusterIdAsInt;
+exports.getClusterIdDescription = getClusterIdDescription;
+
 class ZdoApi {
   constructor(xb) {
     this.xb = xb;
-  }
-
-  getClusterIdAsString(clusterId) {
-    if (typeof(clusterId) === 'number') {
-      return utils.hexStr(clusterId, 4);
-    }
-    return '' + clusterId;
-  }
-
-  getClusterIdAsInt(clusterId) {
-    if (typeof(clusterId) === 'number' ) {
-      return clusterId;
-    }
-    return parseInt(clusterId, 16);
-  }
-
-  getClusterIdDescription(clusterId) {
-    clusterId = this.getClusterIdAsInt(clusterId);
-    if (clusterId in zci) {
-      return zci[clusterId];
-    }
-    return '??? 0x' + this.getClusterIdAsString(clusterId) + ' ???';
   }
 
   makeFrame(frame) {
@@ -130,7 +141,7 @@ class ZdoApi {
 
     if (!zdoBuilder[frame.clusterId]) {
       throw new Error('This library does not implement building the 0x' +
-                      this.getClusterIdAsString(frame.clusterId) +
+                      getClusterIdAsString(frame.clusterId) +
                       ' frame type.');
     }
 
@@ -164,7 +175,7 @@ class ZdoApi {
   parseZdoFrame(frame) {
     var reader = new BufferReader(frame.data);
     frame.zdoSeq = reader.nextUInt8();
-    zdoParser[this.getClusterIdAsInt(frame.clusterId)](frame, reader);
+    zdoParser[getClusterIdAsInt(frame.clusterId)](frame, reader);
   }
 }
 

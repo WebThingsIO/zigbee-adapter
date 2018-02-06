@@ -16,15 +16,20 @@ const utils = require('../utils');
 const ZigbeeProperty = require('./zb-property');
 
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
-const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
+
 const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
 const CLUSTER_ID_GENONOFF_HEX = utils.hexStr(CLUSTER_ID_GENONOFF, 4);
 const CLUSTER_ID_GENLEVELCTRL = zclId.cluster('genLevelCtrl').value;
 const CLUSTER_ID_GENLEVELCTRL_HEX = utils.hexStr(CLUSTER_ID_GENLEVELCTRL, 4);
 const CLUSTER_ID_HAELECTRICAL = zclId.cluster('haElectricalMeasurement').value;
 const CLUSTER_ID_HAELECTRICAL_HEX = utils.hexStr(CLUSTER_ID_HAELECTRICAL, 4);
+const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
+const CLUSTER_ID_LIGHTLINK = zclId.cluster('lightLink').value;
+const CLUSTER_ID_LIGHTLINK_HEX = utils.hexStr(CLUSTER_ID_LIGHTLINK, 4);
 const CLUSTER_ID_SEMETERING = zclId.cluster('seMetering').value;
 const CLUSTER_ID_SEMETERING_HEX = utils.hexStr(CLUSTER_ID_SEMETERING, 4);
+
+const DEBUG = false;
 
 class ZigbeeClassifier {
 
@@ -38,6 +43,35 @@ class ZigbeeClassifier {
 
   prependFrames(frames) {
     this.frames = frames.concat(this.frames);
+  }
+
+  addColorProperty(node, lightingColorCtrlEndpoint) {
+    this.addProperty(
+      node,                           // device
+      '_level',                       // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      'currentLevel',                 // attr
+      'setLevelValue',                // setAttrFromValue
+      'parseLevelAttr'                // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      'color',                        // name
+      {                               // property description
+        type: 'string',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      'currentHue,currentSaturation', // attr
+      'setColorValue',                // setAttrFromValue
+      'parseColorAttr'                // parseValueFromAttr
+    );
   }
 
   addLevelProperty(node, genLevelCtrlEndpoint) {
@@ -248,57 +282,39 @@ class ZigbeeClassifier {
       property.visible = false;
       // Right now, hidden attributes aren't things that change their value
       // so we don't need to report changes.
-      this.appendFrames([
-        node.makeReadAttributeFrameForProperty(property)
-      ]);
     } else {
       this.appendFrames([
         node.makeConfigReportFrame(property),
-        node.makeReadAttributeFrameForProperty(property),
       ]);
     }
-  }
-
-  findZhaEndpointWithInputClusterIdHex(node, clusterIdHex) {
-    for (var endpointNum in node.activeEndpoints) {
-      var endpoint = node.activeEndpoints[endpointNum];
-      if (endpoint.profileId == ZHA_PROFILE_ID_HEX) {
-        if (endpoint.inputClusters.includes(clusterIdHex)) {
-          return endpointNum;
-        }
-      }
-    }
-  }
-
-  findZhaEndpointWithOutputClusterIdHex(node, clusterIdHex) {
-    for (var endpointNum in node.activeEndpoints) {
-      var endpoint = node.activeEndpoints[endpointNum];
-      if (endpoint.profileId == ZHA_PROFILE_ID_HEX) {
-        if (endpoint.outputClusters.includes(clusterIdHex)) {
-          return endpointNum;
-        }
-      }
-    }
+    this.appendFrames([
+      node.makeReadAttributeFrameForProperty(property)
+    ]);
   }
 
   // internal function allows us to use early returns.
   classifyInternal(node) {
     let seMeteringEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(node,
-                                                CLUSTER_ID_SEMETERING_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SEMETERING_HEX);
     let haElectricalEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(node,
-                                                CLUSTER_ID_HAELECTRICAL_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_HAELECTRICAL_HEX);
 
     let genLevelCtrlEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(node,
-                                                CLUSTER_ID_GENLEVELCTRL_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
     let genOnOffEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(node,
-                                                CLUSTER_ID_GENONOFF_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
     let genOnOffOutputEndpoint =
-      this.findZhaEndpointWithOutputClusterIdHex(node,
-                                                 CLUSTER_ID_GENONOFF_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
+
+    if (DEBUG) {
+      console.log('---- Zigbee classifier -----');
+      console.log('    seMeteringEndpoint =', seMeteringEndpoint);
+      console.log('  haElectricalEndpoint =', haElectricalEndpoint);
+      console.log('  genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
+      console.log('      genOnOffEndpoint =', genOnOffEndpoint);
+      console.log('genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('     colorCapabilities =', node.colorCapabilities);
+    }
 
     if (haElectricalEndpoint) {
       this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
@@ -317,7 +333,7 @@ class ZigbeeClassifier {
       return;
     }
     if (genOnOffOutputEndpoint) {
-      // Swithces have both input and output clusters for genOnOff where a
+      // Switches have both input and output clusters for genOnOff where a
       // sensor only has an output cluster.
       this.initBinarySensor(node, genOnOffOutputEndpoint);
       return;
@@ -330,8 +346,8 @@ class ZigbeeClassifier {
     }
 
     this.classifyInternal(node);
-    let bindFrames = node.makeBindFramesFor(this.frames);
-    node.sendFrames(bindFrames.concat(this.frames));
+    DEBUG && console.log('Initialized as', node.type);
+    node.sendFrames(node.addBindFramesFor(this.frames));
     this.frames = [];
 
     // Now that we know the type, set the default name.
@@ -348,14 +364,33 @@ class ZigbeeClassifier {
 
   initOnOffSwitch(node, genOnOffEndpoint) {
     node.type = Constants.THING_TYPE_ON_OFF_SWITCH;
-
     this.addOnProperty(node, genOnOffEndpoint);
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint) {
-    node.type = Constants.THING_TYPE_MULTI_LEVEL_SWITCH;
+    let lightLinkEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_LIGHTLINK_HEX);
+    if (DEBUG) {
+      console.log('     lightLinkEndpoint =', lightLinkEndpoint);
+    }
+    let colorSupported = false;
+    if (lightLinkEndpoint) {
+      if ((node.colorCapabilities & 3) != 0) {
+        // Hue and Saturation are supported
+        colorSupported = true;
+        node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
+      } else {
+        node.type = Constants.THING_TYPE_DIMMABLE_LIGHT;
+      }
+    } else {
+      node.type = Constants.THING_TYPE_MULTI_LEVEL_SWITCH;
+    }
     this.addOnProperty(node, genLevelCtrlEndpoint);
-    this.addLevelProperty(node, genLevelCtrlEndpoint);
+    if (colorSupported) {
+      this.addColorProperty(node, node.lightingColorCtrlEndpoint);
+    } else {
+      this.addLevelProperty(node, genLevelCtrlEndpoint);
+    }
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
