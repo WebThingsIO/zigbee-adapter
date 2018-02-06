@@ -3,6 +3,9 @@
   "version": "0.3.0-pre2",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "main": "index.js",
+  "scripts": {
+    "lint": "eslint ."
+  },
   "keywords": [
     "mozilla",
     "iot",
@@ -10,6 +13,10 @@
     "zigbee"
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
+  "devDependencies": {
+    "eslint": "^4.7.0",
+    "eslint-plugin-html": "^4.0.0"
+  },
   "license": "MPL-2.0",
   "repository": {
     "type": "git",

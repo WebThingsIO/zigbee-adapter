@@ -304,7 +304,7 @@ class ZigbeeNode extends Device {
                   'endpoint:', property.endpoint,
                   'clusterId:', utils.hexStr(property.clusterId, 4),
                   frame.zcl.cmdId,
-                  'value:', logValue, '(' + value + ')');
+                  'value:', logValue);
       var deferredSet = property.deferredSet;
       if (deferredSet) {
         property.deferredSet = null;

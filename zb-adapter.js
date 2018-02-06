@@ -561,7 +561,6 @@ class ZigbeeAdapter extends Adapter {
 
   handleBindResponse(frame) {
     if (frame.status != 0) {
-      console.log('Got an unsupported bind response');
       // The device doesn't support the bind command, which means that we
       // can't use configReports, so we have no way of knowing if any
       // property values change. The Hue bulbs behave this way when using
@@ -1370,6 +1369,8 @@ class ZigbeeAdapter extends Adapter {
     this.queueCommandsAtFront(commands);
   }
 
+  // populateNodeAttrbibutes will read attributes which are required by
+  // the classifier to determine the type of thing its dealing with.
   populateNodeAttributes(node) {
     if (this.debugFlow) {
       console.log('populateNodeAttributes node.addr64 =', node.addr64);
@@ -1380,8 +1381,6 @@ class ZigbeeAdapter extends Adapter {
         CLUSTER_ID_LIGHTINGCOLORCTRL_HEX);
     if (lightingColorCtrlEndpoint) {
       node.lightingColorCtrlEndpoint = lightingColorCtrlEndpoint;
-      console.log('Node:', node.addr64, 'has a lightingColorCtrl cluster');
-
       let colorCapabilitiesAttr = zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL,
                                              'colorCapabilities');
       if (colorCapabilitiesAttr) {
@@ -1401,7 +1400,6 @@ class ZigbeeAdapter extends Adapter {
   }
 
   populateNodeAttributesReadRsp(frame) {
-    console.log('Got read response for colorCapabilities:', frame.zcl.payload);
     let node = this.nodes[frame.remote64];
     if (!node) {
       return;
@@ -1415,7 +1413,6 @@ class ZigbeeAdapter extends Adapter {
       if (attrEntry.status == 0) {
         if (attrEntry.attrId == colorCapabilitiesAttr.value) {
           node.colorCapabilities = attrEntry.attrData;
-          console.log('Found colorCapabilities:', node.colorCapabilities);
         }
       }
     }
