@@ -37,7 +37,8 @@
     "zb-classifier.js",
     "zb-node.js",
     "zb-property.js",
-    "zb-zdo.js"
+    "zb-zdo.js",
+    "node_modules"
   ],
   "moziot": {
     "api": {
