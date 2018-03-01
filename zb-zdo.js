@@ -16,9 +16,19 @@
 const assert = require('assert');
 const BufferBuilder = require('buffer-builder');
 const BufferReader = require('buffer-reader');
-const utils = require('../utils');
 const xbeeApi = require('xbee-api');
 const zclId = require('zcl-id');
+
+let utils;
+try {
+  utils = require('../utils');
+} catch (e) {
+  if (e.code !== 'MODULE_NOT_FOUND') {
+    throw e;
+  }
+
+  utils = require('gateway-addon').Utils;
+}
 
 const C = xbeeApi.constants;
 

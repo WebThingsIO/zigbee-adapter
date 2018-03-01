@@ -11,10 +11,23 @@
 'use strict';
 
 const Color = require('color');
-const Deferred = require('../deferred');
-const Property = require('../property');
-const utils = require('../utils');
 const zclId = require('zcl-id');
+
+let Deferred, Property, utils;
+try {
+  Deferred = require('../deferred');
+  Property = require('../property');
+  utils = require('../utils');
+} catch (e) {
+  if (e.code !== 'MODULE_NOT_FOUND') {
+    throw e;
+  }
+
+  const gwa = require('gateway-addon');
+  Deferred = gwa.Deferred;
+  Property = gwa.Property;
+  utils = gwa.Utils;
+}
 
 /**
  * @function levelToPercent

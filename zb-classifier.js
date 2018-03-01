@@ -10,10 +10,22 @@
 
 'use strict';
 
-const Constants = require('../addon-constants');
 const zclId = require('zcl-id');
-const utils = require('../utils');
 const ZigbeeProperty = require('./zb-property');
+
+let Constants, utils;
+try {
+  Constants = require('../addon-constants');
+  utils = require('../utils');
+} catch (e) {
+  if (e.code !== 'MODULE_NOT_FOUND') {
+    throw e;
+  }
+
+  const gwa = require('gateway-addon');
+  Constants = gwa.Constants;
+  utils = gwa.Utils;
+}
 
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 
