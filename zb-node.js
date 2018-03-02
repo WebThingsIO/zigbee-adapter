@@ -9,12 +9,24 @@
 
 'use strict';
 
-var Device = require('../device');
-var utils = require('../utils');
 var xbeeApi = require('xbee-api');
 var zclId = require('zcl-id');
 var zcl = require('zcl-packet');
 var zdo = require('./zb-zdo');
+
+let Device, utils;
+try {
+  Device = require('../device');
+  utils = require('../utils');
+} catch (e) {
+  if (e.code !== 'MODULE_NOT_FOUND') {
+    throw e;
+  }
+
+  const gwa = require('gateway-addon');
+  Device = gwa.Device;
+  utils = gwa.Utils;
+}
 
 var C = xbeeApi.constants;
 

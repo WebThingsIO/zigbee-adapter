@@ -9,17 +9,29 @@
 
 'use strict';
 
-var Adapter = require('../adapter');
 var ZigbeeNode = require('./zb-node');
 var SerialPort = require('serialport');
 var xbeeApi = require('xbee-api');
 var at = require('./zb-at');
 var util = require('util');
-var utils = require('../utils');
 var zdo = require('./zb-zdo');
 var zcl = require('zcl-packet');
 var zclId = require('zcl-id');
 var zigBeeClassifier = require('./zb-classifier');
+
+let Adapter, utils;
+try {
+  Adapter = require('../adapter');
+  utils = require('../utils');
+} catch (e) {
+  if (e.code !== 'MODULE_NOT_FOUND') {
+    throw e;
+  }
+
+  const gwa = require('gateway-addon');
+  Adapter = gwa.Adapter;
+  utils = gwa.Utils;
+}
 
 var C = xbeeApi.constants;
 var AT_CMD = at.AT_CMD;
