@@ -614,7 +614,7 @@ escape-string-regexp@^1.0.2, escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
 
-eslint-plugin-html@^4.0.0:
+eslint-plugin-html@^4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/eslint-plugin-html/-/eslint-plugin-html-4.0.2.tgz#0e56149e42c2ffc3f0df6261a8bb96b1a9f2280d"
   dependencies:
@@ -631,9 +631,9 @@ eslint-visitor-keys@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#3f3180fb2e291017716acb4c9d6d5b5c34a6a81d"
 
-eslint@^4.7.0:
-  version "4.17.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-4.17.0.tgz#dc24bb51ede48df629be7031c71d9dc0ee4f3ddf"
+eslint@^4.18.2:
+  version "4.18.2"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-4.18.2.tgz#0f81267ad1012e7d2051e186a9004cc2267b8d45"
   dependencies:
     ajv "^5.3.0"
     babel-code-frame "^6.22.0"
@@ -670,7 +670,7 @@ eslint@^4.7.0:
     semver "^5.3.0"
     strip-ansi "^4.0.0"
     strip-json-comments "~2.0.1"
-    table "^4.0.1"
+    table "4.0.2"
     text-table "~0.2.0"
 
 espree@^3.5.2:
@@ -1543,7 +1543,7 @@ semver@^5.3.0, semver@^5.4.1:
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.5.0.tgz#dc4bbc7a6ca9d916dee5d43516f0092b58f7b8ab"
 
-serialport@^6.0.4:
+serialport@^6.1.1:
   version "6.1.1"
   resolved "https://registry.yarnpkg.com/serialport/-/serialport-6.1.1.tgz#b912f3c2fe22b38ef8ea5ccaa6ebc0b8874b9fe9"
   dependencies:
@@ -1697,7 +1697,7 @@ supports-color@^4.0.0:
   dependencies:
     has-flag "^2.0.0"
 
-table@^4.0.1:
+table@4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/table/-/table-4.0.2.tgz#a33447375391e766ad34d3486e6e2aedc84d2e36"
   dependencies:
@@ -1825,7 +1825,7 @@ write@^0.2.1:
   dependencies:
     mkdirp "^0.5.1"
 
-xbee-api@^0.5.2:
+xbee-api@^0.5.6:
   version "0.5.6"
   resolved "https://registry.yarnpkg.com/xbee-api/-/xbee-api-0.5.6.tgz#6208ce6b57f90a261559d91a6cd6002da3c4f487"
   dependencies:
@@ -1855,7 +1855,7 @@ zcl-id@^0.3.2:
     busyman "^0.3.0"
     enum "^2.3.0"
 
-zcl-packet@^0.2.2:
+zcl-packet@^0.2.4:
   version "0.2.4"
   resolved "https://registry.yarnpkg.com/zcl-packet/-/zcl-packet-0.2.4.tgz#413f61560205d212044ebb8e7915978a85c1b75d"
   dependencies:
