@@ -14,7 +14,11 @@
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "color": "^3.0.0"
+    "color": "^3.0.0",
+    "serialport": "^6.0.4",
+    "xbee-api": "^0.5.2",
+    "zcl-id": "^0.3.2",
+    "zcl-packet": "^0.2.2"
   },
   "devDependencies": {
     "eslint": "^4.7.0",
