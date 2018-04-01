@@ -71,7 +71,7 @@ ac.SERIAL_NUMBER_HIGH = 'SH';
 ac[ac.SERIAL_NUMBER_HIGH] = 'Serial Number High (SH)';
 
 ac.SERIAL_NUMBER_LOW = 'SL';
-ac[ac.SERIAL_NUMBER_LOW] = 'Serial Number High (SL)';
+ac[ac.SERIAL_NUMBER_LOW] = 'Serial Number Low (SL)';
 
 ac.WRITE_PARAMETERS = 'WR';
 ac[ac.WRITE_PARAMETERS] = 'Write Parameters (WR)';
