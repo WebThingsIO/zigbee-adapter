@@ -1677,8 +1677,9 @@ function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
   // Attempt to move to new config format
   if (Database) {
     const db = new Database(manifest.name);
-    db.open();
-    promise = db.loadConfig().then((config) => {
+    promise = db.open().then(() => {
+      return db.loadConfig();
+    }).then((config) => {
       if (config.hasOwnProperty('discoverAttributes')) {
         delete config.discoverAttributes;
       }
