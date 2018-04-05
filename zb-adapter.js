@@ -19,7 +19,7 @@ var zcl = require('zcl-packet');
 var zclId = require('zcl-id');
 var zigBeeClassifier = require('./zb-classifier');
 
-let Adapter, utils;
+let Adapter, Database, utils;
 try {
   Adapter = require('../adapter');
   utils = require('../utils');
@@ -30,6 +30,7 @@ try {
 
   const gwa = require('gateway-addon');
   Adapter = gwa.Adapter;
+  Database = gwa.Database;
   utils = gwa.Utils;
 }
 
@@ -145,6 +146,10 @@ class ZigbeeAdapter extends Adapter {
     // we do any parsing of the data to be printed. This is useful to enable
     // if the frame parsing code is crashing.
     this.debugFrameParsing = false;
+
+    // debugDiscoverAttributes causes us to ask for and print out the attributes
+    // available for each cluster.
+    this.debugDiscoverAttributes = false;
 
     this.frameDumped = false;
     this.isPairing = false;
@@ -949,7 +954,7 @@ class ZigbeeAdapter extends Adapter {
         this.getSimpleDescriptorCommands(node, endpoint));
     }
 
-    if (this.manifest.moziot.config.discoverAttributes) {
+    if (this.debugDiscoverAttributes) {
       // If we're configured to do so, then ask for and print out
       // the attributes available for each cluster.
       commands = commands.concat(
@@ -1667,7 +1672,31 @@ function findDigiPorts() {
 }
 
 function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
-  findDigiPorts().then((digiPorts) => {
+  let promise;
+
+  // Attempt to move to new config format
+  if (Database) {
+    const db = new Database(manifest.name);
+    promise = db.open().then(() => {
+      return db.loadConfig();
+    }).then((config) => {
+      if (config.hasOwnProperty('discoverAttributes')) {
+        delete config.discoverAttributes;
+      }
+
+      if (config.hasOwnProperty('scanChannels') &&
+          typeof config.scanChannels === 'string') {
+        config.scanChannels = parseInt(config.scanChannels, 16);
+      }
+
+      manifest.moziot.config = config;
+      return db.saveConfig(config);
+    });
+  } else {
+    promise = Promise.resolve();
+  }
+
+  promise.then(() => findDigiPorts()).then((digiPorts) => {
     for (var port of digiPorts) {
       // Under OSX, SerialPort.list returns the /dev/tty.usbXXX instead
       // /dev/cu.usbXXX. tty.usbXXX requires DCD to be asserted which

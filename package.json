@@ -54,8 +54,19 @@
     "plugin": true,
     "exec": "{nodeLoader} {path}",
     "config": {
-      "scanChannels": "0x1ffe",
-      "discoverAttributes": false
+      "scanChannels": 8190
+    },
+    "schema": {
+      "type": "object",
+      "required": [
+        "scanChannels"
+      ],
+      "properties": {
+        "scanChannels": {
+          "type": "integer",
+          "default": 8190
+        }
+      }
     }
   }
 }
