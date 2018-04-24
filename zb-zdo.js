@@ -61,7 +61,9 @@ zci.ACTIVE_ENDPOINTS_RESPONSE = 0x8005;
 zci[zci.ACTIVE_ENDPOINTS_RESPONSE] = 'Active Endpoints Resp (0x8005)';
 
 zci.MATCH_DESCRIPTOR_REQUEST = 0x0006;
-zci[zci.MATCH_DESCRIPTOR_REQUEST] = 'Match Descriptor Req (0x0005)';
+zci[zci.MATCH_DESCRIPTOR_REQUEST] = 'Match Descriptor Req (0x0006)';
+zci.MATCH_DESCRIPTOR_RESPONSE = 0x8006;
+zci[zci.MATCH_DESCRIPTOR_RESPONSE] = 'Match Descriptor Resp (0x8006)';
 
 zci.END_DEVICE_ANNOUNCEMENT = 0x0013;
 zci[zci.END_DEVICE_ANNOUNCEMENT] = 'End Device Announcement (0x0013)';
@@ -185,7 +187,13 @@ class ZdoApi {
   parseZdoFrame(frame) {
     const reader = new BufferReader(frame.data);
     frame.zdoSeq = reader.nextUInt8();
-    zdoParser[getClusterIdAsInt(frame.clusterId)](frame, reader);
+    const clusterId = getClusterIdAsInt(frame.clusterId);
+    if (zdoParser.hasOwnProperty(clusterId)) {
+      zdoParser[clusterId](frame, reader);
+    } else {
+      console.error('Received unrecognized ZDO Frame');
+      console.error(frame);
+    }
   }
 }
 
@@ -242,6 +250,15 @@ zdoBuilder[zci.MANAGEMENT_PERMIT_JOIN_REQUEST] = function(frame, builder) {
 
 zdoBuilder[zci.MANAGEMENT_RTG_REQUEST] = function(frame, builder) {
   builder.appendUInt8(frame.startIndex);
+};
+
+zdoBuilder[zci.MATCH_DESCRIPTOR_RESPONSE] = function(frame, builder) {
+  builder.appendUInt8(frame.status);
+  builder.appendUInt16LE(parseInt(frame.zdoAddr16, 16));
+  builder.appendUInt8(frame.endpoints.length);
+  for (const endpoint of frame.endpoints) {
+    builder.appendUInt8(endpoint);
+  }
 };
 
 zdoBuilder[zci.NODE_DESCRIPTOR_REQUEST] = function(frame, builder) {
@@ -349,7 +366,7 @@ zdoParser[zci.MANAGEMENT_RTG_RESPONSE] = function(frame, reader) {
 
 zdoParser[zci.MATCH_DESCRIPTOR_REQUEST] = function(frame, reader) {
   frame.zdoAddr16 = reader.nextString(2, 'hex').swapHex();
-  frame.profileId = reader.nextString(2, 'hex').swapHex();
+  frame.matchProfileId = reader.nextString(2, 'hex').swapHex();
 
   frame.inputClusterCount = reader.nextUInt8();
   frame.inputClusters = [];
