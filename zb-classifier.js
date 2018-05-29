@@ -286,9 +286,9 @@ class ZigbeeClassifier {
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
               attr, setAttrFromValue, parseValueFromAttr) {
-    let property =  new ZigbeeProperty(node, name, descr, profileId,
-                                       endpoint, clusterId, attr,
-                                       setAttrFromValue, parseValueFromAttr);
+    const property = new ZigbeeProperty(node, name, descr, profileId,
+                                        endpoint, clusterId, attr,
+                                        setAttrFromValue, parseValueFromAttr);
     node.properties.set(name, property);
     if (name[0] == '_') {
       property.visible = false;
@@ -300,22 +300,22 @@ class ZigbeeClassifier {
       ]);
     }
     this.appendFrames([
-      node.makeReadAttributeFrameForProperty(property)
+      node.makeReadAttributeFrameForProperty(property),
     ]);
   }
 
   // internal function allows us to use early returns.
   classifyInternal(node) {
-    let seMeteringEndpoint =
+    const seMeteringEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SEMETERING_HEX);
-    let haElectricalEndpoint =
+    const haElectricalEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_HAELECTRICAL_HEX);
 
-    let genLevelCtrlEndpoint =
+    const genLevelCtrlEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
-    let genOnOffEndpoint =
+    const genOnOffEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
-    let genOnOffOutputEndpoint =
+    const genOnOffOutputEndpoint =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
 
     if (DEBUG) {
@@ -348,7 +348,6 @@ class ZigbeeClassifier {
       // Switches have both input and output clusters for genOnOff where a
       // sensor only has an output cluster.
       this.initBinarySensor(node, genOnOffOutputEndpoint);
-      return;
     }
   }
 
@@ -363,7 +362,7 @@ class ZigbeeClassifier {
     this.frames = [];
 
     // Now that we know the type, set the default name.
-    node.defaultName = node.id + '-' + node.type;
+    node.defaultName = `${node.id}-${node.type}`;
     if (!node.name) {
       node.name = node.defaultName;
     }
@@ -380,7 +379,7 @@ class ZigbeeClassifier {
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint) {
-    let lightLinkEndpoint =
+    const lightLinkEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_LIGHTLINK_HEX);
     if (DEBUG) {
       console.log('     lightLinkEndpoint =', lightLinkEndpoint);

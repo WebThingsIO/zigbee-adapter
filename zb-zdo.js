@@ -37,7 +37,7 @@ exports = module.exports;
 const ZDO_PROFILE_ID = 0;
 const ZDO_PROFILE_ID_HEX = utils.hexStr(ZDO_PROFILE_ID, 4);
 
-var zci = exports.CLUSTER_ID = {};
+const zci = exports.CLUSTER_ID = {};
 
 // Function which will convert endianess of hex strings.
 // i.e. '12345678'.swapHex() returns '78563412'
@@ -97,24 +97,24 @@ zci.MANAGEMENT_NETWORK_UPDATE_NOTIFY = 0x8038;
 zci[zci.MANAGEMENT_NETWORK_UPDATE_NOTIFY] =
   'Mgmt Network Update Notify (0x8038)';
 
-var zdoBuilder = module.exports.zdoBuilder = {};
-var zdoParser = module.exports.zdoParser = {};
+const zdoBuilder = module.exports.zdoBuilder = {};
+const zdoParser = module.exports.zdoParser = {};
 
 function getClusterIdAsString(clusterId) {
-  if (typeof(clusterId) === 'number') {
+  if (typeof clusterId === 'number') {
     return utils.hexStr(clusterId, 4);
   }
-  return '' + clusterId;
+  return `${clusterId}`;
 }
 
 function getClusterIdAsInt(clusterId) {
-  if (typeof(clusterId) === 'number' ) {
+  if (typeof clusterId === 'number') {
     return clusterId;
   }
-  if (typeof(clusterId) === 'string' && clusterId.match('^[0-9A-Fa-f]+$')) {
+  if (typeof clusterId === 'string' && clusterId.match('^[0-9A-Fa-f]+$')) {
     return parseInt(clusterId, 16);
   }
-  let cluster = zclId.cluster(clusterId);
+  const cluster = zclId.cluster(clusterId);
   if (cluster) {
     return cluster.value;
   }
@@ -125,7 +125,7 @@ function getClusterIdDescription(clusterId) {
   if (clusterId in zci) {
     return zci[clusterId];
   }
-  return '??? 0x' + getClusterIdAsString(clusterId) + ' ???';
+  return `??? 0x${getClusterIdAsString(clusterId)} ???`;
 }
 
 exports.getClusterIdAsString = getClusterIdAsString;
@@ -143,16 +143,16 @@ class ZdoApi {
     assert(frame.destination16, 'Caller must provide frame.destination16');
     assert(frame.clusterId, 'Caller must provide frame.clusterId');
 
-    var frameId = xbeeApi._frame_builder.nextFrameId();
+    const frameId = xbeeApi._frame_builder.nextFrameId();
 
-    var zdoData = Buffer.alloc(256);
-    var builder = new BufferBuilder(zdoData);
+    const zdoData = Buffer.alloc(256);
+    const builder = new BufferBuilder(zdoData);
     builder.appendUInt8(frameId);
 
     if (!zdoBuilder[frame.clusterId]) {
-      throw new Error('This library does not implement building the 0x' +
-                      getClusterIdAsString(frame.clusterId) +
-                      ' frame type.');
+      throw new Error(
+        `This library does not implement building the 0x${
+          getClusterIdAsString(frame.clusterId)} frame type.`);
     }
 
     frame.id = frameId;
@@ -176,14 +176,14 @@ class ZdoApi {
   }
 
   isZdoFrame(frame) {
-    if (typeof(frame.profileId) === 'number') {
+    if (typeof frame.profileId === 'number') {
       return frame.profileId === ZDO_PROFILE_ID;
     }
     return frame.profileId === ZDO_PROFILE_ID_HEX;
   }
 
   parseZdoFrame(frame) {
-    var reader = new BufferReader(frame.data);
+    const reader = new BufferReader(frame.data);
     frame.zdoSeq = reader.nextUInt8();
     zdoParser[getClusterIdAsInt(frame.clusterId)](frame, reader);
   }
@@ -191,11 +191,11 @@ class ZdoApi {
 
 exports.ZdoApi = ZdoApi;
 
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //
 // Builders
 //
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 zdoBuilder[zci.ACTIVE_ENDPOINTS_REQUEST] = function(frame, builder) {
   builder.appendUInt16LE(parseInt(frame.destination16, 16));
@@ -204,20 +204,20 @@ zdoBuilder[zci.ACTIVE_ENDPOINTS_REQUEST] = function(frame, builder) {
 zdoBuilder[zci.BIND_REQUEST] = function(frame, builder) {
   builder.appendString(frame.bindSrcAddr64.swapHex(), 'hex');
   builder.appendUInt8(frame.bindSrcEndpoint);
-  if (typeof(frame.bindClusterId) === 'number') {
+  if (typeof frame.bindClusterId === 'number') {
     builder.appendUInt16LE(frame.bindClusterId, 'hex');
   } else {
     builder.appendString(frame.bindClusterId.swapHex(), 'hex');
   }
   builder.appendUInt8(frame.bindDstAddrMode);
   if (frame.bindDstAddrMode === 1) {
-    assert(frame.bindDstAddr16 !== undefined,
+    assert(typeof frame.bindDstAddr16 !== 'undefined',
            'Must provide bindDstAddr16 for bindDstAddrMode 1');
     builder.appendString(frame.bindDstAddr16.swapHex(), 'hex');
   } else if (frame.bindDstAddrMode === 3) {
-    assert(frame.bindDstAddr64 !== undefined,
+    assert(typeof frame.bindDstAddr64 !== 'undefined',
            'Must provide bindDstAddr16 for bindDstAddrMode 3');
-    assert(frame.bindDstEndpoint !== undefined,
+    assert(typeof frame.bindDstEndpoint !== 'undefined',
            'Must provide bindDstEndpoint for bindDstAddrMode 3');
     builder.appendString(frame.bindDstAddr64.swapHex(), 'hex');
     builder.appendUInt8(frame.bindDstEndpoint);
@@ -253,11 +253,11 @@ zdoBuilder[zci.SIMPLE_DESCRIPTOR_REQUEST] = function(frame, builder) {
   builder.appendUInt8(frame.endpoint);
 };
 
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //
 // Parsers
 //
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 zdoParser[zci.ACTIVE_ENDPOINTS_RESPONSE] = function(frame, reader) {
   frame.status = reader.nextUInt8();
@@ -265,7 +265,7 @@ zdoParser[zci.ACTIVE_ENDPOINTS_RESPONSE] = function(frame, reader) {
   if (reader.offset < reader.buf.length) {
     frame.numActiveEndpoints = reader.nextUInt8();
     frame.activeEndpoints = [];
-    for (var i = 0; i < frame.numActiveEndpoints; i++) {
+    for (let i = 0; i < frame.numActiveEndpoints; i++) {
       frame.activeEndpoints[i] = reader.nextUInt8();
     }
   }
@@ -292,19 +292,19 @@ zdoParser[zci.MANAGEMENT_LQI_RESPONSE] = function(frame, reader) {
   frame.numEntriesThisResponse = reader.nextUInt8();
   frame.neighbors = [];
 
-  for (var i = 0; i < frame.numEntriesThisResponse; i++) {
-    var neighbor = frame.neighbors[i] = {};
+  for (let i = 0; i < frame.numEntriesThisResponse; i++) {
+    const neighbor = frame.neighbors[i] = {};
 
     neighbor.panId = reader.nextString(8, 'hex').swapHex();
     neighbor.addr64 = reader.nextString(8, 'hex').swapHex();
     neighbor.addr16 = reader.nextString(2, 'hex').swapHex();
 
-    var byte1 = reader.nextUInt8();
+    const byte1 = reader.nextUInt8();
     neighbor.deviceType = byte1 & 0x03;
     neighbor.rxOnWhenIdle = (byte1 >> 2) & 0x03;
     neighbor.relationship = (byte1 >> 4) & 0x07;
 
-    var byte2 = reader.nextUInt8();
+    const byte2 = reader.nextUInt8();
     neighbor.permitJoining = byte2 & 0x03;
     neighbor.depth = reader.nextUInt8();
     neighbor.lqi = reader.nextUInt8();
@@ -318,7 +318,7 @@ zdoParser[zci.MANAGEMENT_NETWORK_UPDATE_NOTIFY] = function(frame, reader) {
   frame.transmissionFailures = reader.nextUInt16LE();
   frame.numEnergyValues = reader.nextUInt8();
   frame.energyValues = [];
-  for (var i = 0; i < frame.numEnergyValues; i++) {
+  for (let i = 0; i < frame.numEnergyValues; i++) {
     frame.energyValues[i] = reader.nextUInt8();
   }
 };
@@ -334,11 +334,11 @@ zdoParser[zci.MANAGEMENT_RTG_RESPONSE] = function(frame, reader) {
   frame.numEntriesThisResponse = reader.nextUInt8();
   frame.routings = [];
 
-  for (var i = 0; i < frame.numEntriesThisResponse; i++) {
-    var routing = frame.routings[i] = {};
+  for (let i = 0; i < frame.numEntriesThisResponse; i++) {
+    const routing = frame.routings[i] = {};
 
     routing.addr16 = reader.nextString(2, 'hex').swapHex();
-    var byte1 = reader.nextUInt8();
+    const byte1 = reader.nextUInt8();
     routing.status = byte1 & 0x07;
     routing.memoryConstrained = (byte1 >> 3) & 1;
     routing.manyToOne = (byte1 >> 4) & 1;
@@ -353,13 +353,13 @@ zdoParser[zci.MATCH_DESCRIPTOR_REQUEST] = function(frame, reader) {
 
   frame.inputClusterCount = reader.nextUInt8();
   frame.inputClusters = [];
-  for (var i = 0; i < frame.inputClusterCount; i++) {
+  for (let i = 0; i < frame.inputClusterCount; i++) {
     frame.inputClusters[i] = reader.nextString(2, 'hex').swapHex();
   }
 
   frame.outputClusterCount = reader.nextUInt8();
   frame.outputClusters = [];
-  for (i = 0; i < frame.outputClusterCount; i++) {
+  for (let i = 0; i < frame.outputClusterCount; i++) {
     frame.outputClusters[i] = reader.nextString(2, 'hex').swapHex();
   }
 };
@@ -368,12 +368,12 @@ zdoParser[zci.NODE_DESCRIPTOR_RESPONSE] = function(frame, reader) {
   frame.status = reader.nextUInt8();
   frame.zdoAddr16 = reader.nextString(2, 'hex').swapHex();
 
-  var byte1 = reader.nextUInt8();
+  const byte1 = reader.nextUInt8();
   frame.logicalType = byte1 & 0x03;
   frame.complexDescriptorAvailable = (byte1 >> 3) & 0x01;
   frame.userDescriptorAvailable = (byte1 >> 4) & 0x01;
 
-  var byte2 = reader.nextUInt8();
+  const byte2 = reader.nextUInt8();
   frame.frequencyBand = (byte2 >> 3) & 0x1f;
 
   frame.macCapabilityFlags = reader.nextUInt8();
@@ -403,18 +403,18 @@ zdoParser[zci.SIMPLE_DESCRIPTOR_RESPONSE] = function(frame, reader) {
   frame.appProfileId = reader.nextString(2, 'hex').swapHex();
   frame.appDeviceId = reader.nextString(2, 'hex').swapHex();
 
-  var byte1 = reader.nextUInt8();
+  const byte1 = reader.nextUInt8();
   frame.appDeviceVersion = byte1 & 0x0f;
 
   frame.inputClusterCount = reader.nextUInt8();
   frame.inputClusters = [];
-  for (var i = 0; i < frame.inputClusterCount; i++) {
+  for (let i = 0; i < frame.inputClusterCount; i++) {
     frame.inputClusters[i] = reader.nextString(2, 'hex').swapHex();
   }
 
   frame.outputClusterCount = reader.nextUInt8();
   frame.outputClusters = [];
-  for (i = 0; i < frame.outputClusterCount; i++) {
+  for (let i = 0; i < frame.outputClusterCount; i++) {
     frame.outputClusters[i] = reader.nextString(2, 'hex').swapHex();
   }
 };
