@@ -13,14 +13,14 @@
 
 'use strict';
 
-var assert = require('assert');
-var BufferBuilder = require('buffer-builder');
-var BufferReader = require('buffer-reader');
-var xbeeApi = require('xbee-api');
+const assert = require('assert');
+const BufferBuilder = require('buffer-builder');
+const BufferReader = require('buffer-reader');
+const xbeeApi = require('xbee-api');
 
-var C = xbeeApi.constants;
+const C = xbeeApi.constants;
 
-var ac = exports.AT_CMD = {};
+const ac = exports.AT_CMD = {};
 
 ac.APPLY_CHANGES = 'AC';
 ac[ac.APPLY_CHANGES] = 'Apply Changes (AC)';
@@ -79,14 +79,10 @@ ac[ac.WRITE_PARAMETERS] = 'Write Parameters (WR)';
 ac.ZIGBEE_STACK_PROFILE = 'ZS';
 ac[ac.ZIGBEE_STACK_PROFILE] = 'Zigbee Stack Profile (ZS)';
 
-var atBuilder = module.exports.atBuilder = {};
-var atParser = module.exports.atParser = {};
+const atBuilder = module.exports.atBuilder = {};
+const atParser = module.exports.atParser = {};
 
 class AtApi {
-  constructor() {
-
-  }
-
   makeFrame(command, frame) {
     assert(command, 'Caller must provide command');
 
@@ -95,12 +91,13 @@ class AtApi {
       frame.command = command;
 
       if (!(command in atBuilder)) {
-        throw new Error('This library does not implement data for the AT "' +
-                        command + '" command.');
+        throw new Error(
+          `This library does not implement data for the AT "${
+            command}" command.`);
       }
 
-      var atData = Buffer.alloc(32); // AT Command Data
-      var builder = new BufferBuilder(atData);
+      const atData = Buffer.alloc(32); // AT Command Data
+      const builder = new BufferBuilder(atData);
 
       atBuilder[command](frame, builder);
 
@@ -109,7 +106,7 @@ class AtApi {
       frame = {
         type: C.FRAME_TYPE.AT_COMMAND,
         command: command,
-        commandParameter: []
+        commandParameter: [],
       };
     }
 
@@ -119,7 +116,7 @@ class AtApi {
   parseFrame(frame) {
     assert(frame, 'Frame parameter must be a frame object');
     if (frame.command in atParser) {
-      var reader = new BufferReader(frame.commandData);
+      const reader = new BufferReader(frame.commandData);
       atParser[frame.command](frame, reader);
     }
   }
@@ -127,11 +124,11 @@ class AtApi {
 
 exports.AtApi = AtApi;
 
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //
 // Builders
 //
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 atBuilder[ac.API_OPTIONS] = function(frame, builder) {
   builder.appendUInt8(frame.apiOptions);
@@ -150,7 +147,7 @@ atBuilder[ac.ENCRYPTION_OPTIONS] = function(frame, builder) {
 };
 
 atBuilder[ac.LINK_KEY] = function(frame, builder) {
-  var data;
+  let data;
   if (Array.isArray(frame.linkKey) || Buffer.isBuffer(frame.linkKey)) {
     data = Buffer.from(frame.linkKey);
   } else {
@@ -160,15 +157,15 @@ atBuilder[ac.LINK_KEY] = function(frame, builder) {
 };
 
 atBuilder[ac.NODE_IDENTIFIER] = function(builder, data) {
-  assert(typeof(data) === 'string', 'data must be a string');
+  assert(typeof data === 'string', 'data must be a string');
 
   // Leading spaces aren't allowed (so we remove them)
   // Embedded commas aren't allowed (so we remove them)
   // Finally, the length is limited to 20 printable ASCII characters.
   data = data.replace(/,/g, '')
-             .replace(/[^\x20-\x7e]+/g, '')
-             .trim()
-             .slice(0,20);
+    .replace(/[^\x20-\x7e]+/g, '')
+    .trim()
+    .slice(0, 20);
 
   builder.appendString(data, 'ascii');
 };
@@ -185,11 +182,11 @@ atBuilder[ac.ZIGBEE_STACK_PROFILE] = function(frame, builder) {
   builder.appendUInt8(frame.zigBeeStackProfile);
 };
 
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 //
 // Parsers
 //
-//---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 atParser[ac.API_OPTIONS] = function(frame, reader) {
   frame.apiOptions = reader.nextUInt8();

@@ -9,10 +9,10 @@
 
 'use strict';
 
-var xbeeApi = require('xbee-api');
-var zclId = require('zcl-id');
-var zcl = require('zcl-packet');
-var zdo = require('./zb-zdo');
+const xbeeApi = require('xbee-api');
+const zclId = require('zcl-id');
+const zcl = require('zcl-packet');
+const zdo = require('./zb-zdo');
 
 let Device, utils;
 try {
@@ -28,7 +28,7 @@ try {
   utils = gwa.Utils;
 }
 
-var C = xbeeApi.constants;
+const C = xbeeApi.constants;
 
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
@@ -43,7 +43,7 @@ class ZigbeeNode extends Device {
     // Our id is a Mac address on the Zigbee network. It's unique within
     // the zigbee network, but might not be globally unique, so we prepend
     // with zb- to put it in a namespace.
-    var deviceId = 'zb-' + id64;
+    const deviceId = `zb-${id64}`;
     super(adapter, deviceId);
 
     this.addr64 = id64;
@@ -54,9 +54,9 @@ class ZigbeeNode extends Device {
     this.isCoordinator = (id64 == adapter.serialNumber);
 
     if (this.isCoordinator) {
-      this.defaultName = deviceId + '-Dongle';
+      this.defaultName = `${deviceId}-Dongle`;
     } else {
-      this.defaultName = deviceId + '-Node';
+      this.defaultName = `${deviceId}-Node`;
     }
     this.discoveringAttributes = false;
     this.fireAndForget = false;
@@ -64,30 +64,30 @@ class ZigbeeNode extends Device {
   }
 
   asDict() {
-    var dict = super.asDict();
+    const dict = super.asDict();
     dict.addr64 = this.addr64;
     dict.addr16 = this.addr16;
     dict.neighbors = this.neighbors;
     dict.activeEndpoints = this.activeEndpoints;
     dict.isCoordinator = this.isCoordinator;
     dict.fireAndForget = this.fireAndForget;
-    for (var endpointNum in dict.activeEndpoints) {
-      var endpoint = dict.activeEndpoints[endpointNum];
-      var clusterId;
-      var idx;
-      var zclCluster;
+    for (const endpointNum in dict.activeEndpoints) {
+      const endpoint = dict.activeEndpoints[endpointNum];
+      let clusterId;
+      let idx;
+      let zclCluster;
       for (idx in endpoint.inputClusters) {
         clusterId = parseInt(endpoint.inputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
         if (zclCluster) {
-          endpoint.inputClusters[idx] += ' - ' + zclCluster.key;
+          endpoint.inputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
       for (idx in endpoint.outputClusters) {
         clusterId = parseInt(endpoint.outputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
         if (zclCluster) {
-          endpoint.outputClusters[idx] += ' - ' + zclCluster.key;
+          endpoint.outputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
     }
@@ -128,10 +128,10 @@ class ZigbeeNode extends Device {
                       'clusterId', params.clusterId,
                       'attrId:', params.attrId);
           this.adapter.readAttribute(this,
-            params.endpoint,
-            params.profileId,
-            params.clusterId,
-            params.attrId);
+                                     params.endpoint,
+                                     params.profileId,
+                                     params.clusterId,
+                                     params.attrId);
         }
         break;
       }
@@ -142,8 +142,8 @@ class ZigbeeNode extends Device {
   }
 
   findZhaEndpointWithInputClusterIdHex(clusterIdHex) {
-    for (var endpointNum in this.activeEndpoints) {
-      var endpoint = this.activeEndpoints[endpointNum];
+    for (const endpointNum in this.activeEndpoints) {
+      const endpoint = this.activeEndpoints[endpointNum];
       if (endpoint.profileId == ZHA_PROFILE_ID_HEX ||
           endpoint.profileId == ZLL_PROFILE_ID_HEX) {
         if (endpoint.inputClusters.includes(clusterIdHex)) {
@@ -154,11 +154,11 @@ class ZigbeeNode extends Device {
   }
 
   findZhaEndpointWithOutputClusterIdHex(clusterIdHex) {
-    for (var endpointNum in this.activeEndpoints) {
-      var endpoint = this.activeEndpoints[endpointNum];
+    for (const endpointNum in this.activeEndpoints) {
+      const endpoint = this.activeEndpoints[endpointNum];
       if (endpoint.profileId == ZHA_PROFILE_ID_HEX ||
           endpoint.profileId == ZLL_PROFILE_ID_HEX) {
-          if (endpoint.outputClusters.includes(clusterIdHex)) {
+        if (endpoint.outputClusters.includes(clusterIdHex)) {
           return endpointNum;
         }
       }
@@ -178,10 +178,10 @@ class ZigbeeNode extends Device {
   getAttrEntryFromFrameForProperty(frame, property) {
     let attrId;
     if (Array.isArray(property.attr)) {
-      let attrEntries = [];
+      const attrEntries = [];
       for (const attr of property.attr) {
         attrId = zclId.attr(property.clusterId, attr).value;
-        let attrEntry = this.getAttrEntryFromFrame(frame, attrId);
+        const attrEntry = this.getAttrEntryFromFrame(frame, attrId);
         if (attrEntry) {
           attrEntries.push(attrEntry);
         }
@@ -193,7 +193,7 @@ class ZigbeeNode extends Device {
   }
 
   frameHasAttr(frame, property) {
-    let attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
+    const attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
     if (Array.isArray(attrEntry)) {
       return attrEntry.length > 0;
     }
@@ -222,7 +222,7 @@ class ZigbeeNode extends Device {
       // ZHA clusters. This means that we need to treat them as
       // 'fire and forget'.
 
-      let property = this.findPropertyFromFrame(frame);
+      const property = this.findPropertyFromFrame(frame);
       if (property) {
         property.fireAndForget = true;
       }
@@ -231,36 +231,36 @@ class ZigbeeNode extends Device {
 
   handleDiscoverRsp(frame) {
     this.reportZclStatusError(frame);
-    let payload = frame.zcl.payload;
+    const payload = frame.zcl.payload;
     if (payload.discComplete == 0) {
       // More attributes are available
-      let discoverFrame =
+      const discoverFrame =
         this.makeDiscoverAttributesFrame(
           frame.sourceEndpoint,
           frame.profileId,
           frame.clusterId,
           payload.attrInfos.slice(-1)[0].attrId + 1
         );
-        this.adapter.sendFrameWaitFrameAtFront(discoverFrame, {
-          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-          zclCmdId: 'discoverRsp',
-          zclSeqNum: discoverFrame.id
-        });
+      this.adapter.sendFrameWaitFrameAtFront(discoverFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'discoverRsp',
+        zclSeqNum: discoverFrame.id,
+      });
     }
 
-    let clusterId = parseInt(frame.clusterId, 16);
-    let clusterIdStr =  zclId.cluster(clusterId).key;
+    const clusterId = parseInt(frame.clusterId, 16);
+    const clusterIdStr = zclId.cluster(clusterId).key;
     let attrInfo;
     if (SKIP_DISCOVER_READ_CLUSTERS.includes(clusterIdStr)) {
       // This is a cluster which dosen't seem to respond to read requests.
       // Just print the attributes.
       for (attrInfo of payload.attrInfos) {
-        let attr = zclId.attr(clusterId, attrInfo.attrId);
-        let attrStr = attr ? attr.key : 'unknown';
-        let dataType = zclId.dataType(attrInfo.dataType);
-        let dataTypeStr = dataType ? dataType.key : 'unknown';
-        console.log('      AttrId:', attrStr + ' (' + attrInfo.attrId + ')',
-                    'dataType:', dataTypeStr + ' (' + attrInfo.dataType + ')');
+        const attr = zclId.attr(clusterId, attrInfo.attrId);
+        const attrStr = attr ? attr.key : 'unknown';
+        const dataType = zclId.dataType(attrInfo.dataType);
+        const dataTypeStr = dataType ? dataType.key : 'unknown';
+        console.log('      AttrId:', `${attrStr} (${attrInfo.attrId})`,
+                    'dataType:', `${dataTypeStr} (${attrInfo.dataType})`);
       }
       return;
     }
@@ -270,7 +270,7 @@ class ZigbeeNode extends Device {
     // front of the queue.
 
     for (attrInfo of payload.attrInfos.reverse()) {
-      let readFrame = this.makeReadAttributeFrame(
+      const readFrame = this.makeReadAttributeFrame(
         frame.sourceEndpoint,
         frame.profileId,
         clusterId,
@@ -279,7 +279,7 @@ class ZigbeeNode extends Device {
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
         type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
         zclCmdId: 'readRsp',
-        zclSeqNum: readFrame.id
+        zclSeqNum: readFrame.id,
       });
     }
   }
@@ -287,28 +287,27 @@ class ZigbeeNode extends Device {
   handleReadRsp(frame) {
     this.reportZclStatusError(frame);
     if (this.discoveringAttributes && frame.zcl.cmdId === 'readRsp') {
-      let clusterId = parseInt(frame.clusterId, 16);
-      for (let attrEntry of frame.zcl.payload) {
+      const clusterId = parseInt(frame.clusterId, 16);
+      for (const attrEntry of frame.zcl.payload) {
         if (attrEntry.status == 0) {
-          let attr = zclId.attr(clusterId, attrEntry.attrId);
-          let attrStr = attr ? attr.key : 'unknown';
-          let dataType = zclId.dataType(attrEntry.dataType);
-          let dataTypeStr = dataType ? dataType.key : 'unknown';
-          console.log('      AttrId:', attrStr +
-                      ' (' + attrEntry.attrId + ')',
-                      'dataType:', dataTypeStr +
-                      ' (' + attrEntry.dataType + ')',
+          const attr = zclId.attr(clusterId, attrEntry.attrId);
+          const attrStr = attr ? attr.key : 'unknown';
+          const dataType = zclId.dataType(attrEntry.dataType);
+          const dataTypeStr = dataType ? dataType.key : 'unknown';
+          console.log('      AttrId:',
+                      `${attrStr} ( ${attrEntry.attrId})`,
+                      'dataType:', `${dataTypeStr} (${attrEntry.dataType})`,
                       'data:', attrEntry.attrData);
         }
       }
       return;
     }
 
-    let property = this.findPropertyFromFrame(frame);
+    const property = this.findPropertyFromFrame(frame);
     if (property) {
       // Note: attrEntry might be an array.
-      let attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
-      let [value, logValue] = property.parseAttrEntry(attrEntry);
+      const attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
+      const [value, logValue] = property.parseAttrEntry(attrEntry);
       property.setCachedValue(value);
       console.log(this.name,
                   'property:', property.name,
@@ -317,7 +316,7 @@ class ZigbeeNode extends Device {
                   'clusterId:', utils.hexStr(property.clusterId, 4),
                   frame.zcl.cmdId,
                   'value:', logValue);
-      var deferredSet = property.deferredSet;
+      const deferredSet = property.deferredSet;
       if (deferredSet) {
         property.deferredSet = null;
         deferredSet.resolve(property.value);
@@ -344,7 +343,7 @@ class ZigbeeNode extends Device {
   }
 
   makeBindFrame(endpoint, clusterId, configReportFrames) {
-    var frame = this.adapter.zdo.makeFrame({
+    const frame = this.adapter.zdo.makeFrame({
       destination64: this.addr64,
       destination16: this.addr16,
       clusterId: zdo.CLUSTER_ID.BIND_REQUEST,
@@ -364,11 +363,11 @@ class ZigbeeNode extends Device {
     // and create bind frames for each one. Some devices, like the Hue bulbs,
     // don't support binding, which means we also set things up so that we
     // only send the configReport frames if the binding request is successful.
-    let outputFrames = [];
-    let uniqueClusterEndpoint = {};
+    const outputFrames = [];
+    const uniqueClusterEndpoint = {};
     for (const frame of frames) {
       if (frame.zcl && frame.zcl.cmd == 'configReport') {
-        let key = '' + frame.destinationEndpoint + frame.clusterId;
+        const key = `${frame.destinationEndpoint}${frame.clusterId}`;
         if (uniqueClusterEndpoint.hasOwnProperty(key)) {
           uniqueClusterEndpoint[key].frames.push(frame);
         } else {
@@ -391,17 +390,17 @@ class ZigbeeNode extends Device {
   }
 
   makeConfigReportFrame(property) {
-    let clusterId = property.clusterId;
+    const clusterId = property.clusterId;
     let attrs = property.attr;
     if (!Array.isArray(attrs)) {
       attrs = [attrs];
     }
 
-    let frame = this.makeZclFrameForProperty(
+    const frame = this.makeZclFrameForProperty(
       property,
       {
         cmd: 'configReport',
-        payload: attrs.map(attr => {
+        payload: attrs.map((attr) => {
           return {
             direction: 0,
             attrId: zclId.attr(clusterId, attr).value,
@@ -417,7 +416,7 @@ class ZigbeeNode extends Device {
   }
 
   makeDiscoverAttributesFrame(endpoint, profileId, clusterId, startAttrId) {
-    var frame = this.makeZclFrame(
+    const frame = this.makeZclFrame(
       endpoint, profileId, clusterId,
       {
         cmd: 'discover',
@@ -434,12 +433,12 @@ class ZigbeeNode extends Device {
     if (!Array.isArray(attrIds)) {
       attrIds = [attrIds];
     }
-    var frame = this.makeZclFrame(
+    const frame = this.makeZclFrame(
       endpoint, profileId, clusterId,
       {
         cmd: 'read',
-        payload: attrIds.map(attrId => {
-          return { direction: 0, attrId: attrId };
+        payload: attrIds.map((attrId) => {
+          return {direction: 0, attrId: attrId};
         }),
       }
     );
@@ -454,15 +453,18 @@ class ZigbeeNode extends Device {
   }
 
   makeReadReportConfigFrame(property) {
-    var clusterId = property.clusterId;
-    var attr = property.attr;
-    var frame = this.makeZclFrameForProperty(
+    const clusterId = property.clusterId;
+    const attr = property.attr;
+    const frame = this.makeZclFrameForProperty(
       property,
       {
         cmd: 'readReportConfig',
-        payload: [{ direction: 0,
-                    attrId: zclId.attr(clusterId, attr).value,
-                 }],
+        payload: [
+          {
+            direction: 0,
+            attrId: zclId.attr(clusterId, attr).value,
+          },
+        ],
       }
     );
     return frame;
@@ -470,25 +472,25 @@ class ZigbeeNode extends Device {
 
   makeZclFrame(endpoint, profileId, clusterId, zclData) {
     if (!zclData.frameCntl) {
-      zclData.frameCntl = { frameType: 0 };
+      zclData.frameCntl = {frameType: 0};
     }
-    if (zclData.frameCntl.manufSpec === undefined) {
+    if (typeof zclData.frameCntl.manufSpec === 'undefined') {
       zclData.frameCntl.manufSpec = 0;
     }
-    if (zclData.frameCntl.direction === undefined) {
+    if (typeof zclData.frameCntl.direction === 'undefined') {
       zclData.frameCntl.direction = 0;
     }
-    if (zclData.frameCntl.disDefaultRsp === undefined) {
-        zclData.frameCntl.disDefaultRsp = 0;
+    if (typeof zclData.frameCntl.disDefaultRsp === 'undefined') {
+      zclData.frameCntl.disDefaultRsp = 0;
     }
-    if (zclData.manufCode === undefined) {
+    if (typeof zclData.manufCode === 'undefined') {
       zclData.manufCode = 0;
     }
-    if (zclData.payload === undefined) {
+    if (typeof zclData.payload === 'undefined') {
       zclData.payload = [];
     }
 
-    var frame = {
+    const frame = {
       id: xbeeApi._frame_builder.nextFrameId(),
       type: C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME,
       destination64: this.addr64,
@@ -521,7 +523,7 @@ class ZigbeeNode extends Device {
   }
 
   notifyPropertyChanged(property) {
-    var deferredSet = property.deferredSet;
+    const deferredSet = property.deferredSet;
     if (deferredSet) {
       property.deferredSet = null;
       deferredSet.resolve(property.value);
@@ -531,14 +533,14 @@ class ZigbeeNode extends Device {
 
   reportZclStatusError(frame) {
     let errorFound = false;
-    for (let attrEntry of frame.zcl.payload) {
+    for (const attrEntry of frame.zcl.payload) {
       // Note: 'report' frames don't have a status
       if (attrEntry.hasOwnProperty('status') && attrEntry.status != 0) {
         let status = zclId.status(attrEntry.status);
         if (!status) {
           status = {key: 'unknown', value: attrEntry.status};
         }
-        let clusterId = zdo.getClusterIdAsInt(frame.clusterId);
+        const clusterId = zdo.getClusterIdAsInt(frame.clusterId);
         let cluster = zclId.cluster(clusterId);
         if (!cluster) {
           cluster = {key: 'unknown', value: frame.clusterId};
@@ -548,10 +550,9 @@ class ZigbeeNode extends Device {
           attr = {key: 'unknown', value: attrEntry.attrId};
         }
         console.error('Response:', frame.zcl.cmdId,
-                      'got status:', status.key, '(' + status.value +
-                      ') node:', this.name,
-                      'cluster:', cluster.key, '(' + cluster.value +
-                      ') attr:', attr.key, '(' + attr.value + ')');
+                      'got status:', status.key, `(${status.value}) node:`,
+                      this.name, 'cluster:', cluster.key,
+                      `(${cluster.value}) attr:`, attr.key, `(${attr.value})`);
         errorFound = true;
       }
     }
@@ -563,7 +564,7 @@ class ZigbeeNode extends Device {
   }
 
   sendZclFrameWaitExplicitRx(property, zclData) {
-    var frame = this.makeZclFrameForProperty(property, zclData);
+    const frame = this.makeZclFrameForProperty(property, zclData);
     this.adapter.sendFrameWaitFrame(frame, {
       type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
       remote64: frame.destination64,
@@ -571,7 +572,7 @@ class ZigbeeNode extends Device {
   }
 
   sendZclFrameWaitExplicitRxResolve(property, zclData) {
-    var frame = this.makeZclFrameForProperty(property, zclData);
+    const frame = this.makeZclFrameForProperty(property, zclData);
     this.adapter.sendFrameWaitFrameResolve(frame, {
       type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
       remote64: frame.destination64,

@@ -66,7 +66,7 @@ class ZigbeeProperty extends Property {
     if (setAttrFromValue) {
       this.setAttrFromValue = Object.getPrototypeOf(this)[setAttrFromValue];
       if (!this.setAttrFromValue) {
-        let err = 'Unknown function: ' + setAttrFromValue;
+        const err = `Unknown function: ${setAttrFromValue}`;
         console.error(err);
         throw err;
       }
@@ -74,16 +74,16 @@ class ZigbeeProperty extends Property {
     if (parseValueFromAttr) {
       this.parseValueFromAttr = Object.getPrototypeOf(this)[parseValueFromAttr];
       if (!this.parseValueFromAttr) {
-        let err = 'Unknown function: ' + parseValueFromAttr;
+        const err = `Unknown function: ${parseValueFromAttr}`;
         console.error(err);
         throw err;
       }
     }
-    let attrs = attr.split(',');
+    const attrs = attr.split(',');
     if (attrs.length > 1) {
       this.attr = attrs;
       this.attrId = [];
-      for (let attr of attrs) {
+      for (const attr of attrs) {
         this.attrId.push(zclId.attr(clusterId, attr).value);
       }
     } else {
@@ -94,7 +94,7 @@ class ZigbeeProperty extends Property {
   }
 
   asDict() {
-    var dict = super.asDict();
+    const dict = super.asDict();
     dict.profileId = this.profileId;
     dict.endpoint = this.endpoint;
     dict.clusterId = this.clusterId;
@@ -145,7 +145,7 @@ class ZigbeeProperty extends Property {
   parseColorAttr(attrEntries) {
     let hue = 0;
     let sat = 0;
-    for (let attrEntry of attrEntries) {
+    for (const attrEntry of attrEntries) {
       switch (attrEntry.attrId) {
         case 0:
           hue = attrEntry.attrData;
@@ -156,12 +156,12 @@ class ZigbeeProperty extends Property {
       }
     }
     let level = 0;
-    let levelProperty = this.device.findProperty('_level');
+    const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
       level = levelProperty.value;
     }
-    let color = new Color({h: hue, s: sat, v: level});
-    let colorStr = color.rgb().hex();
+    const color = new Color({h: hue, s: sat, v: level});
+    const colorStr = color.rgb().hex();
     return [colorStr, colorStr];
   }
 
@@ -173,10 +173,10 @@ class ZigbeeProperty extends Property {
    */
   parseLevelAttr(attrEntry) {
     this.level = attrEntry.attrData;
-    let percent = levelToPercent(this.level);
+    const percent = levelToPercent(this.level);
     return [
       percent,
-      percent.toFixed(1) + '% (' + this.level + ')'
+      `${percent.toFixed(1)}% (${this.level})`,
     ];
   }
 
@@ -188,13 +188,13 @@ class ZigbeeProperty extends Property {
    */
   parseHaCurrentAttr(attrEntry) {
     if (!this.hasOwnProperty('multiplier')) {
-      let multiplierProperty = this.device.findProperty('_currentMul');
+      const multiplierProperty = this.device.findProperty('_currentMul');
       if (multiplierProperty && multiplierProperty.value) {
         this.multiplier = multiplierProperty.value;
       }
     }
     if (!this.hasOwnProperty('divisor')) {
-      let divisorProperty = this.device.findProperty('_currentDiv');
+      const divisorProperty = this.device.findProperty('_currentDiv');
       if (divisorProperty && divisorProperty.value) {
         this.divisor = divisorProperty.value;
       }
@@ -202,10 +202,10 @@ class ZigbeeProperty extends Property {
 
     let current = 0;
     if (this.multiplier && this.divisor) {
-      let rmsCurrent = attrEntry.attrData;
+      const rmsCurrent = attrEntry.attrData;
       current = rmsCurrent * this.multiplier / this.divisor;
     }
-    return [current, '' + current];
+    return [current, `${current}`];
   }
 
   /**
@@ -216,13 +216,13 @@ class ZigbeeProperty extends Property {
    */
   parseHaInstantaneousPowerAttr(attrEntry) {
     if (!this.hasOwnProperty('multiplier')) {
-      let multiplierProperty = this.device.findProperty('_powerMul');
+      const multiplierProperty = this.device.findProperty('_powerMul');
       if (multiplierProperty && multiplierProperty.value) {
         this.multiplier = multiplierProperty.value;
       }
     }
     if (!this.hasOwnProperty('divisor')) {
-      let divisorProperty = this.device.findProperty('_powerDiv');
+      const divisorProperty = this.device.findProperty('_powerDiv');
       if (divisorProperty && divisorProperty.value) {
         this.divisor = divisorProperty.value;
       }
@@ -230,11 +230,11 @@ class ZigbeeProperty extends Property {
 
     let power = 0;
     if (this.multiplier && this.divisor) {
-      let demand = attrEntry.attrData;
+      const demand = attrEntry.attrData;
       // the units for haElectricalMeasurement are watts
       power = demand * this.multiplier / this.divisor;
     }
-    return [power, '' + power];
+    return [power, `${power}`];
   }
 
   /**
@@ -245,13 +245,13 @@ class ZigbeeProperty extends Property {
    */
   parseSeInstantaneousPowerAttr(attrEntry) {
     if (!this.hasOwnProperty('multiplier')) {
-      let multiplierProperty = this.device.findProperty('_multiplier');
+      const multiplierProperty = this.device.findProperty('_multiplier');
       if (multiplierProperty && multiplierProperty.value) {
         this.multiplier = multiplierProperty.value;
       }
     }
     if (!this.hasOwnProperty('divisor')) {
-      let divisorProperty = this.device.findProperty('_divisor');
+      const divisorProperty = this.device.findProperty('_divisor');
       if (divisorProperty && divisorProperty.value) {
         this.divisor = divisorProperty.value;
       }
@@ -259,12 +259,12 @@ class ZigbeeProperty extends Property {
 
     let power = 0;
     if (this.multiplier && this.divisor) {
-      let demand = attrEntry.attrData;
+      const demand = attrEntry.attrData;
       // the units for seMetering are kilowatts, so we multiple by 1000
       // to convert to watts.
       power = demand * this.multiplier * 1000 / this.divisor;
     }
-    return [power, '' + power];
+    return [power, `${power}`];
   }
 
   /**
@@ -273,8 +273,8 @@ class ZigbeeProperty extends Property {
    * Converts generic numeric attributes in a number.
    */
   parseNumericAttr(attrEntry) {
-    let value = attrEntry.attrData;
-    return [value, '' + value];
+    const value = attrEntry.attrData;
+    return [value, `${value}`];
   }
 
   /**
@@ -284,10 +284,10 @@ class ZigbeeProperty extends Property {
    * (a boolean).
    */
   parseOnOffAttr(attrEntry) {
-    let propertyValue = attrEntry.attrData != 0;
+    const propertyValue = attrEntry.attrData != 0;
     return [
       propertyValue,
-      (propertyValue ? 'on' : 'off') + ' (' + attrEntry.attrData + ')'
+      `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
     ];
   }
 
@@ -298,27 +298,28 @@ class ZigbeeProperty extends Property {
    * and saturation values.
    */
   setColorValue(propertyValue) {
-    let color = new Color(propertyValue);
-    let hsv = color.hsv().color;
-    let hue = hsv[0];     // 0-359
-    let sat = hsv[1];     // 0-100
-    let level = hsv[2];  // 0-100
+    const color = new Color(propertyValue);
+    const hsv = color.hsv().color;
+    const hue = hsv[0];   // 0-359
+    const sat = hsv[1];   // 0-100
+    const level = hsv[2]; // 0-100
 
-    let levelProperty = this.device.findProperty('_level');
+    const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
       this.device.sendZclFrameWaitExplicitRx(
         levelProperty,
         levelProperty.valueToZclData(level));
     }
 
-    return [{
+    return [
+      {
         frameCntl: {frameType: 1},
         cmd: 'moveToHueAndSaturation',
-        payload: [Math.round(hue/360 * 254),
-                  Math.round(sat/100 * 254),
+        payload: [Math.round(hue / 360 * 254),
+                  Math.round(sat / 100 * 254),
                   10],  // 10ths of a second
       },
-      'hsv: [' + hue + ', ' + sat + ', ' + level + ']'
+      `hsv: [${hue}, ${sat}, ${level}]`,
     ];
   }
 
@@ -337,12 +338,13 @@ class ZigbeeProperty extends Property {
       propertyValue = this.max;
     }
     this.level = percentToLevel(propertyValue);
-    return [{
+    return [
+      {
         frameCntl: {frameType: 1},
         cmd: 'moveToLevel',
         payload: [this.level],
       },
-      'level: ' + this.level + ' (' + propertyValue.toFixed(1) + '%)'
+      `level: ${this.level} (${propertyValue.toFixed(1)}%)`,
     ];
   }
 
@@ -354,12 +356,13 @@ class ZigbeeProperty extends Property {
    */
   setOnOffValue(propertyValue) {
     // propertyValue is a boolean
-    let attr = propertyValue ? 'on' : 'off';
-    return [{
+    const attr = propertyValue ? 'on' : 'off';
+    return [
+      {
         frameCntl: {frameType: 1},
         cmd: attr,
       },
-      attr
+      attr,
     ];
   }
 
@@ -374,7 +377,7 @@ class ZigbeeProperty extends Property {
       return Promise.resolve();
     }
 
-    var deferredSet = this.deferredSet;
+    let deferredSet = this.deferredSet;
     if (!deferredSet) {
       deferredSet = new Deferred();
       this.deferredSet = deferredSet;
@@ -388,7 +391,7 @@ class ZigbeeProperty extends Property {
   valueToZclData(value) {
     this.setCachedValue(value);
 
-    let [zclData, logData] = this.setAttrFromValue(value);
+    const [zclData, logData] = this.setAttrFromValue(value);
 
     console.log('setProperty property:', this.name,
                 'for:', this.device.name,
