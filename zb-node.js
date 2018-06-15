@@ -35,6 +35,11 @@ const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
 const ZLL_PROFILE_ID_HEX = utils.hexStr(ZLL_PROFILE_ID, 4);
 
+const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
+const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
+
+const ZCL_STATUS_SUCCESS = zclId.status('success').value;
+
 const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
 
 class ZigbeeNode extends Device {
@@ -50,6 +55,7 @@ class ZigbeeNode extends Device {
     this.addr16 = id16;
     this.neighbors = [];
     this.activeEndpoints = {};
+    this.activeEndpointsPopulated = false;
 
     this.isCoordinator = (id64 == adapter.serialNumber);
 
@@ -61,6 +67,8 @@ class ZigbeeNode extends Device {
     this.discoveringAttributes = false;
     this.fireAndForget = false;
     this.colorCapabilities = 0;
+    this.extendedTimeout = false;
+    this.added = false;
   }
 
   asDict() {
@@ -193,6 +201,10 @@ class ZigbeeNode extends Device {
   }
 
   frameHasAttr(frame, property) {
+    if (frame.clusterId == CLUSTER_ID_SSIASZONE_HEX) {
+      // For IAS Zones, there should only be one property.
+      return true;
+    }
     const attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
     if (Array.isArray(attrEntry)) {
       return attrEntry.length > 0;
@@ -284,12 +296,23 @@ class ZigbeeNode extends Device {
     }
   }
 
+  handleEnrollReq(reqFrame) {
+    const rspStatus = 0;
+    const zoneId = 1;
+    const enrollRspFrame =
+      this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
+    this.adapter.sendFrameWaitFrameAtFront(enrollRspFrame, {
+      type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+      id: enrollRspFrame.id,
+    });
+  }
+
   handleReadRsp(frame) {
     this.reportZclStatusError(frame);
     if (this.discoveringAttributes && frame.zcl.cmdId === 'readRsp') {
       const clusterId = parseInt(frame.clusterId, 16);
       for (const attrEntry of frame.zcl.payload) {
-        if (attrEntry.status == 0) {
+        if (attrEntry.status == ZCL_STATUS_SUCCESS) {
           const attr = zclId.attr(clusterId, attrEntry.attrId);
           const attrStr = attr ? attr.key : 'unknown';
           const dataType = zclId.dataType(attrEntry.dataType);
@@ -325,6 +348,23 @@ class ZigbeeNode extends Device {
     }
   }
 
+  handleStatusChangeNotification(frame) {
+    const zoneStatus = frame.zcl.payload.zonestatus;
+    const property = this.findPropertyFromFrame(frame);
+    if (property) {
+      const value = ((zoneStatus & 3) != 0);
+      property.setCachedValue(value);
+      console.log(this.name,
+                  'property:', property.name,
+                  'profileId:', utils.hexStr(property.profileId, 4),
+                  'endpoint:', property.endpoint,
+                  'clusterId:', utils.hexStr(property.clusterId, 4),
+                  'value:', value,
+                  'zoneStatus:', zoneStatus);
+      this.notifyPropertyChanged(property);
+    }
+  }
+
   handleZhaResponse(frame) {
     if (frame.zcl) {
       switch (frame.zcl.cmdId) {
@@ -338,6 +378,27 @@ class ZigbeeNode extends Device {
         case 'discoverRsp':
           this.handleDiscoverRsp(frame);
           break;
+        case 'enrollReq':
+          this.handleEnrollReq(frame);
+          // enrollReq sends back an enrollRsp so no need to
+          // generate a defaultRsp
+          return;
+        case 'statusChangeNotification':
+          // Note: The zcl-packet library doesn't seem to extract
+          //       the zoneid or delay fields from the received packet.
+          this.handleStatusChangeNotification(frame);
+          break;
+      }
+      if (frame.zcl.cmdId != 'defaultRsp' &&
+          frame.zcl.cmdId != 'writeNoRsp' &&
+          frame.zcl.frameCntl.disDefaultRsp == 0 &&
+          this.isZclStatusSuccess(frame)) {
+        const defaultRspFrame =
+          this.makeDefaultRspFrame(frame, ZCL_STATUS_SUCCESS);
+        this.adapter.sendFrameWaitFrameAtFront(defaultRspFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+          id: defaultRspFrame.id,
+        });
       }
     }
   }
@@ -415,6 +476,27 @@ class ZigbeeNode extends Device {
     return frame;
   }
 
+  makeDefaultRspFrame(frame, statusCode) {
+    const rspFrame = this.makeZclFrame(
+      frame.sourceEndpoint,
+      frame.profileId,
+      frame.clusterId,
+      {
+        cmd: 'defaultRsp',
+        frameCntl: {
+          frameType: 0,
+          disDefaultRsp: 1,
+        },
+        payload: {
+          cmdId: frame.zcl.cmdId,
+          statusCode: statusCode,
+        },
+      }
+    );
+    rspFrame.zcl.seqNum = frame.zcl.seqNum;
+    return rspFrame;
+  }
+
   makeDiscoverAttributesFrame(endpoint, profileId, clusterId, startAttrId) {
     const frame = this.makeZclFrame(
       endpoint, profileId, clusterId,
@@ -427,6 +509,35 @@ class ZigbeeNode extends Device {
       }
     );
     return frame;
+  }
+
+  makeEnrollRspFrame(enrollReqFrame, status, zoneId) {
+    if (!enrollReqFrame) {
+      enrollReqFrame = {
+        sourceEndpoint:
+          this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX),
+        profileId: ZHA_PROFILE_ID_HEX,
+      };
+    }
+    const rspFrame = this.makeZclFrame(
+      enrollReqFrame.sourceEndpoint,
+      enrollReqFrame.profileId,
+      CLUSTER_ID_SSIASZONE,
+      {
+        cmd: 'enrollRsp',
+        frameCntl: {
+          frameType: 1,   // enrollRsp is specific to the IAS Zone cluster
+        },
+        payload: {
+          enrollrspcode: status,
+          zoneid: zoneId,
+        },
+      }
+    );
+    if (enrollReqFrame.zcl) {
+      rspFrame.zcl.seqNum = enrollReqFrame.zcl.seqNum;
+    }
+    return rspFrame;
   }
 
   makeReadAttributeFrame(endpoint, profileId, clusterId, attrIds) {
@@ -470,6 +581,28 @@ class ZigbeeNode extends Device {
     return frame;
   }
 
+  // attrIdsVals is an array of tuples:
+  //  [[attrId1, attrVal1], [attrId2, attrVal2], ...]
+  makeWriteAttributeFrame(endpoint, profileId, clusterId, attrIdsVals) {
+    const frame = this.makeZclFrame(
+      endpoint, profileId, clusterId,
+      {
+        cmd: 'write',
+        payload: attrIdsVals.map((attrTuple) => {
+          const attrId = attrTuple[0];
+          const attrData = attrTuple[1];
+          return {
+            attrId: zclId.attr(clusterId, attrId).value,
+            dataType: zclId.attrType(clusterId, attrId).value,
+            attrData: attrData,
+          };
+        }),
+      }
+    );
+    console.log('makeWriteAttributeFrame frame =', frame);
+    return frame;
+  }
+
   makeZclFrame(endpoint, profileId, clusterId, zclData) {
     if (!zclData.frameCntl) {
       zclData.frameCntl = {frameType: 0};
@@ -478,6 +611,8 @@ class ZigbeeNode extends Device {
       zclData.frameCntl.manufSpec = 0;
     }
     if (typeof zclData.frameCntl.direction === 'undefined') {
+      // direction: 0 = client-to-server
+      // direction: 1 = server-to-client
       zclData.frameCntl.direction = 0;
     }
     if (typeof zclData.frameCntl.disDefaultRsp === 'undefined') {
@@ -531,11 +666,28 @@ class ZigbeeNode extends Device {
     super.notifyPropertyChanged(property);
   }
 
+  isZclStatusSuccess(frame) {
+    // Note: 'report' frames don't have a status
+    // Cluster specific commands may or may not have payloads
+    // which are arrays, so we only try to iterate if it looks
+    // like an array.
+    if (Array.isArray(frame.zcl.payload)) {
+      for (const attrEntry of frame.zcl.payload) {
+        if (attrEntry.hasOwnProperty('status') &&
+            attrEntry.status != ZCL_STATUS_SUCCESS) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   reportZclStatusError(frame) {
     let errorFound = false;
     for (const attrEntry of frame.zcl.payload) {
       // Note: 'report' frames don't have a status
-      if (attrEntry.hasOwnProperty('status') && attrEntry.status != 0) {
+      if (attrEntry.hasOwnProperty('status') &&
+          attrEntry.status != ZCL_STATUS_SUCCESS) {
         let status = zclId.status(attrEntry.status);
         if (!status) {
           status = {key: 'unknown', value: attrEntry.status};

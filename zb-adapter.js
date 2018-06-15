@@ -9,6 +9,7 @@
 
 'use strict';
 
+const assert = require('assert');
 const ZigbeeNode = require('./zb-node');
 const SerialPort = require('serialport');
 const xbeeApi = require('xbee-api');
@@ -44,8 +45,33 @@ const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
 const CLUSTER_ID_LIGHTINGCOLORCTRL_HEX =
   utils.hexStr(CLUSTER_ID_LIGHTINGCOLORCTRL, 4);
 
+const ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorCapabilities').value;
+
+const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
+const CLUSTER_ID_GENPOLLCTRL_HEX = utils.hexStr(CLUSTER_ID_GENPOLLCTRL, 4);
+
+const ATTR_ID_GENPOLLCTRL_CHECKININTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'checkinInterval').value;
+const ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'longPollInterval').value;
+const ATTR_ID_GENPOLLCTRL_SHORTPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'shortPollInterval').value;
+const ATTR_ID_GENPOLLCTRL_FASTPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'fastPollTimeout').value;
+
+const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
+const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
+
+const ATTR_ID_SSIASZONE_ZONETYPE =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneType').value;
+const ATTR_ID_SSIASZONE_ZONESTATUS =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneStatus').value;
+const ATTR_ID_SSIASZONE_CIEADDR =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'iasCieAddr').value;
 
 const WAIT_TIMEOUT_DELAY = 1000;
+const EXTENDED_TIMEOUT_DELAY = 3 * WAIT_TIMEOUT_DELAY;
 const WAIT_RETRY_MAX = 3;   // includes initial send
 
 const DEVICE_TYPE = {
@@ -243,6 +269,7 @@ class ZigbeeAdapter extends Adapter {
       this.getManagementLqiCommands(coordinator)
         .concat(this.getManagementRtgCommands(coordinator))
         .concat([
+          FUNC(this, this.handleDeviceAdded, [coordinator]),
           FUNC(this, this.enumerateAllNodes, [this.populateNodeInfo]),
           FUNC(this, this.dumpNodes, []),
           FUNC(this, this.print, ['----- Scan Complete -----']),
@@ -274,9 +301,14 @@ class ZigbeeAdapter extends Adapter {
                                   {zigBeeStackProfile: 2}));
       configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE));
     }
-    if (this.apiOptions != 1) {
+    // API Options = 1 allows Explicit Rx frames to ve rcvd
+    // API Options = 3 enables ZDO passthrough
+    // i.e. Simple Descriptor Request, Active Endpoint Request
+    //      and Match Descriptor Requests which come from an
+    //      endpoint will be passed through (received).
+    if (this.apiOptions != 3) {
       configCommands.push(this.AT(AT_CMD.API_OPTIONS,
-                                  {apiOptions: 1}));
+                                  {apiOptions: 3}));
       configCommands.push(this.AT(AT_CMD.API_OPTIONS));
     }
     if (this.encryptionEnabled != 1) {
@@ -323,7 +355,10 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
-  dumpFrame(label, frame) {
+  dumpFrame(label, frame, dumpFrameDetail) {
+    if (typeof dumpFrameDetail === 'undefined') {
+      dumpFrameDetail = this.debugDumpFrameDetail;
+    }
     this.frameDumped = true;
     let frameTypeStr = C.FRAME_TYPE[frame.type];
     if (!frameTypeStr) {
@@ -341,7 +376,7 @@ class ZigbeeAdapter extends Adapter {
         }
         if (frame.commandParameter.length > 0) {
           console.log(label, frameTypeStr, 'Set', atCmdStr);
-          if (this.debugDumpFrameDetail) {
+          if (dumpFrameDetail) {
             console.log(label, frame);
           }
         } else {
@@ -356,7 +391,7 @@ class ZigbeeAdapter extends Adapter {
           atCmdStr = frame.command;
         }
         console.log(label, frameTypeStr, atCmdStr);
-        if (this.debugDumpFrameDetail) {
+        if (dumpFrameDetail) {
           console.log(label, frame);
         }
         break;
@@ -374,7 +409,7 @@ class ZigbeeAdapter extends Adapter {
         } else {
           console.log(label, frame.destination64, frame.clusterId);
         }
-        if (this.debugDumpFrameDetail) {
+        if (dumpFrameDetail) {
           console.log(label, util.inspect(frame, {depth: null}));
         }
         break;
@@ -404,20 +439,27 @@ class ZigbeeAdapter extends Adapter {
                       zdo.getClusterIdDescription(frame.clusterId),
                       'status:', status.key, `(${status.value})`);
         } else if (this.isZhaFrame(frame)) {
-          console.log(label, 'Explicit Rx', frame.remote64,
-                      'ZHA', frame.clusterId,
-                      zclId.cluster(parseInt(frame.clusterId, 16)).key,
-                      frame.zcl ? frame.zcl.cmdId : '???', frame.zcl.payload);
+          if (frame.zcl) {
+            console.log(label, 'Explicit Rx', frame.remote64,
+                        'ZHA', frame.clusterId,
+                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        frame.zcl ? frame.zcl.cmdId : '???', frame.zcl.payload);
+          } else {
+            console.log(label, 'Explicit Rx', frame.remote64,
+                        'ZHA', frame.clusterId,
+                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        '??? no zcl ???');
+          }
         } else {
           console.log(label, frame.remote64, frame.clusterId);
         }
-        if (this.debugDumpFrameDetail) {
+        if (dumpFrameDetail) {
           console.log(label, util.inspect(frame, {depth: null}));
         }
         break;
 
       case C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS:
-        if (this.debugDumpFrameDetail || frame.deliveryStatus !== 0) {
+        if (dumpFrameDetail || frame.deliveryStatus !== 0) {
           console.log(label, frameTypeStr,
                       'Remote16:', frame.remote16,
                       'Retries:', frame.transmitRetryCount,
@@ -434,7 +476,7 @@ class ZigbeeAdapter extends Adapter {
         break;
 
       case C.FRAME_TYPE.ROUTE_RECORD:
-        if (this.debugDumpFrameDetail) {
+        if (dumpFrameDetail) {
           console.log(label, frameTypeStr);
           console.log(label, frame);
         }
@@ -442,7 +484,7 @@ class ZigbeeAdapter extends Adapter {
 
       default:
         console.log(label, frameTypeStr);
-        if (this.debugDumpFrameDetail) {
+        if (dumpFrameDetail) {
           console.log(label, frame);
         }
     }
@@ -515,7 +557,9 @@ class ZigbeeAdapter extends Adapter {
     this.enumerateNodes = [];
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
-      this.enumerateNodes.push(node);
+      if (!node.isCoordinator) {
+        this.enumerateNodes.push(node);
+      }
     }
     this.enumerateNextNode();
   }
@@ -537,14 +581,25 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  findNodeByAddr16(addr16) {
+    for (const nodeId in this.nodes) {
+      const node = this.nodes[nodeId];
+      if (node.addr16 == addr16) {
+        return node;
+      }
+    }
+  }
+
   flattenCommands(cmdSeq) {
     const cmds = [];
     for (const cmd of cmdSeq) {
       if (cmd.constructor === Array) {
         for (const cmd2 of cmd) {
+          assert(cmd2 instanceof Command, 'Expecting instance of Command');
           cmds.push(cmd2);
         }
       } else {
+        assert(cmd instanceof Command, 'Expecting instance of Command');
         cmds.push(cmd);
       }
     }
@@ -598,6 +653,8 @@ class ZigbeeAdapter extends Adapter {
       const clusterId = parseInt(frame.clusterId, 16);
       if (clusterId in ZigbeeAdapter.zdoClusterHandler) {
         ZigbeeAdapter.zdoClusterHandler[clusterId].call(this, frame);
+      } else {
+        console.error('No handler for ZDO cluster:', clusterId);
       }
     } else if (this.isZhaFrame(frame)) {
       zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
@@ -629,6 +686,15 @@ class ZigbeeAdapter extends Adapter {
     if (frame.deliveryStatus !== 0) {
       console.error('Transmit Status ERROR:',
                     this.getDeliveryStatusAsString(frame.deliveryStatus));
+    }
+    if (frame.discoveryStatus ==
+        C.DISCOVERY_STATUS.EXTENDED_TIMEOUT_DISCOVERY) {
+      const node = this.findNodeByAddr16(frame.remote16);
+      if (node) {
+        node.extendedTimeout = true;
+      } else {
+        console.error('Unable to find node for remote16 =', frame.remote16);
+      }
     }
   }
 
@@ -715,6 +781,23 @@ class ZigbeeAdapter extends Adapter {
     this.populateNodeInfo(node);
   }
 
+  // ----- MATCH DESCRIPTOR REQUEST ------------------------------------------
+
+  handleMatchDescriptorRequest(frame) {
+    if (frame.outputClusters.indexOf(CLUSTER_ID_SSIASZONE_HEX) >= 0) {
+      // Sensors which are "Security sensors" will ask if we support
+      // the SSIASZONE cluster, so we tell them that we do.
+      this.queueCommandsAtFront([new Command(SEND_FRAME, this.zdo.makeFrame({
+        destination64: frame.remote64,
+        destination16: frame.remote16,
+        clusterId: zdo.CLUSTER_ID.MATCH_DESCRIPTOR_RESPONSE,
+        status: 0,
+        zdoAddr16: frame.remote16,
+        endpoints: [1],
+      }))]);
+    }
+  }
+
   // ----- GET ACTIVE ENDPOINTS ----------------------------------------------
 
   getActiveEndpoint(node) {
@@ -776,9 +859,10 @@ class ZigbeeAdapter extends Adapter {
     if (node) {
       for (const endpoint of frame.activeEndpoints) {
         if (!(endpoint in node.activeEndpoints)) {
-          node.activeEndpoints[endpoint] = {};
+          node.activeEndpoints[endpoint] = {populated: false};
         }
       }
+      node.activeEndpointsPopulated = true;
     }
   }
 
@@ -945,9 +1029,15 @@ class ZigbeeAdapter extends Adapter {
       console.log('getSimpleDescriptors node.addr64 =', node.addr64);
     }
     let commands = [];
-    for (const endpoint in node.activeEndpoints) {
-      commands = commands.concat(
-        this.getSimpleDescriptorCommands(node, endpoint));
+    for (const endpointNum in node.activeEndpoints) {
+      // Only ask for the simple descriptor if we don't already
+      // know what it is. This is especially important for battery
+      // operated devices
+      const endpoint = node.activeEndpoints[endpointNum];
+      if (!endpoint.hasOwnProperty('profileId')) {
+        commands = commands.concat(
+          this.getSimpleDescriptorCommands(node, endpointNum));
+      }
     }
 
     if (this.debugDiscoverAttributes) {
@@ -960,24 +1050,25 @@ class ZigbeeAdapter extends Adapter {
     this.queueCommandsAtFront(commands);
   }
 
-  getSimpleDescriptor(node, endpoint) {
+  getSimpleDescriptor(node, endpointNum) {
     if (this.debugFlow) {
       console.log('getSimpleDescriptor node.addr64 =', node.addr64,
-                  'endpoint =', endpoint);
+                  'endpoint =', endpointNum);
     }
-    this.queueCommandsAtFront(this.getSimpleDescriptorCommands(node, endpoint));
+    this.queueCommandsAtFront(
+      this.getSimpleDescriptorCommands(node, endpointNum));
   }
 
-  getSimpleDescriptorCommands(node, endpoint) {
+  getSimpleDescriptorCommands(node, endpointNum) {
     if (this.debugFlow) {
       console.log('getSimpleDescriptorCommands: node.addr64 =', node.addr64,
-                  'endpoint =', endpoint);
+                  'endpoint =', endpointNum);
     }
     const simpleDescFrame = this.zdo.makeFrame({
       destination64: node.addr64,
       destination16: node.addr16,
       clusterId: zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_REQUEST,
-      endpoint: endpoint,
+      endpoint: endpointNum,
     });
     return [
       new Command(SEND_FRAME, simpleDescFrame),
@@ -1050,17 +1141,7 @@ class ZigbeeAdapter extends Adapter {
         id: leaveFrame.id,
       }),
     ]);
-  }
 
-  handleManagementLeaveResponse(frame) {
-    if (frame.status !== 0) {
-      return;
-    }
-    const node = this.nodes[frame.remote64];
-    if (!node) {
-      // Node doesn't exist, nothing else to do
-      return;
-    }
     // Walk through all of the nodes and remove the node from the
     // neighbor tables
 
@@ -1068,14 +1149,19 @@ class ZigbeeAdapter extends Adapter {
       const scanNode = this.nodes[nodeAddr];
       for (const neighborIdx in scanNode.neighbors) {
         const neighbor = scanNode.neighbors[neighborIdx];
-        if (neighbor.addr64 == frame.remote64) {
+        if (neighbor.addr64 == node.addr64) {
           scanNode.neighbors.splice(neighborIdx, 1);
           break;
         }
       }
     }
-    delete this.nodes[frame.remote64];
+    delete this.nodes[node.addr64];
     this.handleDeviceRemoved(node);
+  }
+
+  handleManagementLeaveResponse(_frame) {
+    // We've already removed the device, so we don't need
+    // to do anything else.
   }
 
   // ----- PERMIT JOIN -------------------------------------------------------
@@ -1302,11 +1388,15 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('ZigbeeAdapter: handleDeviceAdded: ', node.addr64);
     }
-    if (node.isCoordinator) {
-      node.name = node.defaultName;
-    } else {
-      zigBeeClassifier.classify(node);
-      super.handleDeviceAdded(node);
+    // Only add the device if we haven't already added it.
+    if (!node.added) {
+      if (node.isCoordinator) {
+        node.name = node.defaultName;
+      } else {
+        zigBeeClassifier.classify(node);
+        super.handleDeviceAdded(node);
+        node.added = true;
+      }
     }
   }
 
@@ -1371,7 +1461,10 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('populateNodeInfo node.addr64 =', node.addr64);
     }
-    let commands = this.getActiveEndpointCommands(node);
+    let commands = [];
+    if (!node.activeEndpointsPopulated) {
+      commands = commands.concat(this.getActiveEndpointCommands(node));
+    }
     commands = commands.concat([
       FUNC(this, this.populateNodeInfoEndpoints, [node]),
       FUNC(this, this.populateNodeAttributes, [node]),
@@ -1392,41 +1485,140 @@ class ZigbeeAdapter extends Adapter {
         CLUSTER_ID_LIGHTINGCOLORCTRL_HEX);
     if (lightingColorCtrlEndpoint) {
       node.lightingColorCtrlEndpoint = lightingColorCtrlEndpoint;
-      const colorCapabilitiesAttr = zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL,
-                                               'colorCapabilities');
-      if (colorCapabilitiesAttr) {
+      if (!node.hasOwnProperty('colorCapabilities')) {
         const readFrame = node.makeReadAttributeFrame(
           lightingColorCtrlEndpoint,
           ZHA_PROFILE_ID,
           CLUSTER_ID_LIGHTINGCOLORCTRL,
-          colorCapabilitiesAttr.value);
+          ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES);
         this.sendFrameWaitFrameAtFront(readFrame, {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.id,
-          callback: this.populateNodeAttributesReadRsp.bind(this),
+          callback: this.populateNodeAttributesLightingControl.bind(this),
+        });
+      }
+    }
+
+    const ssIasZoneEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+    if (ssIasZoneEndpoint) {
+      node.ssIasZoneEndpoint = ssIasZoneEndpoint;
+      if (!node.hasOwnProperty('zoneType') ||
+          !node.hasOwnProperty('zoneStatus')) {
+        const readFrame = node.makeReadAttributeFrame(
+          ssIasZoneEndpoint,
+          ZHA_PROFILE_ID,
+          CLUSTER_ID_SSIASZONE,
+          [
+            ATTR_ID_SSIASZONE_ZONETYPE,
+            ATTR_ID_SSIASZONE_ZONESTATUS,
+            ATTR_ID_SSIASZONE_CIEADDR,
+          ]);
+        this.sendFrameWaitFrameAtFront(readFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'readRsp',
+          zclSeqNum: readFrame.id,
+          callback: this.populateNodeAttributesIasZone.bind(this),
         });
       }
     }
   }
 
-  populateNodeAttributesReadRsp(frame) {
+  populateNodeAttributesLightingControl(frame) {
     const node = this.nodes[frame.remote64];
     if (!node) {
       return;
     }
-    const colorCapabilitiesAttr = zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL,
-                                             'colorCapabilities');
-    if (!colorCapabilitiesAttr) {
+    for (const attrEntry of frame.zcl.payload) {
+      if (attrEntry.status == 0 &&
+          attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES) {
+        node.colorCapabilities = attrEntry.attrData;
+      }
+    }
+  }
+
+  populateNodeAttributesIasZone(frame) {
+    const node = this.nodes[frame.remote64];
+    if (!node) {
       return;
     }
+    let cieAddr;
     for (const attrEntry of frame.zcl.payload) {
       if (attrEntry.status == 0) {
-        if (attrEntry.attrId == colorCapabilitiesAttr.value) {
-          node.colorCapabilities = attrEntry.attrData;
+        switch (attrEntry.attrId) {
+          case ATTR_ID_SSIASZONE_ZONETYPE:
+            node.zoneType = attrEntry.attrData;
+            break;
+          case ATTR_ID_SSIASZONE_ZONESTATUS:
+            node.zoneStatus = attrEntry.attrData;
+            break;
+          case ATTR_ID_SSIASZONE_CIEADDR:
+            cieAddr = attrEntry.attrData;
+            break;
         }
       }
     }
+    const ourCieAddr = `0x${this.serialNumber}`;
+    let commands = [];
+
+    if (cieAddr != ourCieAddr) {
+      // Tell the sensor to send statusChangeNotifications to us.
+      const writeFrame = node.makeWriteAttributeFrame(
+        frame.sourceEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_SSIASZONE,
+        [[ATTR_ID_SSIASZONE_CIEADDR, ourCieAddr]]
+      );
+      commands = commands.concat([
+        new Command(SEND_FRAME, writeFrame),
+        new Command(WAIT_FRAME, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'writeRsp',
+          zclSeqNum: writeFrame.id,
+        }),
+      ]);
+    }
+
+    // Make sure that the sensor is "enrolled".
+    const reqFrame = null;
+    const rspStatus = 0;
+    const zoneId = 1;
+    const enrollRspFrame =
+      node.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
+    commands = commands.concat([
+      new Command(SEND_FRAME, enrollRspFrame),
+      new Command(WAIT_FRAME, {
+        type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+        id: enrollRspFrame.id,
+      }),
+    ]);
+
+    // Find out what the various poll intervals are.
+    const genPollCtrlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENPOLLCTRL_HEX);
+    if (genPollCtrlEndpoint) {
+      const readFrame = node.makeReadAttributeFrame(
+        genPollCtrlEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_GENPOLLCTRL,
+        [
+          ATTR_ID_GENPOLLCTRL_CHECKININTERVAL,
+          ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVAL,
+          ATTR_ID_GENPOLLCTRL_SHORTPOLLINTERVAL,
+          ATTR_ID_GENPOLLCTRL_FASTPOLLINTERVAL,
+        ]);
+      commands = commands.concat([
+        new Command(SEND_FRAME, readFrame),
+        new Command(WAIT_FRAME, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'readRsp',
+          zclSeqNum: readFrame.id,
+        }),
+      ]);
+    }
+
+    this.queueCommandsAtFront(commands);
   }
 
   populateNodeInfoEndpoints(node) {
@@ -1515,8 +1707,15 @@ class ZigbeeAdapter extends Adapter {
           }
           this.waitFrame = cmd.cmdData;
           this.waitRetryCount += 1;
+          let timeoutDelay = WAIT_TIMEOUT_DELAY;
+          if (this.lastFrameSent && this.lastFrameSent.destination64) {
+            const node = this.nodes[this.lastFrameSent.destination64];
+            if (node && node.extendedTimeout) {
+              timeoutDelay = EXTENDED_TIMEOUT_DELAY;
+            }
+          }
           this.waitTimeout = setTimeout(this.waitTimedOut.bind(this),
-                                        WAIT_TIMEOUT_DELAY);
+                                        timeoutDelay);
           break;
         }
         case EXEC_FUNC: {
@@ -1627,6 +1826,8 @@ zch[zdo.CLUSTER_ID.MANAGEMENT_LQI_RESPONSE] =
   ZigbeeAdapter.prototype.handleManagementLqiResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_RTG_RESPONSE] =
   ZigbeeAdapter.prototype.handleManagementRtgResponse;
+zch[zdo.CLUSTER_ID.MATCH_DESCRIPTOR_REQUEST] =
+  ZigbeeAdapter.prototype.handleMatchDescriptorRequest;
 zch[zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE] =
   ZigbeeAdapter.prototype.handleSimpleDescriptorResponse;
 zch[zdo.CLUSTER_ID.END_DEVICE_ANNOUNCEMENT] =

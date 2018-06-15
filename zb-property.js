@@ -88,7 +88,11 @@ class ZigbeeProperty extends Property {
       }
     } else {
       this.attr = attr;
-      this.attrId = zclId.attr(clusterId, attr).value;
+      // The on property for IAS Zone devices don't have an attribute
+      // so an empty string is used for attr in that case.
+      if (attr) {
+        this.attrId = zclId.attr(clusterId, attr).value;
+      }
     }
     this.fireAndForget = false;
   }
@@ -268,6 +272,28 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseTemperatureMeasurementAttr
+   *
+   * Parses the temperature attribute as a property.
+   */
+  parseTemperatureMeasurementAttr(attrEntry) {
+    if (!this.hasOwnProperty('minimum')) {
+      const minTempProperty = this.device.findProperty('_minTemp');
+      if (minTempProperty && minTempProperty.value) {
+        this.minimum = minTempProperty.value / 100;
+      }
+    }
+    if (!this.hasOwnProperty('maximum')) {
+      const maxTempProperty = this.device.findProperty('_maxTemp');
+      if (maxTempProperty && maxTempProperty.value) {
+        this.maximum = maxTempProperty.value / 100;
+      }
+    }
+    const temperature = attrEntry.attrData / 100;
+    return [temperature, temperature.toFixed(2)];
+  }
+
+  /**
    * @method parseNumericAttr
    *
    * Converts generic numeric attributes in a number.
@@ -275,6 +301,40 @@ class ZigbeeProperty extends Property {
   parseNumericAttr(attrEntry) {
     const value = attrEntry.attrData;
     return [value, `${value}`];
+  }
+
+  /**
+   * @method parseOccupiedAttr
+   *
+   * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
+   * property (a boolean).
+   */
+  parseOccupiedAttr(attrEntry) {
+    const propertyValue = attrEntry.attrData != 0;
+    const occupiedStr = (propertyValue ? 'occupied' : 'not occupied');
+    return [propertyValue, `${occupiedStr} (${attrEntry.attrData})`];
+  }
+
+  /**
+   * @method parseOccupancySensorTypeAttr
+   *
+   * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
+   * property (a boolean).
+   */
+  parseOccupancySensorTypeAttr(attrEntry) {
+    let type = 'unknown';
+    switch (attrEntry.attrData) {
+      case 0:
+        type = 'PIR';
+        break;
+      case 1:
+        type = 'ultrasonic';
+        break;
+      case 2:
+        type = 'PIR+ultrasonic';
+        break;
+    }
+    return [type, `${type} (${attrEntry.attrData})`];
   }
 
   /**
