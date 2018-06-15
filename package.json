@@ -1,6 +1,6 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
