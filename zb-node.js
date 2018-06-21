@@ -66,7 +66,6 @@ class ZigbeeNode extends Device {
     }
     this.discoveringAttributes = false;
     this.fireAndForget = false;
-    this.colorCapabilities = 0;
     this.extendedTimeout = false;
     this.added = false;
   }

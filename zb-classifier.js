@@ -553,7 +553,8 @@ class ZigbeeClassifier {
     }
     let colorSupported = false;
     if (lightLinkEndpoint) {
-      if ((node.colorCapabilities & 3) != 0) {
+      if (node.hasOwnProperty('colorCapabilities') &&
+          (node.colorCapabilities & 3) != 0) {
         // Hue and Saturation are supported
         colorSupported = true;
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
