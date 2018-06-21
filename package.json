@@ -1,6 +1,7 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.3.4",
+  "display_name": "Zigbee",
+  "version": "0.3.5",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -56,17 +57,23 @@
     "plugin": true,
     "exec": "{nodeLoader} {path}",
     "config": {
-      "scanChannels": 8190
+      "scanChannels": 8190,
+      "allowFTDISerial": false
     },
     "schema": {
       "type": "object",
       "required": [
-        "scanChannels"
+        "scanChannels",
+        "allowFTDISerial"
       ],
       "properties": {
         "scanChannels": {
           "type": "integer",
           "default": 8190
+        },
+        "allowFTDISerial": {
+          "type": "boolean",
+          "default": false
         }
       }
     }
