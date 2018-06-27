@@ -101,6 +101,8 @@ class ZigbeeClassifier {
       node,                           // device
       'color',                        // name
       {                               // property description
+        '@type': 'ColorProperty',
+        label: 'Color',
         type: 'string',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -112,15 +114,38 @@ class ZigbeeClassifier {
     );
   }
 
+  addBrightnessProperty(node, genLevelCtrlEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'level',                        // name
+      {                               // property description
+        '@type': 'BrightnessProperty',
+        label: 'Brightness',
+        type: 'number',
+        unit: 'percent',
+        minimum: 0,
+        maximum: 100,
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genLevelCtrlEndpoint,           // endpoint
+      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      'currentLevel',                 // attr
+      'setLevelValue',                // setAttrFromValue
+      'parseLevelAttr'                // parseValueFromAttr
+    );
+  }
+
   addLevelProperty(node, genLevelCtrlEndpoint) {
     this.addProperty(
       node,                           // device
       'level',                        // name
       {                               // property description
+        '@type': 'LevelProperty',
+        label: 'Level',
         type: 'number',
         unit: 'percent',
-        min: 0,
-        max: 100,
+        minimum: 0,
+        maximum: 100,
       },
       ZHA_PROFILE_ID,                 // profileId
       genLevelCtrlEndpoint,           // endpoint
@@ -136,6 +161,8 @@ class ZigbeeClassifier {
       node,                           // device
       'on',                           // name
       {                               // property description
+        '@type': 'OnOffProperty',
+        label: 'On/Off',
         type: 'boolean',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -152,6 +179,8 @@ class ZigbeeClassifier {
       node,                           // device
       'on',                           // name
       {                               // property description
+        '@type': 'BooleanProperty',
+        label: 'Present',
         type: 'boolean',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -194,6 +223,8 @@ class ZigbeeClassifier {
       node,                           // device
       'current',                      // name
       {                               // property description
+        '@type': 'CurrentProperty',
+        label: 'Current',
         type: 'number',
         unit: 'ampere',
       },
@@ -211,6 +242,8 @@ class ZigbeeClassifier {
       node,                           // device
       'frequency',                    // name
       {                               // property description
+        '@type': 'FrequencyProperty',
+        label: 'Frequency',
         type: 'number',
         unit: 'hertz',
       },
@@ -254,6 +287,8 @@ class ZigbeeClassifier {
       node,                           // device
       'instantaneousPower',           // name
       {                               // property description
+        '@type': 'InstantaneousPowerProperty',
+        label: 'Power',
         type: 'number',
         unit: 'watt',
       },
@@ -271,6 +306,8 @@ class ZigbeeClassifier {
       node,                           // device
       'voltage',                      // name
       {                               // property description
+        '@type': 'VoltageProperty',
+        label: 'Voltage',
         type: 'number',
         unit: 'volt',
       },
@@ -314,6 +351,8 @@ class ZigbeeClassifier {
       node,                           // device
       'instantaneousPower',           // name
       {                               // property description
+        '@type': 'InstantaneousPowerProperty',
+        label: 'Power',
         type: 'number',
         unit: 'watt',
       },
@@ -331,6 +370,8 @@ class ZigbeeClassifier {
       node,                           // device
       'occupied',                     // name
       {                               // property description
+        '@type': 'BooleanProperty',
+        label: 'Occupied',
         type: 'boolean',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -344,6 +385,7 @@ class ZigbeeClassifier {
       node,                           // device
       'sensorType',                   // name
       {                               // property description
+        label: 'Sensor Type',
         type: 'string',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -386,6 +428,8 @@ class ZigbeeClassifier {
       node,                           // device
       'temperature',                  // name
       {                               // property description
+        // TODO: add proper @type here
+        label: 'Temperature',
         type: 'number',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -402,6 +446,7 @@ class ZigbeeClassifier {
       node,                           // device
       'on',                           // name
       {                               // property description
+        '@type': 'BooleanProperty',
         type: 'boolean',
         descr: descr,
       },
@@ -524,11 +569,13 @@ class ZigbeeClassifier {
 
   initBinarySensor(node, endpointNum) {
     node.type = Constants.THING_TYPE_BINARY_SENSOR;
+    node['@type'] = ['BinarySensor'];
     this.addPresentValueProperty(node, endpointNum);
   }
 
   initBinarySensorFromZoneType(node) {
     node.type = Constants.THING_TYPE_BINARY_SENSOR;
+    node['@type'] = ['BinarySensor'];
     let name = 'thing';
     let descr = '';
     if (ZONE_TYPE_NAME.hasOwnProperty(node.zoneType)) {
@@ -542,6 +589,7 @@ class ZigbeeClassifier {
 
   initOnOffSwitch(node, genOnOffEndpoint) {
     node.type = Constants.THING_TYPE_ON_OFF_SWITCH;
+    node['@type'] = ['OnOffSwitch'];
     this.addOnProperty(node, genOnOffEndpoint);
   }
 
@@ -558,15 +606,20 @@ class ZigbeeClassifier {
         // Hue and Saturation are supported
         colorSupported = true;
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
+        node['@type'] = ['OnOffSwitch', 'Light', 'ColorControl'];
       } else {
         node.type = Constants.THING_TYPE_DIMMABLE_LIGHT;
+        node['@type'] = ['OnOffSwitch', 'Light'];
       }
     } else {
       node.type = Constants.THING_TYPE_MULTI_LEVEL_SWITCH;
+      node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch'];
     }
     this.addOnProperty(node, genLevelCtrlEndpoint);
     if (colorSupported) {
       this.addColorProperty(node, node.lightingColorCtrlEndpoint);
+    } else if (lightLinkEndpoint) {
+      this.addBrightnessProperty(node, genLevelCtrlEndpoint);
     } else {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
     }
@@ -574,9 +627,11 @@ class ZigbeeClassifier {
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
     node.type = Constants.THING_TYPE_SMART_PLUG;
+    node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
+      node['@type'].push('MultiLevelSwitch');
     }
     this.addHaInstantaneousPowerProperty(node, haElectricalEndpoint);
     this.addHaCurrentProperty(node, haElectricalEndpoint);
@@ -586,9 +641,11 @@ class ZigbeeClassifier {
 
   initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
     node.type = Constants.THING_TYPE_SMART_PLUG;
+    node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, seMeteringEndpoint);
     if (genLevelCtrlEndpoint) {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
+      node['@type'].push('MultiLevelSwitch');
     }
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
   }
