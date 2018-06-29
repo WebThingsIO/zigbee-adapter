@@ -48,6 +48,9 @@ const CLUSTER_ID_LIGHTINGCOLORCTRL_HEX =
 const ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES =
   zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorCapabilities').value;
 
+const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
+const CLUSTER_ID_GENOTA_HEX = utils.hexStr(CLUSTER_ID_GENOTA, 4);
+
 const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
 const CLUSTER_ID_GENPOLLCTRL_HEX = utils.hexStr(CLUSTER_ID_GENPOLLCTRL, 4);
 
@@ -768,8 +771,7 @@ class ZigbeeAdapter extends Adapter {
 
     let node = this.nodes[frame.zdoAddr64];
     if (node) {
-      // This probably shouldn't happen, but if it does, update the
-      // 16 bit address.
+      // Update the 16-bit address, just in case it changed.
       node.addr16 = frame.zdoAddr16;
     } else {
       node = this.nodes[frame.zdoAddr64] =
@@ -784,16 +786,39 @@ class ZigbeeAdapter extends Adapter {
   // ----- MATCH DESCRIPTOR REQUEST ------------------------------------------
 
   handleMatchDescriptorRequest(frame) {
-    if (frame.outputClusters.indexOf(CLUSTER_ID_SSIASZONE_HEX) >= 0) {
-      // Sensors which are "Security sensors" will ask if we support
-      // the SSIASZONE cluster, so we tell them that we do.
+    for (const inputCluster of frame.inputClusters) {
+      switch (inputCluster) {
+        case CLUSTER_ID_GENOTA_HEX:
+          // Indicate that we support the OTA cluster
+          this.makeMatchDescriptorResponse(frame, 1);
+          break;
+      }
+    }
+
+    for (const outputCluster of frame.outputClusters) {
+      switch (outputCluster) {
+        case CLUSTER_ID_SSIASZONE_HEX:
+          // Sensors which are "Security sensors" will ask if we support
+          // the SSIASZONE cluster, so we tell them that we do.
+          this.makeMatchDescriptorResponse(frame, 1);
+          break;
+      }
+    }
+  }
+
+  makeMatchDescriptorResponse(reqFrame, endpoint) {
+    // Match Descriptor requests are often broadcast, so we lookup
+    // the 64 bit address when generating the response.
+    const addr64 = this.findNodeByAddr16(reqFrame.destination16);
+    if (addr64) {
       this.queueCommandsAtFront([new Command(SEND_FRAME, this.zdo.makeFrame({
-        destination64: frame.remote64,
-        destination16: frame.remote16,
+        destination64: reqFrame.remote64,
+        destination16: reqFrame.remote16,
         clusterId: zdo.CLUSTER_ID.MATCH_DESCRIPTOR_RESPONSE,
+        zdoSeq: reqFrame.zdoSeq,
         status: 0,
-        zdoAddr16: frame.remote16,
-        endpoints: [1],
+        zdoAddr16: reqFrame.remote16,
+        endpoints: [endpoint],
       }))]);
     }
   }

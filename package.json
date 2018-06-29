@@ -21,7 +21,7 @@
     "serialport": "^6.1.1",
     "xbee-api": "^0.5.6",
     "zcl-id": "^0.3.2",
-    "zcl-packet": "^0.2.4"
+    "zcl-packet": "dhylands/zcl-packet#add-genOta-meta"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.3",

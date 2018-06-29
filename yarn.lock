@@ -2016,9 +2016,9 @@ zcl-id@^0.3.2:
     busyman "^0.3.0"
     enum "^2.3.0"
 
-zcl-packet@^0.2.4:
+zcl-packet@dhylands/zcl-packet#add-genOta-meta:
   version "0.2.4"
-  resolved "https://registry.yarnpkg.com/zcl-packet/-/zcl-packet-0.2.4.tgz#413f61560205d212044ebb8e7915978a85c1b75d"
+  resolved "https://codeload.github.com/dhylands/zcl-packet/tar.gz/201650e85493e6403b9aaa46d5a6410c6bb43d2c"
   dependencies:
     concentrate "^0.2.3"
     dissolve-chunks "^1.3.0"

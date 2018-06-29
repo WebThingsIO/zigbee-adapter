@@ -30,10 +30,16 @@ try {
 
 const C = xbeeApi.constants;
 
+// Server in this context means "server of the cluster"
+const DIR_CLIENT_TO_SERVER = 0;
+const DIR_SERVER_TO_CLIENT = 1;
+
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
 const ZLL_PROFILE_ID_HEX = utils.hexStr(ZLL_PROFILE_ID, 4);
+
+const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
 
 const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
 const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
@@ -306,6 +312,33 @@ class ZigbeeNode extends Device {
     });
   }
 
+  handleQueryNextImageReq(frame) {
+    // For the time being, we always indicate that we have no images.
+    const rspFrame = this.makeZclFrame(
+      frame.sourceEndpoint,
+      frame.profileId,
+      CLUSTER_ID_GENOTA,
+      {
+        cmd: 'queryNextImageRsp',
+        frameCntl: {
+          frameType: 1,   // queryNextImageRsp is specific to genOta
+          direction: DIR_SERVER_TO_CLIENT,
+          disDefaultRsp: 1,
+        },
+        seqNum: frame.zcl.seqNum,
+        payload: {
+          status: zclId.status('noImageAvailable').value,
+        },
+      }
+    );
+    rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint);
+
+    this.adapter.sendFrameWaitFrameAtFront(rspFrame, {
+      type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+      id: rspFrame.id,
+    });
+  }
+
   handleReadRsp(frame) {
     this.reportZclStatusError(frame);
     if (this.discoveringAttributes && frame.zcl.cmdId === 'readRsp') {
@@ -370,6 +403,10 @@ class ZigbeeNode extends Device {
         case 'configReportRsp':
           this.handleConfigReportRsp(frame);
           break;
+        case 'defaultRsp':
+          // Don't generate a defaultRsp to a defaultRsp. We ignore
+          // defaultRsp, so there's nothing else to do.
+          return;
         case 'readRsp':
         case 'report':
           this.handleReadRsp(frame);
@@ -387,10 +424,18 @@ class ZigbeeNode extends Device {
           //       the zoneid or delay fields from the received packet.
           this.handleStatusChangeNotification(frame);
           break;
+        case 'queryNextImageReq':
+          this.handleQueryNextImageReq(frame);
+          // We send a queryNextImageRsp, so no need to
+          // generate a defaultRsp
+          return;
+        case 'writeNoRsp':
+          // Don't generate a defaultRsp to a writeNoRsp command.
+          return;
       }
-      if (frame.zcl.cmdId != 'defaultRsp' &&
-          frame.zcl.cmdId != 'writeNoRsp' &&
-          frame.zcl.frameCntl.disDefaultRsp == 0 &&
+
+      // Generate a defaultRsp
+      if (frame.zcl.frameCntl.disDefaultRsp == 0 &&
           this.isZclStatusSuccess(frame)) {
         const defaultRspFrame =
           this.makeDefaultRspFrame(frame, ZCL_STATUS_SUCCESS);
@@ -462,7 +507,7 @@ class ZigbeeNode extends Device {
         cmd: 'configReport',
         payload: attrs.map((attr) => {
           return {
-            direction: 0,
+            direction: DIR_CLIENT_TO_SERVER,
             attrId: zclId.attr(clusterId, attr).value,
             dataType: zclId.attrType(clusterId, attr).value,
             minRepIntval: 1,
@@ -548,7 +593,7 @@ class ZigbeeNode extends Device {
       {
         cmd: 'read',
         payload: attrIds.map((attrId) => {
-          return {direction: 0, attrId: attrId};
+          return {direction: DIR_CLIENT_TO_SERVER, attrId: attrId};
         }),
       }
     );
@@ -571,7 +616,7 @@ class ZigbeeNode extends Device {
         cmd: 'readReportConfig',
         payload: [
           {
-            direction: 0,
+            direction: DIR_CLIENT_TO_SERVER,
             attrId: zclId.attr(clusterId, attr).value,
           },
         ],
@@ -598,29 +643,30 @@ class ZigbeeNode extends Device {
         }),
       }
     );
-    console.log('makeWriteAttributeFrame frame =', frame);
     return frame;
   }
 
   makeZclFrame(endpoint, profileId, clusterId, zclData) {
-    if (!zclData.frameCntl) {
-      zclData.frameCntl = {frameType: 0};
+    if (!zclData.hasOwnProperty('frameCntl')) {
+      zclData.frameCntl = {
+        // frameType 0 = foundation
+        // frameType 1 = functional (cluster specific)
+        frameType: 0,
+      };
     }
-    if (typeof zclData.frameCntl.manufSpec === 'undefined') {
+    if (!zclData.frameCntl.hasOwnProperty('manufSpec')) {
       zclData.frameCntl.manufSpec = 0;
     }
-    if (typeof zclData.frameCntl.direction === 'undefined') {
-      // direction: 0 = client-to-server
-      // direction: 1 = server-to-client
-      zclData.frameCntl.direction = 0;
+    if (!zclData.frameCntl.hasOwnProperty('direction')) {
+      zclData.frameCntl.direction = DIR_CLIENT_TO_SERVER;
     }
-    if (typeof zclData.frameCntl.disDefaultRsp === 'undefined') {
+    if (!zclData.frameCntl.hasOwnProperty('disDefaultRsp')) {
       zclData.frameCntl.disDefaultRsp = 0;
     }
-    if (typeof zclData.manufCode === 'undefined') {
+    if (!zclData.hasOwnProperty('manufCode')) {
       zclData.manufCode = 0;
     }
-    if (typeof zclData.payload === 'undefined') {
+    if (!zclData.hasOwnProperty('payload')) {
       zclData.payload = [];
     }
 
