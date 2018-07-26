@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -17,6 +17,7 @@
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
     "bl": "^2.0.1",
+    "clone-deep": "^4.0.0",
     "color": "^3.0.0",
     "serialport": "^6.1.1",
     "xbee-api": "^0.5.6",
