@@ -271,7 +271,7 @@ class ZigbeeAdapter extends Adapter {
     this.deviceInfoFilename = path.join(this.configDir,
                                         `zb-${this.serialNumber}.json`);
 
-    // Use this opertunity to create the node for the Coordinator.
+    // Use this opportunity to create the node for the Coordinator.
     const coordinator = this.nodes[this.serialNumber] =
       new ZigbeeNode(this, this.serialNumber, this.networkAddr16);
 
