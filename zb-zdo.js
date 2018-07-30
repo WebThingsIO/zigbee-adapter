@@ -137,6 +137,20 @@ exports.getClusterIdDescription = getClusterIdDescription;
 class ZdoApi {
   constructor(xb) {
     this.xb = xb;
+    this.zdoSeq = 0;
+  }
+
+  nextZdoSeq() {
+    this.zdoSeq = (this.zdoSeq + 1) & 0xff;
+    return this.zdoSeq;
+  }
+
+  getZdoSeq(frame) {
+    assert(frame, 'Frame parameter must be supplied');
+    if (!frame.hasOwnProperty('zdoSeq')) {
+      frame.zdoSeq = this.nextZdoSeq();
+    }
+    return frame.zdoSeq;
   }
 
   makeFrame(frame) {
@@ -145,19 +159,18 @@ class ZdoApi {
     assert(frame.destination16, 'Caller must provide frame.destination16');
     assert(frame.clusterId, 'Caller must provide frame.clusterId');
 
-    const frameId = xbeeApi._frame_builder.nextFrameId();
+    const clusterId = getClusterIdAsInt(frame.clusterId);
+    // Convert the clusterId to its hex form. This is easier to
+    // use for debugging
+    frame.clusterId = utils.hexStr(clusterId, 4);
 
-    const zdoData = Buffer.alloc(256);
-    const builder = new BufferBuilder(zdoData);
-    builder.appendUInt8(frameId);
-
-    if (!zdoBuilder[frame.clusterId]) {
+    if (!zdoBuilder[clusterId]) {
       throw new Error(
         `This library does not implement building the 0x${
-          getClusterIdAsString(frame.clusterId)} frame type.`);
+          getClusterIdAsString(clusterId)} frame type.`);
     }
 
-    frame.id = frameId;
+    frame.id = xbeeApi._frame_builder.nextFrameId();
     frame.type = C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME;
     frame.sourceEndpoint = 0;
     frame.destinationEndpoint = 0;
@@ -170,7 +183,11 @@ class ZdoApi {
       frame.options = 0;
     }
 
-    zdoBuilder[frame.clusterId](frame, builder);
+    const zdoData = Buffer.alloc(256);
+    const builder = new BufferBuilder(zdoData);
+    builder.appendUInt8(this.getZdoSeq(frame));
+
+    zdoBuilder[clusterId](frame, builder);
 
     frame.data = zdoData.slice(0, builder.length);
 
