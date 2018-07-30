@@ -9,6 +9,8 @@
 
 'use strict';
 
+const assert = require('assert');
+const cloneDeep = require('clone-deep');
 const xbeeApi = require('xbee-api');
 const zclId = require('zcl-id');
 const zcl = require('zcl-packet');
@@ -39,14 +41,63 @@ const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
 const ZLL_PROFILE_ID_HEX = utils.hexStr(ZLL_PROFILE_ID, 4);
 
+const CLUSTER_ID_GENBASIC = zclId.cluster('genBasic').value;
+const CLUSTER_ID_GENBASIC_HEX = utils.hexStr(CLUSTER_ID_GENBASIC, 4);
+
+const ATTR_ID_GENBASIC_ZCLVERSION =
+  zclId.attr(CLUSTER_ID_GENBASIC, 'zclVersion').value;
+const ATTR_ID_GENBASIC_POWERSOURCE =
+  zclId.attr(CLUSTER_ID_GENBASIC, 'powerSource').value;
+
+  // powerSource is from cluster 0000, attrId 7
+const POWERSOURCE_UNKNOWN = 0;
+const POWERSOURCE_BATTERY = 3;
+
 const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
+
+const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
+const CLUSTER_ID_GENPOLLCTRL_HEX = utils.hexStr(CLUSTER_ID_GENPOLLCTRL, 4);
+
+const ATTR_ID_GENPOLLCTRL_CHECKININTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'checkinInterval').value;
+const ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'longPollInterval').value;
+const ATTR_ID_GENPOLLCTRL_SHORTPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'shortPollInterval').value;
+const ATTR_ID_GENPOLLCTRL_FASTPOLLINTERVAL =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'fastPollTimeout').value;
+const ATTR_ID_GENPOLLCTRL_CHECKININTERVALMIN =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'checkinIntervalMin').value;
+const ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVALMIN =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'longPollIntervalMin').value;
+const ATTR_ID_GENPOLLCTRL_FASTPOLLTIMEOUTMAX =
+  zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'fastPollTimeoutMax').value;
 
 const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
 const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
 
-const ZCL_STATUS_SUCCESS = zclId.status('success').value;
+const ATTR_ID_SSIASZONE_ZONESTATE =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneState').value;
+const ATTR_ID_SSIASZONE_ZONETYPE =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneType').value;
+const ATTR_ID_SSIASZONE_ZONESTATUS =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneStatus').value;
+const ATTR_ID_SSIASZONE_CIEADDR =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'iasCieAddr').value;
+const ATTR_ID_SSIASZONE_ZONEID =
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneId').value;
+
+const STATUS_SUCCESS = zclId.status('success').value;
 
 const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
+
+const OPTIONAL_DEVICE_INFO_FIELDS = [
+  'activeEndpointsPopulated',
+  'nodeInfoEndpointsPopulated',
+  'colorCapabilities',
+  'zoneType',
+];
+
 
 class ZigbeeNode extends Device {
 
@@ -62,6 +113,8 @@ class ZigbeeNode extends Device {
     this.neighbors = [];
     this.activeEndpoints = {};
     this.activeEndpointsPopulated = false;
+    this.queryingActiveEndpoints = false;
+    this.nodeInfoEndpointsPopulated = false;
 
     this.isCoordinator = (id64 == adapter.serialNumber);
 
@@ -72,8 +125,84 @@ class ZigbeeNode extends Device {
     }
     this.discoveringAttributes = false;
     this.fireAndForget = false;
-    this.extendedTimeout = false;
+    this.extendedTimeout = true;
+    this.powerSource = POWERSOURCE_UNKNOWN;
     this.added = false;
+    this.rebindRequired = true;
+    this.zclSeqNum = 1;
+  }
+
+  advanceZclSeqNum() {
+    this.zclSeqNum = (this.zclSeqNum + 1) & 0xff;
+    if (this.zclSeqNum == 0) {
+      // I'm not sure if 0 is a valid sequence number or not, but we'll skip it
+      // just in case.
+      this.zclSeqNum = 1;
+    }
+  }
+
+  asDeviceInfo() {
+    const devInfo = {
+      addr64: this.addr64,
+      addr16: this.addr16,
+      defaultName: this.defaultName,
+      extendedTimeout: this.extendedTimeout,
+      powerSource: this.powerSource,
+      activeEndpoints: {},
+      properties: {},
+    };
+    for (const endpointNum in this.activeEndpoints) {
+      const endpoint = this.activeEndpoints[endpointNum];
+      devInfo.activeEndpoints[endpointNum] = {
+        profileId: endpoint.profileId,
+        deviceId: endpoint.deviceId,
+        deviceVersion: endpoint.deviceVersion,
+        inputClusters: (endpoint.hasOwnProperty('inputClusters') &&
+                        endpoint.inputClusters.slice(0)) || [],
+        outputClusters: (endpoint.hasOwnProperty('inputClusters') &&
+                         endpoint.outputClusters.slice(0)) || [],
+        classifierAttributesPopulated: endpoint.classifierAttributesPopulated,
+      };
+    }
+    for (const field of OPTIONAL_DEVICE_INFO_FIELDS) {
+      if (this.hasOwnProperty(field)) {
+        devInfo[field] = this[field];
+      }
+    }
+
+    this.properties.forEach((property, propertyName) => {
+      devInfo.properties[propertyName] = property.asDict();
+    });
+    return devInfo;
+  }
+
+  fromDeviceInfo(devInfo) {
+    // Currently, we make the assumption that this function is called
+    // before we know any information about the devices, so we do the
+    // simple thing and create new. If needed, this could be some type
+    // of "merge".
+    this.powerSource = devInfo.powerSource;
+    this.extendedTimeout = devInfo.extendedTimeout;
+    this.defaultName = devInfo.defaultName;
+    if (!this.name) {
+      this.name = this.defaultName;
+    }
+    for (const endpointNum in devInfo.activeEndpoints) {
+      const endpoint = devInfo.activeEndpoints[endpointNum];
+      this.activeEndpoints[endpointNum] = {
+        profileId: endpoint.profileId,
+        deviceId: endpoint.deviceId,
+        deviceVersion: endpoint.deviceVersion,
+        inputClusters: endpoint.inputClusters.slice(0),
+        outputClusters: endpoint.outputClusters.slice(0),
+      };
+    }
+    for (const field of OPTIONAL_DEVICE_INFO_FIELDS) {
+      if (devInfo.hasOwnProperty(field)) {
+        this[field] = devInfo[field];
+      }
+    }
+    this.devInfoProperties = cloneDeep(devInfo.properties);
   }
 
   asDict() {
@@ -81,7 +210,7 @@ class ZigbeeNode extends Device {
     dict.addr64 = this.addr64;
     dict.addr16 = this.addr16;
     dict.neighbors = this.neighbors;
-    dict.activeEndpoints = this.activeEndpoints;
+    dict.activeEndpoints = cloneDeep(this.activeEndpoints);
     dict.isCoordinator = this.isCoordinator;
     dict.fireAndForget = this.fireAndForget;
     for (const endpointNum in dict.activeEndpoints) {
@@ -154,25 +283,39 @@ class ZigbeeNode extends Device {
     }
   }
 
+  isMainsPowered() {
+    return this.powerSource != POWERSOURCE_UNKNOWN &&
+           this.powerSource != POWERSOURCE_BATTERY;
+  }
+
+  endpointHasZhaInputClusterIdHex(endpoint, clusterIdHex) {
+    if (endpoint.profileId == ZHA_PROFILE_ID_HEX ||
+        endpoint.profileId == ZLL_PROFILE_ID_HEX) {
+      if (endpoint.inputClusters.includes(clusterIdHex)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   findZhaEndpointWithInputClusterIdHex(clusterIdHex) {
     for (const endpointNum in this.activeEndpoints) {
+      // Since endpointNum is a key, it comes back as a string
       const endpoint = this.activeEndpoints[endpointNum];
-      if (endpoint.profileId == ZHA_PROFILE_ID_HEX ||
-          endpoint.profileId == ZLL_PROFILE_ID_HEX) {
-        if (endpoint.inputClusters.includes(clusterIdHex)) {
-          return endpointNum;
-        }
+      if (this.endpointHasZhaInputClusterIdHex(endpoint, clusterIdHex)) {
+        return parseInt(endpointNum);
       }
     }
   }
 
   findZhaEndpointWithOutputClusterIdHex(clusterIdHex) {
     for (const endpointNum in this.activeEndpoints) {
+      // Since endpointNum is a key, it comes back as a string
       const endpoint = this.activeEndpoints[endpointNum];
       if (endpoint.profileId == ZHA_PROFILE_ID_HEX ||
           endpoint.profileId == ZLL_PROFILE_ID_HEX) {
         if (endpoint.outputClusters.includes(clusterIdHex)) {
-          return endpointNum;
+          return parseInt(endpointNum);
         }
       }
     }
@@ -190,6 +333,9 @@ class ZigbeeNode extends Device {
 
   getAttrEntryFromFrameForProperty(frame, property) {
     let attrId;
+    if (!property.attr) {
+      return;
+    }
     if (Array.isArray(property.attr)) {
       const attrEntries = [];
       for (const attr of property.attr) {
@@ -233,16 +379,40 @@ class ZigbeeNode extends Device {
     }
   }
 
-  handleConfigReportRsp(frame) {
-    if (this.reportZclStatusError(frame)) {
-      // Some devices, like Hue bulbs, don't support configReports on the
-      // ZHA clusters. This means that we need to treat them as
-      // 'fire and forget'.
+  handleCheckin(frame) {
+    const rspFrame = this.makeZclFrame(
+      parseInt(frame.sourceEndpoint, 16),
+      frame.profileId,
+      CLUSTER_ID_GENPOLLCTRL,
+      {
+        cmd: 'checkinRsp',
+        frameCntl: {
+          frameType: 1, // checkinRsp is specific to GENPOLLCTRL
+          direction: DIR_CLIENT_TO_SERVER,
+          disDefaultRsp: 1,
+        },
+        seqNum: frame.zcl.seqNum,
+        payload: {
+          startfastpolling: this.rebindRequired ? 1 : 0,
+          fastpolltimeout: 120 * 4, // quarter seconds
+        },
+      }
+    );
+    this.adapter.sendFrameNow(rspFrame);
+    this.rebindIfRequired();
+  }
 
-      const property = this.findPropertyFromFrame(frame);
-      if (property) {
+  handleConfigReportRsp(frame) {
+    const property = this.findPropertyFromFrame(frame);
+    if (property) {
+      if (this.reportZclStatusError(frame)) {
+        // Some devices, like Hue bulbs, don't support configReports on the
+        // ZHA clusters. This means that we need to treat them as
+        // 'fire and forget'.
+
         property.fireAndForget = true;
       }
+      property.configReportNeeded = false;
     }
   }
 
@@ -253,7 +423,7 @@ class ZigbeeNode extends Device {
       // More attributes are available
       const discoverFrame =
         this.makeDiscoverAttributesFrame(
-          frame.sourceEndpoint,
+          parseInt(frame.sourceEndpoint, 16),
           frame.profileId,
           frame.clusterId,
           payload.attrInfos.slice(-1)[0].attrId + 1
@@ -261,7 +431,7 @@ class ZigbeeNode extends Device {
       this.adapter.sendFrameWaitFrameAtFront(discoverFrame, {
         type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
         zclCmdId: 'discoverRsp',
-        zclSeqNum: discoverFrame.id,
+        zclSeqNum: discoverFrame.zcl.seqNum,
       });
     }
 
@@ -288,7 +458,7 @@ class ZigbeeNode extends Device {
 
     for (attrInfo of payload.attrInfos.reverse()) {
       const readFrame = this.makeReadAttributeFrame(
-        frame.sourceEndpoint,
+        parseInt(frame.sourceEndpoint, 16),
         frame.profileId,
         clusterId,
         attrInfo.attrId
@@ -296,26 +466,32 @@ class ZigbeeNode extends Device {
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
         type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
         zclCmdId: 'readRsp',
-        zclSeqNum: readFrame.id,
+        zclSeqNum: readFrame.zcl.seqNum,
       });
     }
   }
 
   handleEnrollReq(reqFrame) {
+    // If the cieAddr hasn't been set, then we can wind up receiving an
+    // enrollReq, and never receive an endDeviceAnnouncement, so we make sure
+    // that the cieAddr gets set.
+    this.rebindIasZone();
+
     const rspStatus = 0;
     const zoneId = 1;
     const enrollRspFrame =
       this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
-    this.adapter.sendFrameWaitFrameAtFront(enrollRspFrame, {
-      type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-      id: enrollRspFrame.id,
-    });
+    if (this.adapter.debugFlow) {
+      console.log('handleEnrollReq: Queueing up enrollRsp: seqNum =',
+                  enrollRspFrame.zcl.seqNum);
+    }
+    this.adapter.sendFrameNow(enrollRspFrame);
   }
 
   handleQueryNextImageReq(frame) {
     // For the time being, we always indicate that we have no images.
     const rspFrame = this.makeZclFrame(
-      frame.sourceEndpoint,
+      parseInt(frame.sourceEndpoint, 16),
       frame.profileId,
       CLUSTER_ID_GENOTA,
       {
@@ -344,7 +520,7 @@ class ZigbeeNode extends Device {
     if (this.discoveringAttributes && frame.zcl.cmdId === 'readRsp') {
       const clusterId = parseInt(frame.clusterId, 16);
       for (const attrEntry of frame.zcl.payload) {
-        if (attrEntry.status == ZCL_STATUS_SUCCESS) {
+        if (attrEntry.status == STATUS_SUCCESS) {
           const attr = zclId.attr(clusterId, attrEntry.attrId);
           const attrStr = attr ? attr.key : 'unknown';
           const dataType = zclId.dataType(attrEntry.dataType);
@@ -362,8 +538,15 @@ class ZigbeeNode extends Device {
     if (property) {
       // Note: attrEntry might be an array.
       const attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
+      if (!attrEntry) {
+        // This can happen for a property associated with the ssIasZone
+        // cluster, and a read initiated from a command line tool.
+        // We just ignore the readRsp.
+        return;
+      }
       const [value, logValue] = property.parseAttrEntry(attrEntry);
       property.setCachedValue(value);
+      property.initialReadNeeded = false;
       console.log(this.name,
                   'property:', property.name,
                   'profileId:', utils.hexStr(property.profileId, 4),
@@ -382,18 +565,32 @@ class ZigbeeNode extends Device {
 
   handleStatusChangeNotification(frame) {
     const zoneStatus = frame.zcl.payload.zonestatus;
-    const property = this.findPropertyFromFrame(frame);
-    if (property) {
-      const value = ((zoneStatus & 3) != 0);
-      property.setCachedValue(value);
-      console.log(this.name,
-                  'property:', property.name,
-                  'profileId:', utils.hexStr(property.profileId, 4),
-                  'endpoint:', property.endpoint,
-                  'clusterId:', utils.hexStr(property.clusterId, 4),
-                  'value:', value,
-                  'zoneStatus:', zoneStatus);
-      this.notifyPropertyChanged(property);
+    const profileId = parseInt(frame.profileId, 16);
+    const clusterId = parseInt(frame.clusterId, 16);
+    const endpoint = parseInt(frame.sourceEndpoint, 16);
+
+    for (const property of this.properties.values()) {
+      if (profileId == property.profileId &&
+          endpoint == property.endpoint &&
+          clusterId == property.clusterId) {
+        const value = ((zoneStatus & property.mask) != 0);
+        const prevValue = property.value;
+        property.setCachedValue(value);
+        // Note: These attributes are unsettable, so there should never
+        //       be a deferredSet pending. Since a single status change
+        // notification maps onto multiple properties, reporting only
+        // the changes reduces the amount of logging.
+        if (property.value != prevValue) {
+          console.log(this.name,
+                      'property:', property.name,
+                      'profileId:', utils.hexStr(property.profileId, 4),
+                      'endpoint:', property.endpoint,
+                      'clusterId:', utils.hexStr(property.clusterId, 4),
+                      'value:', value,
+                      `zoneStatus: 0x${zoneStatus.toString(16)}`);
+          this.notifyPropertyChanged(property);
+        }
+      }
     }
   }
 
@@ -429,6 +626,9 @@ class ZigbeeNode extends Device {
           // We send a queryNextImageRsp, so no need to
           // generate a defaultRsp
           return;
+        case 'checkin':
+          this.handleCheckin(frame);
+          break;
         case 'writeNoRsp':
           // Don't generate a defaultRsp to a writeNoRsp command.
           return;
@@ -438,7 +638,7 @@ class ZigbeeNode extends Device {
       if (frame.zcl.frameCntl.disDefaultRsp == 0 &&
           this.isZclStatusSuccess(frame)) {
         const defaultRspFrame =
-          this.makeDefaultRspFrame(frame, ZCL_STATUS_SUCCESS);
+          this.makeDefaultRspFrame(frame, STATUS_SUCCESS);
         this.adapter.sendFrameWaitFrameAtFront(defaultRspFrame, {
           type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
           id: defaultRspFrame.id,
@@ -447,7 +647,266 @@ class ZigbeeNode extends Device {
     }
   }
 
+  rebind() {
+    if (this.adapter.debugFlow) {
+      console.log('rebind called for node:', this.addr64,
+                  'rebindRequired =', this.rebindRequired);
+    }
+
+    this.rebinding = true;
+
+    // Ask for the zclVersion. This is a mandatory attribute for the genBasic
+    // cluster. If the device responds, then we'll go through the binding
+    // process, otherwise, we'll wait until we get an end-device-announcement
+    // (battery powered devices will be sleeping until they wakeup and announce
+    // themselves to us.)
+
+    const genBasicEndpointNum =
+      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENBASIC_HEX);
+
+    if (!genBasicEndpointNum) {
+      // If the device doesn't support genBasic, then we don't want to
+      // talk to it.
+      return;
+    }
+    const endpoint = this.activeEndpoints[genBasicEndpointNum];
+    const readFrame = this.makeReadAttributeFrame(
+      genBasicEndpointNum,
+      endpoint.profileId,
+      CLUSTER_ID_GENBASIC,
+      [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
+    );
+    this.adapter.sendFrameWaitFrameAtFront(readFrame, {
+      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+      zclCmdId: 'readRsp',
+      zclSeqNum: readFrame.zcl.seqNum,
+      callback: this.rebindCallback.bind(this),
+      timeoutFunc: () => {
+        this.rebinding = false;
+      },
+    });
+  }
+
+  rebindCallback(frame) {
+    // This means we got a readRsp. Check to see what type of powerSource is
+    // being used.
+    for (const attrEntry of frame.zcl.payload) {
+      if (attrEntry.status == 0 &&
+          attrEntry.attrId == ATTR_ID_GENBASIC_POWERSOURCE) {
+        this.powerSource = attrEntry.attrData;
+        this.extendedTimeout = this.powerSource == POWERSOURCE_BATTERY;
+      }
+    }
+
+    // Go ahead and do the actual binding.
+    let frames = [];
+    this.properties.forEach((property) => {
+      if (property.configReportNeeded) {
+        frames = frames.concat(this.makeConfigReportFrame(property));
+      }
+      if (property.initialReadNeeded) {
+        frames = frames.concat(
+          this.makeReadAttributeFrameForProperty(property));
+      }
+    });
+    if (frames.length > 0) {
+      this.sendFrames(this.addBindFramesFor(frames));
+    }
+
+    this.rebindIasZone();
+  }
+
+  rebindIasZone() {
+    if (this.adapter.debugFlow) {
+      console.log('rebindIasZone: addr64 =', this.addr64);
+    }
+
+    const ssIasZoneEndpoint =
+      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+    if (!ssIasZoneEndpoint) {
+      this.rebinding = false;
+      return;
+    }
+    this.ssIasZoneEndpoint = ssIasZoneEndpoint;
+
+    if (!this.hasOwnProperty('cieAddr')) {
+      const readFrame = this.makeReadAttributeFrame(
+        this.ssIasZoneEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_SSIASZONE,
+        [
+          ATTR_ID_SSIASZONE_ZONESTATE,
+          ATTR_ID_SSIASZONE_ZONETYPE,
+          ATTR_ID_SSIASZONE_ZONESTATUS,
+          ATTR_ID_SSIASZONE_CIEADDR,
+          ATTR_ID_SSIASZONE_ZONEID,
+        ]);
+      this.adapter.sendFrameWaitFrameAtFront(readFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'readRsp',
+        zclSeqNum: readFrame.zcl.seqNum,
+        callback: this.handleIasReadResponse.bind(this),
+        timeoutFunc: () => {
+          this.rebinding = false;
+        },
+      });
+      return;
+    }
+
+    this.rebindIfRequired();
+  }
+
+  handleIasReadResponse(frame) {
+    for (const attrEntry of frame.zcl.payload) {
+      if (attrEntry.status == 0) {
+        switch (attrEntry.attrId) {
+          case ATTR_ID_SSIASZONE_ZONETYPE:
+            this.zoneType = attrEntry.attrData;
+            break;
+          case ATTR_ID_SSIASZONE_ZONESTATUS:
+            this.zoneStatus = attrEntry.attrData;
+            break;
+          case ATTR_ID_SSIASZONE_CIEADDR:
+            this.cieAddr = attrEntry.attrData;
+            break;
+        }
+      }
+    }
+    if (this.hasOwnProperty('zoneType')) {
+      this.adapter.setClassifierAttributesPopulated(this,
+                                                    this.ssIasZoneEndpoint);
+    }
+    const ourCieAddr = `0x${this.adapter.serialNumber}`;
+    let commands = [];
+
+    if (this.adapter.debugFlow) {
+      console.log('handleIasReadResponse: this.cieAddr =', this.cieAddr,
+                  'ourCieAddr =', ourCieAddr);
+    }
+    if (this.cieAddr != ourCieAddr) {
+      // Tell the sensor to send statusChangeNotifications to us.
+      const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
+      const writeFrame = this.makeWriteAttributeFrame(
+        sourceEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_SSIASZONE,
+        [[ATTR_ID_SSIASZONE_CIEADDR, ourCieAddr]]
+      );
+      this.cieAddr = ourCieAddr;
+      commands = commands.concat(this.adapter.makeFrameWaitFrame(
+        writeFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'writeRsp',
+          zclSeqNum: writeFrame.zcl.seqNum,
+        }
+      ));
+    }
+
+    // Make sure that the sensor is "enrolled".
+    const reqFrame = null;
+    const rspStatus = 0;
+    const zoneId = 1;
+    const enrollRspFrame =
+      this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
+    commands = commands.concat(this.adapter.makeFrameWaitFrame(
+      enrollRspFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+        id: enrollRspFrame.id,
+      }
+    ));
+
+    // Find out what the various poll intervals are.
+    const genPollCtrlEndpoint =
+      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENPOLLCTRL_HEX);
+    if (genPollCtrlEndpoint) {
+      const readFrame = this.makeReadAttributeFrame(
+        genPollCtrlEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_GENPOLLCTRL,
+        [
+          ATTR_ID_GENPOLLCTRL_CHECKININTERVAL,
+          ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVAL,
+          ATTR_ID_GENPOLLCTRL_SHORTPOLLINTERVAL,
+          ATTR_ID_GENPOLLCTRL_FASTPOLLINTERVAL,
+          ATTR_ID_GENPOLLCTRL_CHECKININTERVALMIN,
+          ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVALMIN,
+          ATTR_ID_GENPOLLCTRL_FASTPOLLTIMEOUTMAX,
+        ]);
+      commands = commands.concat(this.adapter.makeFrameWaitFrame(
+        readFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'readRsp',
+          zclSeqNum: readFrame.zcl.seqNum,
+        }
+      ));
+    }
+    commands = commands.concat(
+      this.adapter.makeFuncCommand(this, () => {
+        this.rebinding = false;
+      }),
+      this.adapter.makeFuncCommand(this, this.rebindIfRequired));
+
+    this.adapter.queueCommandsAtFront(commands);
+  }
+
+  rebindIfRequired() {
+    this.updateRebindRequired();
+    if (this.adapter.debugFlow) {
+      console.log('rebindIfRequired: rebindRequired =', this.rebindRequired,
+                  'rebinding =', this.rebinding);
+    }
+    if (this.rebindRequired && !this.rebinding) {
+      this.rebind();
+    }
+  }
+
+  updateRebindRequired() {
+    this.rebindRequired = true;
+
+    const ourCieAddr = `0x${this.adapter.serialNumber}`;
+    if (this.ssIasEndpoint && this.cieAddr != ourCieAddr) {
+      if (this.adapter.debugFlow) {
+        console.log('updateRebindRequired: node:', this.addr64,
+                    'cieAddr not set - rebind still required');
+      }
+      return;
+    }
+
+    // We need to be able to break out of the for loop, so don't be tempted
+    // to replace the for loop with forEach
+    for (const [propertyName, property] of this.properties.entries()) {
+      if (property.configReportNeeded) {
+        if (this.adapter.debugFlow) {
+          console.log('updateRebindRequired: node:', this.addr64,
+                      'property:', propertyName,
+                      'configReportNeeded is true - rebind still required');
+        }
+        return;
+      }
+      if (property.initialReadNeeded) {
+        if (this.adapter.debugFlow) {
+          console.log('updateRebindRequired: node:', this.addr64,
+                      'property:', propertyName,
+                      'initialReadNeeded is true - rebind still required');
+        }
+        return;
+      }
+    }
+
+    // Since we got to here, it looks like everything is setup and no
+    // rebinding is needed.
+    this.rebindRequired = false;
+    if (this.rebinding) {
+      this.adapter.saveDeviceInfo();
+    }
+    this.rebinding = false;
+  }
+
   makeBindFrame(endpoint, clusterId, configReportFrames) {
+    if (this.adapter.debugFlow) {
+      console.log('makeBindFrame: endpoint =', endpoint,
+                  'clusterId =', clusterId);
+    }
     const frame = this.adapter.zdo.makeFrame({
       destination64: this.addr64,
       destination16: this.addr16,
@@ -457,7 +916,7 @@ class ZigbeeNode extends Device {
       bindClusterId: clusterId,
       bindDstAddrMode: 3,
       bindDstAddr64: this.adapter.serialNumber,
-      bindDstEndpoint: 0,
+      bindDstEndpoint: 1,
       sendOnSuccess: configReportFrames,
     });
     return frame;
@@ -510,9 +969,9 @@ class ZigbeeNode extends Device {
             direction: DIR_CLIENT_TO_SERVER,
             attrId: zclId.attr(clusterId, attr).value,
             dataType: zclId.attrType(clusterId, attr).value,
-            minRepIntval: 1,
-            maxRepIntval: 120,
-            repChange: 1,
+            minRepIntval: property.configReport.minRepInterval,
+            maxRepIntval: property.configReport.maxRepInterval,
+            repChange: property.configReport.repChange,
           };
         }),
       }
@@ -521,14 +980,22 @@ class ZigbeeNode extends Device {
   }
 
   makeDefaultRspFrame(frame, statusCode) {
+    // The frame-builder in the xbee-api library expects the source and
+    // destination endpoints to be integers, but the frame parser presents
+    // the endpoints as hex-strings. So we need to convert them.
+    const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
+    const destinationEndpoint = parseInt(frame.destinationEndpoint, 16);
+
+    this.zclSeqNum = frame.zcl.seqNum;
     const rspFrame = this.makeZclFrame(
-      frame.sourceEndpoint,
+      sourceEndpoint,
       frame.profileId,
       frame.clusterId,
       {
         cmd: 'defaultRsp',
         frameCntl: {
           frameType: 0,
+          direction: frame.zcl.frameCntl.direction ? 0 : 1,
           disDefaultRsp: 1,
         },
         payload: {
@@ -537,7 +1004,9 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.zcl.seqNum = frame.zcl.seqNum;
+    // makeZclFrame normally assumes it's making new frames rather than
+    // response frames, so we need to correct the sourceEndpoint.
+    rspFrame.sourceEndpoint = destinationEndpoint;
     return rspFrame;
   }
 
@@ -556,21 +1025,25 @@ class ZigbeeNode extends Device {
   }
 
   makeEnrollRspFrame(enrollReqFrame, status, zoneId) {
-    if (!enrollReqFrame) {
-      enrollReqFrame = {
-        sourceEndpoint:
-          this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX),
-        profileId: ZHA_PROFILE_ID_HEX,
-      };
+    let sourceEndpoint;
+    let profileId;
+    if (enrollReqFrame) {
+      sourceEndpoint = parseInt(enrollReqFrame.sourceEndpoint, 16);
+      profileId = enrollReqFrame.profileId;
+    } else {
+      sourceEndpoint =
+        this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+      profileId = ZHA_PROFILE_ID_HEX;
     }
     const rspFrame = this.makeZclFrame(
-      enrollReqFrame.sourceEndpoint,
-      enrollReqFrame.profileId,
+      sourceEndpoint,
+      profileId,
       CLUSTER_ID_SSIASZONE,
       {
         cmd: 'enrollRsp',
         frameCntl: {
           frameType: 1,   // enrollRsp is specific to the IAS Zone cluster
+          direction: DIR_CLIENT_TO_SERVER,
         },
         payload: {
           enrollrspcode: status,
@@ -578,7 +1051,9 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    if (enrollReqFrame.zcl) {
+    if (enrollReqFrame) {
+      // We're responding to an enrollReq - make sure the enrollRsp has the
+      // same sequence number.
       rspFrame.zcl.seqNum = enrollReqFrame.zcl.seqNum;
     }
     return rspFrame;
@@ -647,6 +1122,9 @@ class ZigbeeNode extends Device {
   }
 
   makeZclFrame(endpoint, profileId, clusterId, zclData) {
+    assert(typeof endpoint === 'number',
+           'makeZclFrame: Expecting endpoint to be a number');
+
     if (!zclData.hasOwnProperty('frameCntl')) {
       zclData.frameCntl = {
         // frameType 0 = foundation
@@ -669,13 +1147,17 @@ class ZigbeeNode extends Device {
     if (!zclData.hasOwnProperty('payload')) {
       zclData.payload = [];
     }
+    if (!zclData.hasOwnProperty('seqNum')) {
+      zclData.seqNum = this.zclSeqNum;
+      this.advanceZclSeqNum();
+    }
 
     const frame = {
       id: xbeeApi._frame_builder.nextFrameId(),
       type: C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME,
       destination64: this.addr64,
       destination16: this.addr16,
-      sourceEndpoint: 0,
+      sourceEndpoint: 1,
 
       destinationEndpoint: endpoint,
       profileId: profileId,
@@ -688,7 +1170,7 @@ class ZigbeeNode extends Device {
 
     frame.data = zcl.frame(zclData.frameCntl,
                            zclData.manufCode,
-                           frame.id,
+                           zclData.seqNum,
                            zclData.cmd,
                            zclData.payload,
                            clusterId);
@@ -709,6 +1191,8 @@ class ZigbeeNode extends Device {
       deferredSet.resolve(property.value);
     }
     super.notifyPropertyChanged(property);
+
+    this.adapter.saveDeviceInfoDeferred();
   }
 
   isZclStatusSuccess(frame) {
@@ -719,7 +1203,7 @@ class ZigbeeNode extends Device {
     if (Array.isArray(frame.zcl.payload)) {
       for (const attrEntry of frame.zcl.payload) {
         if (attrEntry.hasOwnProperty('status') &&
-            attrEntry.status != ZCL_STATUS_SUCCESS) {
+            attrEntry.status != STATUS_SUCCESS) {
           return false;
         }
       }
@@ -732,7 +1216,7 @@ class ZigbeeNode extends Device {
     for (const attrEntry of frame.zcl.payload) {
       // Note: 'report' frames don't have a status
       if (attrEntry.hasOwnProperty('status') &&
-          attrEntry.status != ZCL_STATUS_SUCCESS) {
+          attrEntry.status != STATUS_SUCCESS) {
         let status = zclId.status(attrEntry.status);
         if (!status) {
           status = {key: 'unknown', value: attrEntry.status};
