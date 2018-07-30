@@ -20,7 +20,7 @@ const util = require('util');
 const zdo = require('./zb-zdo');
 const zcl = require('zcl-packet');
 const zclId = require('zcl-id');
-const zigBeeClassifier = require('./zb-classifier');
+const registerFamilies = require('./zb-families');
 
 let Adapter, Database, utils;
 try {
@@ -299,7 +299,9 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('scanNode: Calling populateNodeInfo');
     }
-    this.populateNodeInfo(node);
+    if (node.isMainsPowered()) {
+      this.populateNodeInfo(node);
+    }
   }
 
   scanComplete() {
@@ -712,6 +714,24 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  findNodeFromFrame(frame) {
+    const addr64 = frame.remote64;
+    const addr16 = frame.remote16;
+
+    // Some devices (like xiaomi) switch from using a proper 64-bit address to
+    // using broadcast but still provide the a 16-bit address.
+    if (addr64 == 'ffffffffffffffff') {
+      return this.findNodeByAddr16(addr16);
+    }
+
+    let node = this.nodes[addr64];
+    if (!node) {
+      // We have both the addr64 and addr16 - go ahead and create a new node.
+      node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
+    }
+    return node;
+  }
+
   findNodeByAddr16(addr16) {
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
@@ -785,13 +805,14 @@ class ZigbeeAdapter extends Adapter {
       if (clusterId in ZigbeeAdapter.zdoClusterHandler) {
         ZigbeeAdapter.zdoClusterHandler[clusterId].call(this, frame);
       } else {
-        console.error('No handler for ZDO cluster:', clusterId);
+        console.error('No handler for ZDO cluster:',
+                      zdo.getClusterIdAsString(clusterId));
       }
     } else if (this.isZhaFrame(frame)) {
       zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
         if (error) {
-          console.log('Error parsing ZHA frame:', frame);
-          console.log(error);
+          console.error('Error parsing ZHA frame:', frame);
+          console.error(error);
         } else {
           frame.zcl = data;
           if (this.debugFrames) {
@@ -804,9 +825,11 @@ class ZigbeeAdapter extends Adapter {
           if (frame.zcl.cmdId) {
             frame.zclCmdId = frame.zcl.cmdId;
           }
-          const node = this.nodes[frame.remote64];
+          const node = this.findNodeFromFrame(frame);
           if (node) {
             node.handleZhaResponse(frame);
+          } else {
+            console.log('Node:', frame.remote64, frame.remote16, 'not found');
           }
         }
       });
@@ -899,6 +922,10 @@ class ZigbeeAdapter extends Adapter {
   // ----- END DEVICE ANNOUNCEMENT -------------------------------------------
 
   createNodeIfRequired(addr64, addr16) {
+    if (this.debugFlow) {
+      console.log('createNodeIfRequired:', addr64, addr16);
+    }
+
     if (addr64 == 'ffffffffffffffff') {
       // We can't create a new node if we don't know the 64-bit address.
       // Hopefully, we've seen this node before.
@@ -920,22 +947,32 @@ class ZigbeeAdapter extends Adapter {
       this.cancelPairing();
     }
 
-    const node = this.createNodeIfRequired(frame.zdoAddr64, frame.zdoAddr16);
-    if (node) {
-      if (node.isMainsPowered()) {
-        // We get an end device announcement when adding devices through
-        // pairing, or for routers (typically not battery powered) when they
-        // get powered on. In this case we want to do an initialRead so that
-        // we can sync the state.
-        node.properties.forEach((property) => {
-          if (property.attr) {
-            // The actual read will occur later, once rebinding happens.
-            property.initialReadNeeded = true;
-          }
-        });
+    // Xiaomi devices send a genReport right after sending the end device
+    // announcement, so we introduce a slight delay to allow this to happen
+    // before we assume that it's a regular device.
+
+    setTimeout(() => {
+      if (this.debugFlow) {
+        console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
       }
-      this.populateNodeInfo(node);
-    }
+      const node = this.createNodeIfRequired(frame.zdoAddr64,
+                                             frame.zdoAddr16);
+      if (node && !node.family) {
+        if (node.isMainsPowered()) {
+          // We get an end device announcement when adding devices through
+          // pairing, or for routers (typically not battery powered) when they
+          // get powered on. In this case we want to do an initialRead so that
+          // we can sync the state.
+          node.properties.forEach((property) => {
+            if (property.attr) {
+              // The actual read will occur later, once rebinding happens.
+              property.initialReadNeeded = true;
+            }
+          });
+        }
+        this.populateNodeInfo(node);
+      }
+    }, 500);
   }
 
   // ----- MATCH DESCRIPTOR REQUEST ------------------------------------------
@@ -1337,6 +1374,7 @@ class ZigbeeAdapter extends Adapter {
       }),
     ]);
     this.handleDeviceRemoved(node);
+    this.saveDeviceInfo();
   }
 
   handleManagementLeaveResponse(frame) {
@@ -1364,7 +1402,6 @@ class ZigbeeAdapter extends Adapter {
       }
     }
     delete this.nodes[node.addr64];
-    this.saveDeviceInfo();
   }
 
   // ----- PERMIT JOIN -------------------------------------------------------
@@ -1461,7 +1498,7 @@ class ZigbeeAdapter extends Adapter {
             FUNC(this, this.print, [`    ${outputClusterStr}`])
           );
           const discoverFrame =
-            node.makeDiscoverAttributesFrame(endpointNum,
+            node.makeDiscoverAttributesFrame(parseInt(endpointNum),
                                              endpoint.profileId,
                                              outputCluster, 0);
           commands = commands.concat([
@@ -1649,7 +1686,7 @@ class ZigbeeAdapter extends Adapter {
     if (node.isCoordinator) {
       node.name = node.defaultName;
     } else {
-      zigBeeClassifier.classify(node);
+      node.classify();
       super.handleDeviceAdded(node);
       node.added = true;
     }
@@ -2301,5 +2338,7 @@ function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
     });
   });
 }
+
+registerFamilies();
 
 module.exports = loadZigbeeAdapters;

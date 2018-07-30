@@ -107,6 +107,7 @@ class ZigbeeProperty extends Property {
     dict.endpoint = this.endpoint;
     dict.clusterId = this.clusterId;
     dict.attr = this.attr;
+    dict.attrId = this.attrId;
     dict.value = this.value;
     dict.fireAndForget = this.fireAndForget;
     dict.configReportNeeded = this.configReportNeeded;
@@ -361,6 +362,17 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseNumericTenthsAttr
+   *
+   * Converts generic numeric attributes in a number, and divides
+   * the number by 10.
+   */
+  parseNumericTenthsAttr(attrEntry) {
+    const value = attrEntry.attrData / 10;
+    return [value, `${value}`];
+  }
+
+  /**
    * @method parseOccupiedAttr
    *
    * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
@@ -402,6 +414,19 @@ class ZigbeeProperty extends Property {
    */
   parseOnOffAttr(attrEntry) {
     const propertyValue = attrEntry.attrData != 0;
+    return [
+      propertyValue,
+      `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
+    ];
+  }
+
+  /**
+   * @method parseOffOnAttr
+   *
+   * Like parseOnOffAttr but inverted (0 = on, 1 = off)
+   */
+  parseOffOnAttr(attrEntry) {
+    const propertyValue = attrEntry.attrData == 0;
     return [
       propertyValue,
       `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
@@ -491,6 +516,7 @@ class ZigbeeProperty extends Property {
    */
   setValue(value) {
     if (!this.setAttrFromValue) {
+      console.log('ZigbeeProperty:setValue: no setAttrFromValue');
       return Promise.resolve();
     }
 
