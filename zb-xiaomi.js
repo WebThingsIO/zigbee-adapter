@@ -69,7 +69,7 @@ const MODEL_IDS = {
       on: {
         descr: {
           '@type': 'BooleanProperty',
-          label: 'On',
+          label: 'Open',
           type: 'boolean',
           description: 'Magnet Sensor',
         },
@@ -78,7 +78,7 @@ const MODEL_IDS = {
         clusterId: CLUSTER_ID_GENONOFF,
         attr: 'onOff',
         value: false,
-        parseValueFromAttr: 'parseOffOnAttr',
+        parseValueFromAttr: 'parseOnOffAttr',
       },
     },
   },
@@ -101,7 +101,7 @@ const MODEL_IDS = {
       on: {
         descr: {
           '@type': 'BooleanProperty',
-          label: 'On',
+          label: 'Pressed',
           type: 'boolean',
           description: 'Magnet Sensor',
         },
@@ -117,8 +117,8 @@ const MODEL_IDS = {
           '@type': 'MultiClickProperty',
           label: 'MultiClick',
           type: 'number',
+          description: 'Switch Sensor',
         },
-        description: 'Switch Sensor',
         profileId: ZHA_PROFILE_ID,
         endpoint: 1,
         clusterId: CLUSTER_ID_GENONOFF,

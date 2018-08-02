@@ -69,17 +69,21 @@ const DEBUG = false;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
-  0x000d: {name: 'motion', descr: 'Motion Sensor'},
-  0x0015: {name: 'switch', descr: 'Contact Switch'},
-  0x0028: {name: 'fire', descr: 'Fire Sensor'},
-  0x002a: {name: 'water', descr: 'Water Sensor'},
-  0x002b: {name: 'co', descr: 'Carbon Monoxide Sensor'},
-  0x002c: {name: 'ped', descr: 'Personal Emergency Device'},
-  0x002d: {name: 'vibration', descr: 'Vibration/Movement Sensor'},
-  0x010f: {name: 'remote-panic', descr: 'Remote Control'},
-  0x0115: {name: 'keyfob-panic', descr: 'Keyfob'},
-  0x021d: {name: 'keypad-panic', descr: 'Keypad'},
-  0x0226: {name: 'glass', descr: 'Glass Break Sensor'},
+  0x000d: {name: 'motion', label: 'Motion', descr: 'Motion Sensor'},
+  0x0015: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
+  0x0028: {name: 'fire', label: 'Fire', descr: 'Fire Sensor'},
+  0x002a: {name: 'water', label: 'Water', descr: 'Water Sensor'},
+  0x002b: {name: 'co', label: 'CO', descr: 'Carbon Monoxide Sensor'},
+  0x002c: {name: 'ped', label: 'Pressed', descr: 'Personal Emergency Device'},
+  0x002d: {
+    name: 'vibration',
+    label: 'Vibrating',
+    descr: 'Vibration/Movement Sensor',
+  },
+  0x010f: {name: 'remote-panic', label: 'Pressed', descr: 'Remote Control'},
+  0x0115: {name: 'keyfob-panic', label: 'Pressed', descr: 'Keyfob'},
+  0x021d: {name: 'keypad-panic', label: 'Pressed', descr: 'Keypad'},
+  0x0226: {name: 'glass', label: 'Breakage', descr: 'Glass Break Sensor'},
 };
 
 // One way to do a deepEqual that turns out to be fairly performant.
@@ -425,8 +429,8 @@ class ZigbeeClassifier {
       'occupied',                     // name
       {                               // property description
         '@type': 'BooleanProperty',
-        label: 'Occupied',
         type: 'boolean',
+        label: 'Occupied',
         description: 'Occupancy Sensor',
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -575,13 +579,14 @@ class ZigbeeClassifier {
     );
   }
 
-  addZoneTypeProperty(node, name, descr) {
+  addZoneTypeProperty(node, name, label, descr) {
     this.addProperty(
       node,                           // device
       'on',                           // name
       {                               // property description
         '@type': 'BooleanProperty',
         type: 'boolean',
+        label: label,
         description: descr,
       },
       ZHA_PROFILE_ID,                 // profileId
@@ -598,7 +603,7 @@ class ZigbeeClassifier {
       {                               // property description
         '@type': 'TamperProperty',
         type: 'boolean',
-        description: 'Tamper',
+        label: 'Tamper',
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -614,7 +619,7 @@ class ZigbeeClassifier {
       {                               // property description
         '@type': 'LowPatteryProperty',
         type: 'boolean',
-        description: 'Low Battery',
+        label: 'Low Battery',
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -791,14 +796,16 @@ class ZigbeeClassifier {
     node.type = Constants.THING_TYPE_BINARY_SENSOR;
     node['@type'] = ['BinarySensor'];
     let name = 'thing';
+    let label = '';
     let descr = '';
     if (ZONE_TYPE_NAME.hasOwnProperty(node.zoneType)) {
       name = ZONE_TYPE_NAME[node.zoneType].name;
+      label = ZONE_TYPE_NAME[node.zoneType].label;
       descr = ZONE_TYPE_NAME[node.zoneType].descr;
     }
     node.name = `${node.id}-${name}`;
 
-    this.addZoneTypeProperty(node, name, descr);
+    this.addZoneTypeProperty(node, name, label, descr);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {
