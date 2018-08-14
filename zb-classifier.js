@@ -32,10 +32,15 @@ const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const CLUSTER_ID_GENBINARYINPUT = zclId.cluster('genBinaryInput').value;
 const CLUSTER_ID_GENBINARYINPUT_HEX =
   utils.hexStr(CLUSTER_ID_GENBINARYINPUT, 4);
+const CLUSTER_ID_GENDEVICETEMPCFG = zclId.cluster('genDeviceTempCfg').value;
+const CLUSTER_ID_GENDEVICETEMPCFG_HEX =
+  utils.hexStr(CLUSTER_ID_GENDEVICETEMPCFG, 4);
 const CLUSTER_ID_GENLEVELCTRL = zclId.cluster('genLevelCtrl').value;
 const CLUSTER_ID_GENLEVELCTRL_HEX = utils.hexStr(CLUSTER_ID_GENLEVELCTRL, 4);
 const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
 const CLUSTER_ID_GENONOFF_HEX = utils.hexStr(CLUSTER_ID_GENONOFF, 4);
+const CLUSTER_ID_GENPOWERCFG = zclId.cluster('genPowerCfg').value;
+const CLUSTER_ID_GENPOWERCFG_HEX = utils.hexStr(CLUSTER_ID_GENPOWERCFG, 4);
 const CLUSTER_ID_HAELECTRICAL = zclId.cluster('haElectricalMeasurement').value;
 const CLUSTER_ID_HAELECTRICAL_HEX = utils.hexStr(CLUSTER_ID_HAELECTRICAL, 4);
 const CLUSTER_ID_ILLUMINANCE_MEASUREMENT =
@@ -64,17 +69,21 @@ const DEBUG = false;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
-  0x000d: {name: 'motion', descr: 'Motion Sensor'},
-  0x0015: {name: 'switch', descr: 'Contact Switch'},
-  0x0028: {name: 'fire', descr: 'Fire Sensor'},
-  0x002a: {name: 'water', descr: 'Water Sensor'},
-  0x002b: {name: 'co', descr: 'Carbon Monoxide Sensor'},
-  0x002c: {name: 'ped', descr: 'Personal Emergency Device'},
-  0x002d: {name: 'vibration', descr: 'Vibration/Movement Sensor'},
-  0x010f: {name: 'remote-panic', descr: 'Remote Control'},
-  0x0115: {name: 'keyfob-panic', descr: 'Keyfob'},
-  0x021d: {name: 'keypad-panic', descr: 'Keypad'},
-  0x0226: {name: 'glass', descr: 'Glass Break Sensor'},
+  0x000d: {name: 'motion', label: 'Motion', descr: 'Motion Sensor'},
+  0x0015: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
+  0x0028: {name: 'fire', label: 'Fire', descr: 'Fire Sensor'},
+  0x002a: {name: 'water', label: 'Water', descr: 'Water Sensor'},
+  0x002b: {name: 'co', label: 'CO', descr: 'Carbon Monoxide Sensor'},
+  0x002c: {name: 'ped', label: 'Pressed', descr: 'Personal Emergency Device'},
+  0x002d: {
+    name: 'vibration',
+    label: 'Vibrating',
+    descr: 'Vibration/Movement Sensor',
+  },
+  0x010f: {name: 'remote-panic', label: 'Pressed', descr: 'Remote Control'},
+  0x0115: {name: 'keyfob-panic', label: 'Pressed', descr: 'Keyfob'},
+  0x021d: {name: 'keypad-panic', label: 'Pressed', descr: 'Keypad'},
+  0x0226: {name: 'glass', label: 'Breakage', descr: 'Glass Break Sensor'},
 };
 
 // One way to do a deepEqual that turns out to be fairly performant.
@@ -152,6 +161,26 @@ class ZigbeeClassifier {
       'currentLevel',                 // attr
       'setLevelValue',                // setAttrFromValue
       'parseLevelAttr',               // parseValueFromAttr
+      CONFIG_REPORT_INTEGER
+    );
+  }
+
+  addDeviceTemperatureProperty(node, genDeviceTempCfgEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'temperature',                  // name
+      {                               // property description
+        '@type': 'TemperatureProperty',
+        label: 'Temperature',
+        type: 'number',
+        unit: 'celsius',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genDeviceTempCfgEndpoint,       // endpoint
+      CLUSTER_ID_GENDEVICETEMPCFG,    // clusterId
+      'currentTemperature',           // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
   }
@@ -400,8 +429,9 @@ class ZigbeeClassifier {
       'occupied',                     // name
       {                               // property description
         '@type': 'BooleanProperty',
-        label: 'Occupied',
         type: 'boolean',
+        label: 'Occupied',
+        description: 'Occupancy Sensor',
       },
       ZHA_PROFILE_ID,                 // profileId
       msOccupancySensingEndpoint,     // endpoint
@@ -477,6 +507,26 @@ class ZigbeeClassifier {
     );
   }
 
+  addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'voltage',                      // name
+      {                               // property description
+        '@type': 'VoltageProperty',
+        label: 'Voltage',
+        type: 'number',
+        unit: 'volt',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genPowerCfgEndpoint,            // endpoint
+      CLUSTER_ID_GENPOWERCFG,         // clusterId
+      'mainsVoltage',                 // attr
+      '',                             // setAttrFromValue
+      'parseNumericTenthsAttr',       // parseValueFromAttr
+      CONFIG_REPORT_INTEGER
+    );
+  }
+
   addTemperatureSensorProperty(node, msTemperatureEndpoint) {
     this.addProperty(
       node,                           // device
@@ -529,14 +579,15 @@ class ZigbeeClassifier {
     );
   }
 
-  addZoneTypeProperty(node, name, descr) {
+  addZoneTypeProperty(node, name, label, descr) {
     this.addProperty(
       node,                           // device
       'on',                           // name
       {                               // property description
         '@type': 'BooleanProperty',
         type: 'boolean',
-        descr: descr,
+        label: label,
+        description: descr,
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -552,7 +603,7 @@ class ZigbeeClassifier {
       {                               // property description
         '@type': 'TamperProperty',
         type: 'boolean',
-        descr: 'Tamper',
+        label: 'Tamper',
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -568,7 +619,7 @@ class ZigbeeClassifier {
       {                               // property description
         '@type': 'LowPatteryProperty',
         type: 'boolean',
-        descr: 'Low Battery',
+        label: 'Low Battery',
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -647,6 +698,11 @@ class ZigbeeClassifier {
     const illuminanceEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID_ILLUMINANCE_MEASUREMENT_HEX);
+    const genPowerCfgEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENPOWERCFG_HEX);
+    const genDeviceTempCfgEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_GENDEVICETEMPCFG_HEX);
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
@@ -659,18 +715,30 @@ class ZigbeeClassifier {
       console.log('     colorCapabilities =', node.colorCapabilities);
       console.log('msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
       console.log('     msTemperatureEndpoint =', msTemperatureEndpoint);
+      console.log('       genPowerCfgEndpoint =', genPowerCfgEndpoint);
+      console.log('  genDeviceTempCfgEndpoint =', genDeviceTempCfgEndpoint);
       console.log('                  zoneType =', node.zoneType);
     }
 
     if (msTemperatureEndpoint) {
       this.addTemperatureSensorProperty(node, msTemperatureEndpoint);
+    } else if (genDeviceTempCfgEndpoint) {
+      this.addDeviceTemperatureProperty(node, genDeviceTempCfgEndpoint);
     }
     if (illuminanceEndpoint) {
       this.addIlluminanceMeasurementProperty(node, illuminanceEndpoint);
     }
+    if (genPowerCfgEndpoint) {
+      this.addPowerCfgVoltageProperty(node, genPowerCfgEndpoint);
+    }
 
     if (typeof node.zoneType !== 'undefined') {
       this.initBinarySensorFromZoneType(node);
+      return;
+    }
+
+    if (msOccupancySensingEndpoint) {
+      this.initOccupancySensor(node, msOccupancySensingEndpoint);
       return;
     }
 
@@ -728,14 +796,24 @@ class ZigbeeClassifier {
     node.type = Constants.THING_TYPE_BINARY_SENSOR;
     node['@type'] = ['BinarySensor'];
     let name = 'thing';
+    let label = '';
     let descr = '';
     if (ZONE_TYPE_NAME.hasOwnProperty(node.zoneType)) {
       name = ZONE_TYPE_NAME[node.zoneType].name;
+      label = ZONE_TYPE_NAME[node.zoneType].label;
       descr = ZONE_TYPE_NAME[node.zoneType].descr;
     }
     node.name = `${node.id}-${name}`;
 
-    this.addZoneTypeProperty(node, name, descr);
+    this.addZoneTypeProperty(node, name, label, descr);
+  }
+
+  initOccupancySensor(node, msOccupancySensingEndpoint) {
+    node.type = Constants.THING_TYPE_BINARY_SENSOR;
+    node['@type'] = ['BinarySensor'];
+    node.name = `${node.id}-occupancy`;
+
+    this.addOccupancySensorProperty(node, msOccupancySensingEndpoint);
   }
 
   initOnOffSwitch(node, genOnOffEndpoint) {
