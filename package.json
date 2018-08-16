@@ -44,8 +44,11 @@
     "zb-adapter.js",
     "zb-at.js",
     "zb-classifier.js",
+    "zb-families.js",
+    "zb-family.js",
     "zb-node.js",
     "zb-property.js",
+    "zb-xiaomi.js",
     "zb-zdo.js",
     "node_modules"
   ],
