@@ -964,9 +964,20 @@ class ZigbeeAdapter extends Adapter {
       return this.findNodeByAddr16(addr16);
     }
 
+    let saveDeviceInfo = false;
     let node = this.nodes[addr64];
-    if (!node) {
+    if (node) {
+      // Update the 16-bit address, since it may have changed.
+      if (node.addr16 != addr16) {
+        node.addr16 = addr16;
+        saveDeviceInfo = true;
+      }
+    } else {
       node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
+      saveDeviceInfo = true;
+    }
+    if (saveDeviceInfo) {
+      this.saveDeviceInfoDeferred();
     }
     return node;
   }
