@@ -213,13 +213,31 @@ class ZigbeeAdapter extends Adapter {
       this.xb.on('frame_raw', (rawFrame) => {
         console.log('Rcvd:', rawFrame);
         if (this.xb.canParse(rawFrame)) {
-          const frame = this.xb.parseFrame(rawFrame);
-          this.handleFrame(frame);
+          try {
+            const frame = this.xb.parseFrame(rawFrame);
+            try {
+              this.handleFrame(frame);
+            } catch (e) {
+              console.error('Error handling frame_raw');
+              console.error(e);
+              console.error(frame);
+            }
+          } catch (e) {
+            console.error('Error parsing raw frame_raw');
+            console.error(e);
+            console.error(rawFrame);
+          }
         }
       });
     } else {
       this.xb.on('frame_object', (frame) => {
-        this.handleFrame(frame);
+        try {
+          this.handleFrame(frame);
+        } catch (e) {
+          console.error('Error handling frame_object');
+          console.error(e);
+          console.error(frame);
+        }
       });
     }
 
@@ -797,42 +815,56 @@ class ZigbeeAdapter extends Adapter {
 
   handleExplicitRx(frame) {
     if (this.zdo.isZdoFrame(frame)) {
-      this.zdo.parseZdoFrame(frame);
-      if (this.debugFrames) {
-        this.dumpFrame('Rcvd:', frame);
-      }
-      const clusterId = parseInt(frame.clusterId, 16);
-      if (clusterId in ZigbeeAdapter.zdoClusterHandler) {
-        ZigbeeAdapter.zdoClusterHandler[clusterId].call(this, frame);
-      } else {
-        console.error('No handler for ZDO cluster:',
-                      zdo.getClusterIdAsString(clusterId));
+      try {
+        this.zdo.parseZdoFrame(frame);
+        if (this.debugFrames) {
+          this.dumpFrame('Rcvd:', frame);
+        }
+        const clusterId = parseInt(frame.clusterId, 16);
+        if (clusterId in ZigbeeAdapter.zdoClusterHandler) {
+          ZigbeeAdapter.zdoClusterHandler[clusterId].call(this, frame);
+        } else {
+          console.error('No handler for ZDO cluster:',
+                        zdo.getClusterIdAsString(clusterId));
+        }
+      } catch (e) {
+        console.error('handleExplicitRx: Caught an exception parsing',
+                      'ZDO frame');
+        console.error(e);
+        console.error(frame);
       }
     } else if (this.isZhaFrame(frame)) {
-      zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
-        if (error) {
-          console.error('Error parsing ZHA frame:', frame);
-          console.error(error);
-        } else {
-          frame.zcl = data;
-          if (this.debugFrames) {
-            this.dumpFrame('Rcvd:', frame);
-          }
-          // Add some special fields to ease waitFrame processing.
-          if (frame.zcl.seqNum) {
-            frame.zclSeqNum = frame.zcl.seqNum;
-          }
-          if (frame.zcl.cmdId) {
-            frame.zclCmdId = frame.zcl.cmdId;
-          }
-          const node = this.findNodeFromFrame(frame);
-          if (node) {
-            node.handleZhaResponse(frame);
+      try {
+        zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
+          if (error) {
+            console.error('Error parsing ZHA frame:', frame);
+            console.error(error);
           } else {
-            console.log('Node:', frame.remote64, frame.remote16, 'not found');
+            frame.zcl = data;
+            if (this.debugFrames) {
+              this.dumpFrame('Rcvd:', frame);
+            }
+            // Add some special fields to ease waitFrame processing.
+            if (frame.zcl.seqNum) {
+              frame.zclSeqNum = frame.zcl.seqNum;
+            }
+            if (frame.zcl.cmdId) {
+              frame.zclCmdId = frame.zcl.cmdId;
+            }
+            const node = this.findNodeFromFrame(frame);
+            if (node) {
+              node.handleZhaResponse(frame);
+            } else {
+              console.log('Node:', frame.remote64, frame.remote16, 'not found');
+            }
           }
-        }
-      });
+        });
+      } catch (e) {
+        console.error('handleExplicitRx: Caught an exception parsing',
+                      'ZHA frame');
+        console.error(e);
+        console.error(frame);
+      }
     }
   }
 
@@ -947,42 +979,49 @@ class ZigbeeAdapter extends Adapter {
       this.cancelPairing();
     }
 
-    // Xiaomi devices send a genReport right after sending the end device
-    // announcement, so we introduce a slight delay to allow this to happen
-    // before we assume that it's a regular device.
-
-    setTimeout(() => {
-      if (this.debugFlow) {
-        console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
-      }
-      const node = this.createNodeIfRequired(frame.zdoAddr64,
-                                             frame.zdoAddr16);
-      if (node && !node.family) {
-        if (node.isMainsPowered()) {
-          // We get an end device announcement when adding devices through
-          // pairing, or for routers (typically not battery powered) when they
-          // get powered on. In this case we want to do an initialRead so that
-          // we can sync the state.
-          node.properties.forEach((property) => {
-            if (property.attr) {
-              // The actual read will occur later, once rebinding happens.
-              property.initialReadNeeded = true;
-            }
-          });
+    // Create the node now, since we know the 64 and 16 bit addresses. This
+    // allows us to process broadcasts which only come in with a 16-bit address.
+    const node = this.createNodeIfRequired(frame.zdoAddr64, frame.zdoAddr16);
+    if (node) {
+      // Xiaomi devices send a genReport right after sending the end device
+      // announcement, so we introduce a slight delay to allow this to happen
+      // before we assume that it's a regular device.
+      setTimeout(() => {
+        if (this.debugFlow) {
+          console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
         }
-        this.populateNodeInfo(node);
-      }
-    }, 500);
+        if (!node.family) {
+          if (node.isMainsPowered()) {
+            // We get an end device announcement when adding devices through
+            // pairing, or for routers (typically not battery powered) when they
+            // get powered on. In this case we want to do an initialRead so that
+            // we can sync the state.
+            node.properties.forEach((property) => {
+              if (property.attr) {
+                // The actual read will occur later, once rebinding happens.
+                property.initialReadNeeded = true;
+              }
+            });
+          }
+          this.populateNodeInfo(node);
+        }
+      }, 500);
+    }
   }
 
   // ----- MATCH DESCRIPTOR REQUEST ------------------------------------------
 
   handleMatchDescriptorRequest(frame) {
+    const node = this.createNodeIfRequired(frame.remote64, frame.remote16);
+    if (!node) {
+      return;
+    }
+
     for (const inputCluster of frame.inputClusters) {
       switch (inputCluster) {
         case CLUSTER_ID_GENOTA_HEX:
           // Indicate that we support the OTA cluster
-          this.makeMatchDescriptorResponse(frame, 1);
+          this.sendMatchDescriptorResponse(node, frame, 1);
           break;
       }
     }
@@ -992,35 +1031,33 @@ class ZigbeeAdapter extends Adapter {
         case CLUSTER_ID_SSIASZONE_HEX:
           // Sensors which are "Security sensors" will ask if we support
           // the SSIASZONE cluster, so we tell them that we do.
-          this.makeMatchDescriptorResponse(frame, 1);
+          this.sendMatchDescriptorResponse(node, frame, 1);
           break;
 
         case CLUSTER_ID_GENPOLLCTRL_HEX: {
-          this.makeMatchDescriptorResponse(frame, 1);
+          this.sendMatchDescriptorResponse(node, frame, 1);
           break;
         }
       }
     }
 
-    const node = this.createNodeIfRequired(frame.remote64, frame.remote16);
     this.populateNodeInfo(node);
   }
 
-  makeMatchDescriptorResponse(reqFrame, endpoint) {
-    // Match Descriptor requests are often broadcast, so we lookup
-    // the 64 bit address when generating the response.
-    const node = this.findNodeByAddr16(reqFrame.remote16);
-    if (node) {
-      this.queueCommandsAtFront([new Command(SEND_FRAME, this.zdo.makeFrame({
-        destination64: node.addr64,
-        destination16: node.addr16,
-        clusterId: zdo.CLUSTER_ID.MATCH_DESCRIPTOR_RESPONSE,
-        zdoSeq: reqFrame.zdoSeq,
-        status: 0,
-        zdoAddr16: node.addr16,
-        endpoints: [endpoint],
-      }))]);
-    }
+  sendMatchDescriptorResponse(node, reqFrame, endpoint) {
+    // Match Descriptor requests come from the end devices and often
+    // arrive while we're trying to query the device. For end devices
+    // which are battery powered, this causes our response to be delayed,
+    // so we send it right away.
+    this.sendFrameNow(this.zdo.makeFrame({
+      destination64: node.addr64,
+      destination16: node.addr16,
+      clusterId: zdo.CLUSTER_ID.MATCH_DESCRIPTOR_RESPONSE,
+      zdoSeq: reqFrame.zdoSeq,
+      status: 0,
+      zdoAddr16: node.addr16,
+      endpoints: [endpoint],
+    }));
   }
 
   // ----- GET ACTIVE ENDPOINTS ----------------------------------------------
