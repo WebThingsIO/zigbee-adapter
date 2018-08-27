@@ -255,6 +255,8 @@ class ZigbeeAdapter extends Adapter {
       });
 
       this.queueCommands([
+        this.AT(AT_CMD.API_MODE),
+        FUNC(this, this.configureApiModeIfNeeded),
         this.AT(AT_CMD.DEVICE_TYPE_IDENTIFIER),
         this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID),
         this.AT(AT_CMD.SERIAL_NUMBER_HIGH),
@@ -336,6 +338,26 @@ class ZigbeeAdapter extends Adapter {
         command: command,
       }),
     ];
+  }
+
+  configureApiModeIfNeeded() {
+    if (this.debugFlow) {
+      console.log('configureApiModeIfNeeded');
+    }
+    const configCommands = [];
+    if (this.apiMode != 1) {
+      configCommands.push(this.AT(AT_CMD.API_MODE,
+                                  {apiMode: 1}));
+      configCommands.push(this.AT(AT_CMD.API_MODE));
+    }
+
+    if (configCommands.length > 0) {
+      console.log('Setting API mode to 1');
+      configCommands.push(this.AT(AT_CMD.WRITE_PARAMETERS));
+      this.queueCommandsAtFront(configCommands);
+    } else {
+      console.log('API Mode already set to 1 (i.e. no need to change');
+    }
   }
 
   configureIfNeeded() {
@@ -2215,6 +2237,7 @@ class ZigbeeAdapter extends Adapter {
 
 const acm = ZigbeeAdapter.atCommandMap = {};
 acm[AT_CMD.API_OPTIONS] = 'apiOptions';
+acm[AT_CMD.API_MODE] = 'apiMode';
 acm[AT_CMD.CONFIGURED_64_BIT_PAN_ID] = 'configuredPanId64';
 acm[AT_CMD.DEVICE_TYPE_IDENTIFIER] = 'deviceTypeIdentifier';
 acm[AT_CMD.ENCRYPTION_ENABLED] = 'encryptionEnabled';

@@ -28,6 +28,9 @@ ac[ac.APPLY_CHANGES] = 'Apply Changes (AC)';
 ac.API_OPTIONS = 'AO';
 ac[ac.API_OPTIONS] = 'API Options (AO)';
 
+ac.API_MODE = 'AP';
+ac[ac.API_MODE] = 'API Mode';
+
 ac.OPERATING_CHANNEL = 'CH';
 ac[ac.OPERATING_CHANNEL] = 'Operating Channel (CH)';
 
@@ -130,6 +133,10 @@ exports.AtApi = AtApi;
 //
 // ---------------------------------------------------------------------------
 
+atBuilder[ac.API_MODE] = function(frame, builder) {
+  builder.appendUInt8(frame.apiMode);
+};
+
 atBuilder[ac.API_OPTIONS] = function(frame, builder) {
   builder.appendUInt8(frame.apiOptions);
 };
@@ -187,6 +194,10 @@ atBuilder[ac.ZIGBEE_STACK_PROFILE] = function(frame, builder) {
 // Parsers
 //
 // ---------------------------------------------------------------------------
+
+atParser[ac.API_MODE] = function(frame, reader) {
+  frame.apiMode = reader.nextUInt8();
+};
 
 atParser[ac.API_OPTIONS] = function(frame, reader) {
   frame.apiOptions = reader.nextUInt8();
