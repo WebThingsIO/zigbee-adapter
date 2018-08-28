@@ -356,7 +356,7 @@ class ZigbeeAdapter extends Adapter {
       configCommands.push(this.AT(AT_CMD.WRITE_PARAMETERS));
       this.queueCommandsAtFront(configCommands);
     } else {
-      console.log('API Mode already set to 1 (i.e. no need to change');
+      console.log('API Mode already set to 1 (i.e. no need to change)');
     }
   }
 
