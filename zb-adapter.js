@@ -110,6 +110,8 @@ const SEND_FRAME = 0x01;
 const WAIT_FRAME = 0x02;
 const EXEC_FUNC = 0x03;
 const RESOLVE_SET_PROPERTY = 0x04;
+const MIN_COMMAND_TYPE = 0x01;
+const MAX_COMMAND_TYPE = 0x04;
 
 class Command {
   constructor(cmdType, cmdData) {
@@ -118,22 +120,23 @@ class Command {
   }
 
   print(adapter, idx) {
-    const idxStr = `${`    ${idx}`.slice(-4)}: `;
+    const idxStr = `| ${`    ${idx}`.slice(-4)}: `;
     switch (this.cmdType) {
-      case SEND_FRAME:
-        adapter.dumpFrame(`${idxStr}SEND:`, this.cmdData);
+      case SEND_FRAME: {
+        adapter.dumpFrame(`${idxStr}SEND:`, this.cmdData, false);
         break;
+      }
       case WAIT_FRAME:
         console.log(`${idxStr}WAIT`);
         break;
       case EXEC_FUNC:
-        console.log(`${idxStr}EXEC:`, this.cmdData[1].name, this.cmdData[2]);
+        console.log(`${idxStr}EXEC:`, this.cmdData[1].name);
         break;
       case RESOLVE_SET_PROPERTY:
         console.log(`${idxStr}RESOLVE_SET_PROPERTY`);
         break;
       default:
-        console.log(`${idxStr}UNKNOWN`);
+        console.log(`${idxStr}UNKNOWN: ${this.cmdType}`);
     }
   }
 }
@@ -795,11 +798,25 @@ class ZigbeeAdapter extends Adapter {
     for (const cmd of cmdSeq) {
       if (cmd.constructor === Array) {
         for (const cmd2 of cmd) {
-          assert(cmd2 instanceof Command, 'Expecting instance of Command');
+          assert(cmd2 instanceof Command,
+                 '### Expecting instance of Command ###');
+          assert(typeof cmd2.cmdType === 'number',
+                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
+          assert(cmd2.cmdType >= MIN_COMMAND_TYPE,
+                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
+          assert(cmd2.cmdType <= MAX_COMMAND_TYPE,
+                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
           cmds.push(cmd2);
         }
       } else {
-        assert(cmd instanceof Command, 'Expecting instance of Command');
+        assert(cmd instanceof Command,
+               '### Expecting instance of Command ###');
+        assert(typeof cmd.cmdType === 'number',
+               `### Invalid Command Type: ${cmd.cmdType} ###`);
+        assert(cmd.cmdType >= MIN_COMMAND_TYPE,
+               `### Invalid Command Type: ${cmd.cmdType} ###`);
+        assert(cmd.cmdType <= MAX_COMMAND_TYPE,
+               `### Invalid Command Type: ${cmd.cmdType} ###`);
         cmds.push(cmd);
       }
     }
@@ -2023,10 +2040,13 @@ class ZigbeeAdapter extends Adapter {
     console.log(str);
   }
 
-  dumpCommands() {
-    console.log(`Commands (${this.cmdQueue.length})`);
-    for (const idx in this.cmdQueue) {
-      const cmd = this.cmdQueue[idx];
+  dumpCommands(commands) {
+    if (typeof commands === 'undefined') {
+      commands = this.cmdQueue;
+    }
+    console.log(`Commands (${commands.length})`);
+    for (const idx in commands) {
+      const cmd = commands[idx];
       cmd.print(this, idx);
     }
     console.log('---');
@@ -2053,6 +2073,9 @@ class ZigbeeAdapter extends Adapter {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
+    if (this.debugFlow) {
+      this.dumpCommands();
+    }
     if (!this.running) {
       this.run();
     }
@@ -2086,6 +2109,9 @@ class ZigbeeAdapter extends Adapter {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
+    if (this.debugFlow) {
+      this.dumpCommands();
+    }
     if (!this.running) {
       this.run();
     }
@@ -2187,6 +2213,11 @@ class ZigbeeAdapter extends Adapter {
           }
           break;
         }
+        default:
+          console.error('#####');
+          console.error(`##### UNKNOWN COMMAND: ${cmd.cmdType} #####`);
+          console.error('#####');
+          break;
       }
     }
     this.running = false;
