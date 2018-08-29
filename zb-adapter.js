@@ -40,6 +40,9 @@ try {
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
 
+// Responses that we send should go out before commands
+const RESPONSE_PRIORITY = 1;
+
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 
@@ -440,6 +443,12 @@ class ZigbeeAdapter extends Adapter {
     }
     let atCmdStr;
     let status;
+
+    let prioStr = 'p:-';
+    if (typeof frame.priority !== 'undefined') {
+      prioStr = `p:${frame.priority}`;
+    }
+    label += ` ${prioStr}`;
 
     switch (frame.type) {
       case C.FRAME_TYPE.AT_COMMAND:
@@ -1090,6 +1099,7 @@ class ZigbeeAdapter extends Adapter {
       status: 0,
       zdoAddr16: node.addr16,
       endpoints: [endpoint],
+      priority: RESPONSE_PRIORITY,
     }));
   }
 
