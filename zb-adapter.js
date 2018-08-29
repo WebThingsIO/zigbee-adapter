@@ -1705,7 +1705,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   makeFuncCommand(ths, func, args) {
-    return new Command(FUNC(ths, func, args));
+    return FUNC(ths, func, args);
   }
 
   sendFrameWaitFrameAtFront(sendFrame, waitFrame) {
