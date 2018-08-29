@@ -287,8 +287,19 @@ class ZigbeeNode extends Device {
         }
         break;
 
+      case 'devices':
+        for (const nodeId in this.nodes) {
+          const node = this.nodes[nodeId];
+          console.log(node.addr64, node.addr16, node.name);
+        }
+        break;
+
       case 'discoverAttr':
         this.adapter.discoverAttributes(this);
+        break;
+
+      case 'info':
+        console.log(this.asDeviceInfo());
         break;
 
       case 'readAttr': {
