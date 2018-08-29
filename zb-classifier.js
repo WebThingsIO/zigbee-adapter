@@ -102,9 +102,27 @@ function jsonEqual(a, b) {
 }
 
 const CONFIG_REPORT_INTEGER = {
-  minRepInterval: 1,
-  maxRepInterval: 120,
+  minRepInterval: 1,    // seconds
+  maxRepInterval: 120,  // seconds
   repChange: 1,
+};
+
+const CONFIG_REPORT_BATTERY = {
+  minRepInterval: 10 * 60,  // 10 minutes
+  maxRepInterval: 30 * 60,  // 30 minutes
+  repChange: 2,             // 0.2 V
+};
+
+const CONFIG_REPORT_ILLUMINANCE = {
+  minRepInterval: 0,
+  maxRepInterval: 10 * 60,  // 10 minutes
+  repChange: 0xffff,        // disabled
+};
+
+const CONFIG_REPORT_TEMPERATURE = {
+  minRepInterval: 1 * 60,   // 1 minute
+  maxRepInterval: 10 * 60,  // 10 minutes
+  repChange: 10,            // 0.1 C
 };
 
 class ZigbeeClassifier {
@@ -508,11 +526,7 @@ class ZigbeeClassifier {
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseIlluminanceMeasurementAttr', // parseValueFromAttr
-      {
-        minRepInterval: 0,
-        maxRepInterval: 10 * 60,  // 10 minutes
-        repChange: 0xffff,        // disabled
-      }
+      CONFIG_REPORT_ILLUMINANCE
     );
   }
 
@@ -537,7 +551,7 @@ class ZigbeeClassifier {
       attr,                           // attr
       '',                             // setAttrFromValue
       'parseNumericTenthsAttr',       // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      CONFIG_REPORT_BATTERY
     );
   }
 
@@ -585,11 +599,7 @@ class ZigbeeClassifier {
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseTemperatureMeasurementAttr', // parseValueFromAttr
-      {
-        minRepInterval: 1 * 60,   // 1 minute
-        maxRepInterval: 10 * 60,  // 10 minutes
-        repChange: 10,            // 0.1 C
-      }
+      CONFIG_REPORT_TEMPERATURE
     );
   }
 
