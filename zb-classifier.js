@@ -72,6 +72,12 @@ const DEBUG = false;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
+  // Note: the Smart Things mulitpurpose sensor reports a zoneType of 0.
+  // so we use 0 to inidcate that its a smart switch. If we find other
+  // non-switch sensors which also report a zoneType of 0, we may need
+  // to use further refinements, like the presence of the binaryInput
+  // cluster.
+  0x0000: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
   0x000d: {name: 'motion', label: 'Motion', descr: 'Motion Sensor'},
   0x0015: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
   0x0028: {name: 'fire', label: 'Fire', descr: 'Fire Sensor'},
