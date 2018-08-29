@@ -63,6 +63,9 @@ const ZONE_STATUS_ALARM_MASK = 0x03;
 const ZONE_STATUS_TAMPER_MASK = 0x04;
 const ZONE_STATUS_LOW_BATTERY_MASK = 0x08;
 
+const DEVICE_ID_SMART_PLUG = zclId.device('HA', 'smartPlug').value;
+const DEVICE_ID_SMART_PLUG_HEX = utils.hexStr(DEVICE_ID_SMART_PLUG, 4);
+
 const DEBUG = false;
 
 // From the ZigBee Cluster Library Specification, document 07-5123-06,
@@ -508,6 +511,11 @@ class ZigbeeClassifier {
   }
 
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
+    let attr = 'batteryVoltage';
+    if (node.activeEndpoints[genPowerCfgEndpoint].deviceId ==
+        DEVICE_ID_SMART_PLUG_HEX) {
+      attr = 'mainsVoltage';
+    }
     this.addProperty(
       node,                           // device
       'voltage',                      // name
@@ -520,7 +528,7 @@ class ZigbeeClassifier {
       ZHA_PROFILE_ID,                 // profileId
       genPowerCfgEndpoint,            // endpoint
       CLUSTER_ID_GENPOWERCFG,         // clusterId
-      'mainsVoltage',                 // attr
+      attr,                           // attr
       '',                             // setAttrFromValue
       'parseNumericTenthsAttr',       // parseValueFromAttr
       CONFIG_REPORT_INTEGER
