@@ -213,6 +213,7 @@ class ZigbeeNode extends Device {
         deviceVersion: endpoint.deviceVersion,
         inputClusters: endpoint.inputClusters.slice(0),
         outputClusters: endpoint.outputClusters.slice(0),
+        classifierAttributesPopulated: endpoint.classifierAttributesPopulated,
       };
     }
     this.devInfoProperties = cloneDeep(devInfo.properties);
@@ -269,6 +270,7 @@ class ZigbeeNode extends Device {
   }
 
   debugCmd(cmd, params) {
+    console.log('debugCmd:', this.addr64, cmd, params);
     switch (cmd) {
 
       case 'debug':
@@ -288,8 +290,8 @@ class ZigbeeNode extends Device {
         break;
 
       case 'devices':
-        for (const nodeId in this.nodes) {
-          const node = this.nodes[nodeId];
+        for (const nodeId in this.adapter.nodes) {
+          const node = this.adapter.nodes[nodeId];
           console.log(node.addr64, node.addr16, node.name);
         }
         break;
@@ -298,9 +300,16 @@ class ZigbeeNode extends Device {
         this.adapter.discoverAttributes(this);
         break;
 
-      case 'info':
-        console.log(this.asDeviceInfo());
+      case 'info': {
+        let node;
+        if (params.addr64) {
+          node = this.adapter.nodes[params.addr64];
+        } else {
+          node = this;
+        }
+        console.log(node.asDeviceInfo());
         break;
+      }
 
       case 'readAttr': {
         let paramMissing = false;
@@ -829,13 +838,10 @@ class ZigbeeNode extends Device {
   rebindIasZone() {
     DEBUG && console.log('rebindIasZone: addr64 =', this.addr64);
 
-    const ssIasZoneEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
-    if (!ssIasZoneEndpoint) {
+    if (!node.ssIasZoneEndpoint) {
       this.rebinding = false;
       return;
     }
-    this.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (!this.hasOwnProperty('cieAddr')) {
       const readFrame = this.makeReadAttributeFrame(

@@ -53,11 +53,12 @@ const CLUSTER_ID_LIGHTLINK_HEX = utils.hexStr(CLUSTER_ID_LIGHTLINK, 4);
 const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
 const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
   utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
-const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
-const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
-const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 const CLUSTER_ID_SEMETERING = zclId.cluster('seMetering').value;
 const CLUSTER_ID_SEMETERING_HEX = utils.hexStr(CLUSTER_ID_SEMETERING, 4);
+const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
+const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
+const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
+const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 
 const ZONE_STATUS_ALARM_MASK = 0x03;
 const ZONE_STATUS_TAMPER_MASK = 0x04;
@@ -727,6 +728,9 @@ class ZigbeeClassifier {
     const genDeviceTempCfgEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID_GENDEVICETEMPCFG_HEX);
+    const ssIasZoneEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+    node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');

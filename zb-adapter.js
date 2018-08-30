@@ -309,7 +309,6 @@ class ZigbeeAdapter extends Adapter {
           .concat([
             FUNC(this, this.handleDeviceAdded, [coordinator]),
             FUNC(this, this.startScan),
-            FUNC(this, this.dumpNodes, []),
             FUNC(this, this.scanComplete),
           ]));
     });
@@ -325,12 +324,11 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('scanNode: Calling populateNodeInfo');
     }
-    if (node.isMainsPowered()) {
-      this.populateNodeInfo(node);
-    }
+    this.populateNodeInfo(node);
   }
 
   scanComplete() {
+    this.dumpNodes();
     console.log('----- Scan Complete -----');
     this.saveDeviceInfo();
     this.scanning = false;
@@ -708,7 +706,7 @@ class ZigbeeAdapter extends Adapter {
         nodeIdentifier: this.nodeIdentifier,
         configuredPanId64: this.configuredPanId64,
         operatingPanId64: this.operatingPanId64,
-        operatingPan16: this.operatingPan16,
+        operatingPanId16: this.operatingPanId16,
         operatingChannel: this.operatingChannel,
         scanChannels: `0x${this.scanChannels.toString(16)}`,
         apiOptions: this.apiOptions,
@@ -719,7 +717,8 @@ class ZigbeeAdapter extends Adapter {
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
       if (!node.isCoordinator) {
-        devInfo.nodes[nodeId] = node.asDeviceInfo();
+        const nodeInfo = node.asDeviceInfo();
+        devInfo.nodes[nodeId] = nodeInfo;
       }
     }
 
@@ -1199,7 +1198,7 @@ class ZigbeeAdapter extends Adapter {
         }
       }
       node.activeEndpointsPopulated = true;
-      this.saveDeviceInfo();
+      this.saveDeviceInfoDeferred();
       this.populateNodeInfoEndpoints(node);
     }
   }
@@ -1471,7 +1470,7 @@ class ZigbeeAdapter extends Adapter {
       }),
     ]);
     this.handleDeviceRemoved(node);
-    this.saveDeviceInfo();
+    this.saveDeviceInfoDeferred();
   }
 
   handleManagementLeaveResponse(frame) {
@@ -1741,9 +1740,9 @@ class ZigbeeAdapter extends Adapter {
   // -------------------------------------------------------------------------
 
   addIfReady(node) {
-    this.saveDeviceInfo();
+    this.saveDeviceInfoDeferred();
 
-    if (!node.activeEndpointsPopulated) {
+    if (!node.activeEndpointsPopulated && !this.scanning) {
       if (this.debugFlow) {
         console.log('addIfReady:', node.addr64,
                     'activeEndpoints not populated yet');
@@ -1754,11 +1753,13 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.classifierAttributesPopulated) {
-        if (this.debugFlow) {
-          console.log('addIfReady:', node.addr64, 'endpoint', endpointNum,
-                      'classifier attributes not read yet');
+        if (!this.scanning) {
+          if (this.debugFlow) {
+            console.log('addIfReady:', node.addr64, 'endpoint', endpointNum,
+                        'classifier attributes not read yet');
+          }
+          this.populateNodeInfoEndpoints(node);
         }
-        this.populateNodeInfoEndpoints(node);
         return;
       }
     }
@@ -1766,7 +1767,7 @@ class ZigbeeAdapter extends Adapter {
 
     // We want the initial scan to be quick, so we ignore end devices
     // during the scan.
-    if (!this.scanning || node.isMainsPowered()) {
+    if (!this.scanning) {
       node.rebindIfRequired();
     }
   }
@@ -1867,11 +1868,11 @@ class ZigbeeAdapter extends Adapter {
       // We already know the active endpoints, no need to request
       // them again.
       this.populateNodeInfoEndpoints(node);
-    } else if (!node.queryingActiveEndpoints) {
+    } else if (!node.queryingActiveEndpoints && !this.scanning) {
       // We don't know the active endpoints, and a query for the active
       // endpoints hasn't been queued up => queue up a command to retrieve
       // the active endpoints
-      this.saveDeviceInfo();
+      this.saveDeviceInfoDeferred();
       this.queueCommandsAtFront(this.getActiveEndpointCommands(node));
     }
   }
@@ -2005,7 +2006,7 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.hasOwnProperty('profileId')) {
-        if (!endpoint.queryingSimpleDescriptor) {
+        if (!endpoint.queryingSimpleDescriptor && !this.scanning) {
           // We don't have the simpleDescriptor information
           // (profileId is missing) and we don't have a command queued up to
           // retrieve it - queue one up.
@@ -2027,7 +2028,9 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.classifierAttributesPopulated) {
-        this.populateClassifierAttributes(node, parseInt(endpointNum));
+        if (!this.scanning) {
+          this.populateClassifierAttributes(node, parseInt(endpointNum));
+        }
         return;
       }
     }
