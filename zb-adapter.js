@@ -40,9 +40,6 @@ try {
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
 
-// Responses that we send should go out before commands
-const RESPONSE_PRIORITY = 1;
-
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 
@@ -114,13 +111,19 @@ const MIN_COMMAND_TYPE = 0x01;
 const MAX_COMMAND_TYPE = 0x04;
 
 class Command {
-  constructor(cmdType, cmdData) {
+  constructor(cmdType, cmdData, priority) {
     this.cmdType = cmdType;
     this.cmdData = cmdData;
+    this.priority = priority;
   }
 
   print(adapter, idx) {
-    const idxStr = `| ${`    ${idx}`.slice(-4)}: `;
+    let prioStr = 'p:-';
+    if (typeof this.priority !== 'undefined') {
+      prioStr = `p:${this.priority}`;
+    }
+
+    const idxStr = `| ${`    ${idx}`.slice(-4)}: ${prioStr} `;
     switch (this.cmdType) {
       case SEND_FRAME: {
         adapter.dumpFrame(`${idxStr}SEND:`, this.cmdData, false);
@@ -444,12 +447,6 @@ class ZigbeeAdapter extends Adapter {
     }
     let atCmdStr;
     let status;
-
-    let prioStr = 'p:-';
-    if (typeof frame.priority !== 'undefined') {
-      prioStr = `p:${frame.priority}`;
-    }
-    label += ` ${prioStr}`;
 
     switch (frame.type) {
       case C.FRAME_TYPE.AT_COMMAND:
@@ -819,6 +816,12 @@ class ZigbeeAdapter extends Adapter {
         cmds.push(cmd);
       }
     }
+    // Now that we've flattened things, make sure all of the commands
+    // have the same priority.
+    const priority = cmds[0].priority;
+    for (const cmd of cmds) {
+      cmd.priority = priority;
+    }
     return cmds;
   }
 
@@ -1115,7 +1118,6 @@ class ZigbeeAdapter extends Adapter {
       status: 0,
       zdoAddr16: node.addr16,
       endpoints: [endpoint],
-      priority: RESPONSE_PRIORITY,
     }));
   }
 
@@ -1696,10 +1698,10 @@ class ZigbeeAdapter extends Adapter {
     ]);
   }
 
-  makeFrameWaitFrame(sendFrame, waitFrame) {
+  makeFrameWaitFrame(sendFrame, waitFrame, priority) {
     return [
-      new Command(SEND_FRAME, sendFrame),
-      new Command(WAIT_FRAME, waitFrame),
+      new Command(SEND_FRAME, sendFrame, priority),
+      new Command(WAIT_FRAME, waitFrame, priority),
     ];
   }
 
@@ -1707,12 +1709,13 @@ class ZigbeeAdapter extends Adapter {
     return FUNC(ths, func, args);
   }
 
-  sendFrameWaitFrameAtFront(sendFrame, waitFrame) {
-    this.queueCommandsAtFront(this.makeFrameWaitFrame(sendFrame, waitFrame));
+  sendFrameWaitFrameAtFront(sendFrame, waitFrame, priority) {
+    this.queueCommandsAtFront(
+      this.makeFrameWaitFrame(sendFrame, waitFrame, priority));
   }
 
-  sendFrameWaitFrame(sendFrame, waitFrame) {
-    this.queueCommands(this.makeFrameWaitFrame(sendFrame, waitFrame));
+  sendFrameWaitFrame(sendFrame, waitFrame, priority) {
+    this.queueCommands(this.makeFrameWaitFrame(sendFrame, waitFrame, priority));
   }
 
   sendFrameWaitFrameResolve(sendFrame, waitFrame, property) {
@@ -2061,7 +2064,7 @@ class ZigbeeAdapter extends Adapter {
     }
     cmdSeq = this.flattenCommands(cmdSeq);
     const priority = cmdSeq[0].priority;
-    let idx;
+    let idx = -1;
     if (typeof priority !== 'undefined') {
       // The command being inserted has a priority. This means
       // it will get inserted in front of the first command in
@@ -2072,7 +2075,7 @@ class ZigbeeAdapter extends Adapter {
                priority < cmd.priority;
       });
     }
-    if (typeof idx === 'undefined') {
+    if (idx < 0) {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
@@ -2090,7 +2093,7 @@ class ZigbeeAdapter extends Adapter {
     }
     cmdSeq = this.flattenCommands(cmdSeq);
     const priority = cmdSeq[0].priority;
-    let idx;
+    let idx = -1;
     if (typeof priority === 'undefined') {
       // The command being inserted has no priority. This means
       // it will be inserted in front of the first command
@@ -2108,7 +2111,7 @@ class ZigbeeAdapter extends Adapter {
                priority <= cmd.priority;
       });
     }
-    if (typeof idx === 'undefined') {
+    if (idx < 0) {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);

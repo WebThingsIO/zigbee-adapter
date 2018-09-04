@@ -40,9 +40,6 @@ const C = xbeeApi.constants;
 const DIR_CLIENT_TO_SERVER = 0;
 const DIR_SERVER_TO_CLIENT = 1;
 
-// Responses that we send should go out before commands
-const RESPONSE_PRIORITY = 1;
-
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
@@ -451,7 +448,6 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     this.adapter.sendFrameNow(rspFrame);
     this.rebindIfRequired();
   }
@@ -558,13 +554,8 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint);
-
-    this.adapter.sendFrameWaitFrameAtFront(rspFrame, {
-      type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-      id: rspFrame.id,
-    });
+    this.adapter.sendFrameNow(rspFrame);
   }
 
   handleReadRsp(frame) {
@@ -767,10 +758,7 @@ class ZigbeeNode extends Device {
           this.isZclStatusSuccess(frame)) {
         const defaultRspFrame =
           this.makeDefaultRspFrame(frame, STATUS_SUCCESS);
-        this.adapter.sendFrameWaitFrameAtFront(defaultRspFrame, {
-          type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-          id: defaultRspFrame.id,
-        });
+        this.adapter.sendFrameNow(defaultRspFrame);
       }
     }
   }
@@ -1096,7 +1084,6 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     // makeZclFrame normally assumes it's making new frames rather than
     // response frames, so we need to correct the sourceEndpoint.
     rspFrame.sourceEndpoint = destinationEndpoint;
@@ -1144,7 +1131,6 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     if (enrollReqFrame) {
       // We're responding to an enrollReq - make sure the enrollRsp has the
       // same sequence number.
