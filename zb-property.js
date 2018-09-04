@@ -111,7 +111,7 @@ class ZigbeeProperty extends Property {
     dict.value = this.value;
     dict.fireAndForget = this.fireAndForget;
     dict.configReportNeeded = this.configReportNeeded;
-    dict.initialReadNeed = this.initialReadNeeded;
+    dict.initialReadNeeded = this.initialReadNeeded;
     if (this.hasOwnProperty('level')) {
       dict.level = this.level;
     }
@@ -431,6 +431,20 @@ class ZigbeeProperty extends Property {
       propertyValue,
       `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
     ];
+  }
+
+  setInitialReadNeeded() {
+    if (!this.attr) {
+      // This property has no attributes which means that its event driven
+      // and there is nothing that we can actuall read.
+      return;
+    }
+    if (!this.visible && typeof this.value != 'undefined') {
+      // We already know the value for this invisible property,
+      // no need to read it again.
+      return;
+    }
+    this.initialReadNeeded = true;
   }
 
   /**

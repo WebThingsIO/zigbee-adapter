@@ -40,9 +40,6 @@ const C = xbeeApi.constants;
 const DIR_CLIENT_TO_SERVER = 0;
 const DIR_SERVER_TO_CLIENT = 1;
 
-// Responses that we send should go out before commands
-const RESPONSE_PRIORITY = 1;
-
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
@@ -84,6 +81,9 @@ const ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVALMIN =
 const ATTR_ID_GENPOLLCTRL_FASTPOLLTIMEOUTMAX =
   zclId.attr(CLUSTER_ID_GENPOLLCTRL, 'fastPollTimeoutMax').value;
 
+const FAST_CHECKIN_INTERVAL = 1 * 60 * 4;   // 1 minute (quarter seconds)
+const SLOW_CHECKIN_INTERVAL = 60 * 60 * 4;  // 1 hour (quarter seconds)
+
 const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
 
 const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
@@ -113,6 +113,10 @@ const DEVICE_INFO_FIELDS = [
   'modelId',
   'appVersion',
   'powerSource',
+  'checkinInterval',
+  'longPollInterval',
+  'shortPollInterval',
+  'fastPollInterval',
 ];
 
 class ZigbeeNode extends Device {
@@ -144,8 +148,10 @@ class ZigbeeNode extends Device {
     this.extendedTimeout = true;
     this.powerSource = POWERSOURCE_UNKNOWN;
     this.added = false;
+    this.removed = false;
     this.rebindRequired = true;
     this.zclSeqNum = 1;
+    this.classified = false;
   }
 
   advanceZclSeqNum() {
@@ -213,6 +219,7 @@ class ZigbeeNode extends Device {
         deviceVersion: endpoint.deviceVersion,
         inputClusters: endpoint.inputClusters.slice(0),
         outputClusters: endpoint.outputClusters.slice(0),
+        classifierAttributesPopulated: endpoint.classifierAttributesPopulated,
       };
     }
     this.devInfoProperties = cloneDeep(devInfo.properties);
@@ -266,9 +273,11 @@ class ZigbeeNode extends Device {
       DEBUG && console.log('classify: Calling generic classifier');
       zigbeeClassifier.classify(this);
     }
+    this.classified = true;
   }
 
   debugCmd(cmd, params) {
+    console.log('debugCmd:', this.addr64, cmd, params);
     switch (cmd) {
 
       case 'debug':
@@ -287,9 +296,27 @@ class ZigbeeNode extends Device {
         }
         break;
 
+      case 'devices':
+        for (const nodeId in this.adapter.nodes) {
+          const node = this.adapter.nodes[nodeId];
+          console.log(node.addr64, node.addr16, node.name);
+        }
+        break;
+
       case 'discoverAttr':
         this.adapter.discoverAttributes(this);
         break;
+
+      case 'info': {
+        let node;
+        if (params.addr64) {
+          node = this.adapter.nodes[params.addr64];
+        } else {
+          node = this;
+        }
+        console.log(node.asDeviceInfo());
+        break;
+      }
 
       case 'readAttr': {
         let paramMissing = false;
@@ -427,12 +454,14 @@ class ZigbeeNode extends Device {
         seqNum: frame.zcl.seqNum,
         payload: {
           startfastpolling: this.rebindRequired ? 1 : 0,
-          fastpolltimeout: 120 * 4, // quarter seconds
+          fastpolltimeout: 20 * 4, // quarter seconds
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     this.adapter.sendFrameNow(rspFrame);
+    if (!this.rebindRequired) {
+      this.writeCheckinInterval(SLOW_CHECKIN_INTERVAL);
+    }
     this.rebindIfRequired();
   }
 
@@ -538,13 +567,8 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint);
-
-    this.adapter.sendFrameWaitFrameAtFront(rspFrame, {
-      type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-      id: rspFrame.id,
-    });
+    this.adapter.sendFrameNow(rspFrame);
   }
 
   handleReadRsp(frame) {
@@ -653,6 +677,23 @@ class ZigbeeNode extends Device {
           }
           break;
 
+        case CLUSTER_ID_GENPOLLCTRL_HEX:
+          switch (attrEntry.attrId) {
+            case ATTR_ID_GENPOLLCTRL_CHECKININTERVAL:
+              this.checkinInterval = attrEntry.attrData;
+              break;
+            case ATTR_ID_GENPOLLCTRL_LONGPOLLINTERVAL:
+              this.longPollInterval = attrEntry.attrData;
+              break;
+            case ATTR_ID_GENPOLLCTRL_SHORTPOLLINTERVAL:
+              this.shortPollInterval = attrEntry.attrData;
+              break;
+            case ATTR_ID_GENPOLLCTRL_FASTPOLLINTERVAL:
+              this.fastPollInterval = attrEntry.attrData;
+              break;
+          }
+          break;
+
         case CLUSTER_ID_SSIASZONE_HEX:
           switch (attrEntry.attrId) {
             case ATTR_ID_SSIASZONE_ZONETYPE:
@@ -747,10 +788,7 @@ class ZigbeeNode extends Device {
           this.isZclStatusSuccess(frame)) {
         const defaultRspFrame =
           this.makeDefaultRspFrame(frame, STATUS_SUCCESS);
-        this.adapter.sendFrameWaitFrameAtFront(defaultRspFrame, {
-          type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-          id: defaultRspFrame.id,
-        });
+        this.adapter.sendFrameNow(defaultRspFrame);
       }
     }
   }
@@ -818,13 +856,11 @@ class ZigbeeNode extends Device {
   rebindIasZone() {
     DEBUG && console.log('rebindIasZone: addr64 =', this.addr64);
 
-    const ssIasZoneEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
-    if (!ssIasZoneEndpoint) {
+    // ssIasZoneEndpoint is set by the classifier
+    if (!this.ssIasZoneEndpoint) {
       this.rebinding = false;
       return;
     }
-    this.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (!this.hasOwnProperty('cieAddr')) {
       const readFrame = this.makeReadAttributeFrame(
@@ -850,7 +886,47 @@ class ZigbeeNode extends Device {
       return;
     }
 
+    if (this.genPollCtrlEndpoint) {
+      // We need to bind the poll control endpoint in order to receive
+      // checkin reports.
+      const bindFrame = this.makeBindFrame(this.genPollCtrlEndpoint,
+                                           CLUSTER_ID_GENPOLLCTRL_HEX);
+      this.sendFrames([bindFrame]);
+
+      this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
+    }
+
     this.rebindIfRequired();
+  }
+
+  writeCheckinInterval(interval) {
+    DEBUG && console.log(`writeCheckinInterval(${interval})`,
+                         `this.checkinInterval: ${this.checkinInterval}`);
+    if (!this.genPollCtrlEndpoint) {
+      DEBUG && console.log(
+        'writeCheckinInterval: exiting - no genPollCtrlEndpoint');
+      return;
+    }
+    if (typeof this.checkinInterval === 'undefined') {
+      this.checkinInterval = 0;
+    }
+
+    if (this.checkinInterval != interval) {
+      const writeFrame = this.makeWriteAttributeFrame(
+        this.genPollCtrlEndpoint,
+        ZHA_PROFILE_ID,
+        CLUSTER_ID_GENPOLLCTRL,
+        [[ATTR_ID_GENPOLLCTRL_CHECKININTERVAL, interval]]);
+      this.adapter.sendFrameWaitFrameAtFront(writeFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'writeRsp',
+        zclSeqNum: writeFrame.zcl.seqNum,
+        callback: () => {
+          this.checkinInterval = interval;
+          this.adapter.saveDeviceInfoDeferred();
+        },
+      });
+    }
   }
 
   handleIasReadResponse(frame) {
@@ -901,6 +977,7 @@ class ZigbeeNode extends Device {
     const genPollCtrlEndpoint =
       this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENPOLLCTRL_HEX);
     if (genPollCtrlEndpoint) {
+      this.genPollCtrlEndpoint = genPollCtrlEndpoint;
       const readFrame = this.makeReadAttributeFrame(
         genPollCtrlEndpoint,
         ZHA_PROFILE_ID,
@@ -933,7 +1010,7 @@ class ZigbeeNode extends Device {
 
   rebindIfRequired() {
     this.updateRebindRequired();
-    DEBUG && console.log('rebindIfRequired: rebindRequired =',
+    DEBUG && console.log(`rebindIfRequired: ${this.addr64} rebindRequired =`,
                          this.rebindRequired,
                          'rebinding =', this.rebinding);
     if (this.rebindRequired && !this.rebinding) {
@@ -986,14 +1063,19 @@ class ZigbeeNode extends Device {
       destination64: this.addr64,
       destination16: this.addr16,
       clusterId: zdo.CLUSTER_ID.BIND_REQUEST,
-      bindSrcAddr64: this.addr64,
-      bindSrcEndpoint: endpoint,
-      bindClusterId: clusterId,
-      bindDstAddrMode: 3,
-      bindDstAddr64: this.adapter.serialNumber,
-      bindDstEndpoint: 1,
-      sendOnSuccess: configReportFrames,
+      bindSrcAddr64: this.addr64, // address of device that sends reports
+      bindSrcEndpoint: endpoint,  // endpoint of device that sends reports
+      bindClusterId: clusterId,   // clusterId of device that sends reports
+      bindDstAddrMode: 3, // 3 = 64-bit DstAddr and DstEndpoint provided
+      bindDstAddr64: this.adapter.serialNumber, // coordinator address
+      bindDstEndpoint: 1, // Endpoint on the coordinator
     });
+    if (this.adapter.debugFrames) {
+      frame.shortDescr = `EP:${endpoint} CL:${clusterId}`;
+    }
+    if (configReportFrames) {
+      frame.sendOnSuccess = configReportFrames;
+    }
     return frame;
   }
 
@@ -1079,7 +1161,6 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     // makeZclFrame normally assumes it's making new frames rather than
     // response frames, so we need to correct the sourceEndpoint.
     rspFrame.sourceEndpoint = destinationEndpoint;
@@ -1127,7 +1208,6 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.priority = RESPONSE_PRIORITY;
     if (enrollReqFrame) {
       // We're responding to an enrollReq - make sure the enrollRsp has the
       // same sequence number.

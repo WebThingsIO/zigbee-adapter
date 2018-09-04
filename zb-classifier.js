@@ -53,11 +53,12 @@ const CLUSTER_ID_LIGHTLINK_HEX = utils.hexStr(CLUSTER_ID_LIGHTLINK, 4);
 const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
 const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
   utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
-const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
-const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
-const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 const CLUSTER_ID_SEMETERING = zclId.cluster('seMetering').value;
 const CLUSTER_ID_SEMETERING_HEX = utils.hexStr(CLUSTER_ID_SEMETERING, 4);
+const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
+const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
+const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
+const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 
 const ZONE_STATUS_ALARM_MASK = 0x03;
 const ZONE_STATUS_TAMPER_MASK = 0x04;
@@ -72,6 +73,12 @@ const DEBUG = false;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
+  // Note: the Smart Things mulitpurpose sensor reports a zoneType of 0.
+  // so we use 0 to inidcate that its a smart switch. If we find other
+  // non-switch sensors which also report a zoneType of 0, we may need
+  // to use further refinements, like the presence of the binaryInput
+  // cluster.
+  0x0000: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
   0x000d: {name: 'motion', label: 'Motion', descr: 'Motion Sensor'},
   0x0015: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
   0x0028: {name: 'fire', label: 'Fire', descr: 'Fire Sensor'},
@@ -96,9 +103,27 @@ function jsonEqual(a, b) {
 }
 
 const CONFIG_REPORT_INTEGER = {
-  minRepInterval: 1,
-  maxRepInterval: 120,
+  minRepInterval: 1,    // seconds
+  maxRepInterval: 120,  // seconds
   repChange: 1,
+};
+
+const CONFIG_REPORT_BATTERY = {
+  minRepInterval: 10 * 60,  // 10 minutes
+  maxRepInterval: 30 * 60,  // 30 minutes
+  repChange: 2,             // 0.2 V
+};
+
+const CONFIG_REPORT_ILLUMINANCE = {
+  minRepInterval: 0,
+  maxRepInterval: 10 * 60,  // 10 minutes
+  repChange: 0xffff,        // disabled
+};
+
+const CONFIG_REPORT_TEMPERATURE = {
+  minRepInterval: 1 * 60,   // 1 minute
+  maxRepInterval: 10 * 60,  // 10 minutes
+  repChange: 10,            // 0.1 C
 };
 
 class ZigbeeClassifier {
@@ -502,11 +527,7 @@ class ZigbeeClassifier {
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseIlluminanceMeasurementAttr', // parseValueFromAttr
-      {
-        minRepInterval: 0,
-        maxRepInterval: 10 * 60,  // 10 minutes
-        repChange: 0xffff,        // disabled
-      }
+      CONFIG_REPORT_ILLUMINANCE
     );
   }
 
@@ -531,7 +552,7 @@ class ZigbeeClassifier {
       attr,                           // attr
       '',                             // setAttrFromValue
       'parseNumericTenthsAttr',       // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      CONFIG_REPORT_BATTERY
     );
   }
 
@@ -579,11 +600,7 @@ class ZigbeeClassifier {
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseTemperatureMeasurementAttr', // parseValueFromAttr
-      {
-        minRepInterval: 1 * 60,   // 1 minute
-        maxRepInterval: 10 * 60,  // 10 minutes
-        repChange: 10,            // 0.1 C
-      }
+      CONFIG_REPORT_TEMPERATURE
     );
   }
 
@@ -672,9 +689,7 @@ class ZigbeeClassifier {
     if (name[0] == '_') {
       property.visible = false;
     }
-    if (attr) {
-      property.initialReadNeeded = true;
-    }
+    property.setInitialReadNeeded();
 
     DEBUG && console.log('addProperty:   configReportNeeded =',
                          property.configReportNeeded,
@@ -711,6 +726,9 @@ class ZigbeeClassifier {
     const genDeviceTempCfgEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID_GENDEVICETEMPCFG_HEX);
+    const ssIasZoneEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+    node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');

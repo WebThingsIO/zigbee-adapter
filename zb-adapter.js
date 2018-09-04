@@ -40,9 +40,6 @@ try {
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
 
-// Responses that we send should go out before commands
-const RESPONSE_PRIORITY = 1;
-
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
 const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 
@@ -114,13 +111,19 @@ const MIN_COMMAND_TYPE = 0x01;
 const MAX_COMMAND_TYPE = 0x04;
 
 class Command {
-  constructor(cmdType, cmdData) {
+  constructor(cmdType, cmdData, priority) {
     this.cmdType = cmdType;
     this.cmdData = cmdData;
+    this.priority = priority;
   }
 
   print(adapter, idx) {
-    const idxStr = `| ${`    ${idx}`.slice(-4)}: `;
+    let prioStr = 'p:-';
+    if (typeof this.priority !== 'undefined') {
+      prioStr = `p:${this.priority}`;
+    }
+
+    const idxStr = `| ${`    ${idx}`.slice(-4)}: ${prioStr} `;
     switch (this.cmdType) {
       case SEND_FRAME: {
         adapter.dumpFrame(`${idxStr}SEND:`, this.cmdData, false);
@@ -309,7 +312,6 @@ class ZigbeeAdapter extends Adapter {
           .concat([
             FUNC(this, this.handleDeviceAdded, [coordinator]),
             FUNC(this, this.startScan),
-            FUNC(this, this.dumpNodes, []),
             FUNC(this, this.scanComplete),
           ]));
     });
@@ -325,12 +327,11 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('scanNode: Calling populateNodeInfo');
     }
-    if (node.isMainsPowered()) {
-      this.populateNodeInfo(node);
-    }
+    this.populateNodeInfo(node);
   }
 
   scanComplete() {
+    this.dumpNodes();
     console.log('----- Scan Complete -----');
     this.saveDeviceInfo();
     this.scanning = false;
@@ -447,12 +448,6 @@ class ZigbeeAdapter extends Adapter {
     let atCmdStr;
     let status;
 
-    let prioStr = 'p:-';
-    if (typeof frame.priority !== 'undefined') {
-      prioStr = `p:${frame.priority}`;
-    }
-    label += ` ${prioStr}`;
-
     switch (frame.type) {
       case C.FRAME_TYPE.AT_COMMAND:
         if (frame.command in AT_CMD) {
@@ -484,9 +479,11 @@ class ZigbeeAdapter extends Adapter {
 
       case C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME:
         if (this.zdo.isZdoFrame(frame)) {
+          const shortDescr = frame.shortDescr || '';
           console.log(label, 'Explicit Tx', frame.destination64, 'ZDO',
                       zdo.getClusterIdAsString(frame.clusterId),
-                      zdo.getClusterIdDescription(frame.clusterId));
+                      zdo.getClusterIdDescription(frame.clusterId),
+                      shortDescr);
         } else if (this.isZhaFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64,
                       'ZHA', frame.clusterId,
@@ -708,7 +705,7 @@ class ZigbeeAdapter extends Adapter {
         nodeIdentifier: this.nodeIdentifier,
         configuredPanId64: this.configuredPanId64,
         operatingPanId64: this.operatingPanId64,
-        operatingPan16: this.operatingPan16,
+        operatingPanId16: this.operatingPanId16,
         operatingChannel: this.operatingChannel,
         scanChannels: `0x${this.scanChannels.toString(16)}`,
         apiOptions: this.apiOptions,
@@ -719,7 +716,8 @@ class ZigbeeAdapter extends Adapter {
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
       if (!node.isCoordinator) {
-        devInfo.nodes[nodeId] = node.asDeviceInfo();
+        const nodeInfo = node.asDeviceInfo();
+        devInfo.nodes[nodeId] = nodeInfo;
       }
     }
 
@@ -819,6 +817,12 @@ class ZigbeeAdapter extends Adapter {
                `### Invalid Command Type: ${cmd.cmdType} ###`);
         cmds.push(cmd);
       }
+    }
+    // Now that we've flattened things, make sure all of the commands
+    // have the same priority.
+    const priority = cmds[0].priority;
+    for (const cmd of cmds) {
+      cmd.priority = priority;
     }
     return cmds;
   }
@@ -1042,29 +1046,34 @@ class ZigbeeAdapter extends Adapter {
     // allows us to process broadcasts which only come in with a 16-bit address.
     const node = this.createNodeIfRequired(frame.zdoAddr64, frame.zdoAddr16);
     if (node) {
-      // Xiaomi devices send a genReport right after sending the end device
-      // announcement, so we introduce a slight delay to allow this to happen
-      // before we assume that it's a regular device.
-      setTimeout(() => {
-        if (this.debugFlow) {
-          console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
-        }
-        if (!node.family) {
-          if (node.isMainsPowered()) {
-            // We get an end device announcement when adding devices through
-            // pairing, or for routers (typically not battery powered) when they
-            // get powered on. In this case we want to do an initialRead so that
-            // we can sync the state.
-            node.properties.forEach((property) => {
-              if (property.attr) {
-                // The actual read will occur later, once rebinding happens.
-                property.initialReadNeeded = true;
-              }
-            });
+      if (node.classified && !node.family) {
+        // For regular Zigbee nodes that we've already classified, we
+        // don't need to delay.
+        this.handleEndEndDeviceAnnouncementInternal(node);
+      } else {
+        // Xiaomi devices send a genReport right after sending the end device
+        // announcement, so we introduce a slight delay to allow this to happen
+        // before we assume that it's a regular device.
+        setTimeout(() => {
+          if (this.debugFlow) {
+            console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
           }
-          this.populateNodeInfo(node);
-        }
-      }, 500);
+          this.handleEndEndDeviceAnnouncementInternal(node);
+        }, 500);
+      }
+    }
+  }
+
+  handleEndEndDeviceAnnouncementInternal(node) {
+    if (node.isMainsPowered()) {
+      // We get an end device announcement when adding devices through
+      // pairing, or for routers (typically not battery powered) when they
+      // get powered on. In this case we want to do an initialRead so that
+      // we can sync the state.
+      node.properties.forEach((property) => {
+        property.setInitialReadNeeded();
+      });
+      this.populateNodeInfo(node);
     }
   }
 
@@ -1116,7 +1125,6 @@ class ZigbeeAdapter extends Adapter {
       status: 0,
       zdoAddr16: node.addr16,
       endpoints: [endpoint],
-      priority: RESPONSE_PRIORITY,
     }));
   }
 
@@ -1199,7 +1207,7 @@ class ZigbeeAdapter extends Adapter {
         }
       }
       node.activeEndpointsPopulated = true;
-      this.saveDeviceInfo();
+      this.saveDeviceInfoDeferred();
       this.populateNodeInfoEndpoints(node);
     }
   }
@@ -1439,6 +1447,7 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log(`removeThing(${node.addr64})`);
     }
+    node.removed = true;
     this.managementLeave(node);
   }
 
@@ -1470,8 +1479,14 @@ class ZigbeeAdapter extends Adapter {
         id: leaveFrame.id,
       }),
     ]);
+
+    node.added = false;
     this.handleDeviceRemoved(node);
-    this.saveDeviceInfo();
+    this.saveDeviceInfoDeferred();
+    if (this.debugFlow) {
+      console.log('----- Management Leave -----');
+      this.dumpNodes();
+    }
   }
 
   handleManagementLeaveResponse(frame) {
@@ -1506,6 +1521,11 @@ class ZigbeeAdapter extends Adapter {
   permitJoin(seconds) {
     this.networkJoinTime = seconds;
 
+    if (this.debugFlow) {
+      console.log(`----- Permit Join (${seconds}) -----`);
+      this.dumpNodes();
+    }
+
     const permitJoinFrame = this.zdo.makeFrame({
       destination64: '000000000000ffff',
       destination16: 'fffe',
@@ -1526,6 +1546,12 @@ class ZigbeeAdapter extends Adapter {
 
   startPairing(timeoutSeconds) {
     console.log('Pairing mode started, timeout =', timeoutSeconds);
+    for (const nodeId in this.nodes) {
+      const node = this.nodes[nodeId];
+      if (node.removed) {
+        this.handleDeviceAdded(node);
+      }
+    }
     this.isPairing = true;
     this.permitJoin(timeoutSeconds);
   }
@@ -1697,10 +1723,10 @@ class ZigbeeAdapter extends Adapter {
     ]);
   }
 
-  makeFrameWaitFrame(sendFrame, waitFrame) {
+  makeFrameWaitFrame(sendFrame, waitFrame, priority) {
     return [
-      new Command(SEND_FRAME, sendFrame),
-      new Command(WAIT_FRAME, waitFrame),
+      new Command(SEND_FRAME, sendFrame, priority),
+      new Command(WAIT_FRAME, waitFrame, priority),
     ];
   }
 
@@ -1708,12 +1734,13 @@ class ZigbeeAdapter extends Adapter {
     return FUNC(ths, func, args);
   }
 
-  sendFrameWaitFrameAtFront(sendFrame, waitFrame) {
-    this.queueCommandsAtFront(this.makeFrameWaitFrame(sendFrame, waitFrame));
+  sendFrameWaitFrameAtFront(sendFrame, waitFrame, priority) {
+    this.queueCommandsAtFront(
+      this.makeFrameWaitFrame(sendFrame, waitFrame, priority));
   }
 
-  sendFrameWaitFrame(sendFrame, waitFrame) {
-    this.queueCommands(this.makeFrameWaitFrame(sendFrame, waitFrame));
+  sendFrameWaitFrame(sendFrame, waitFrame, priority) {
+    this.queueCommands(this.makeFrameWaitFrame(sendFrame, waitFrame, priority));
   }
 
   sendFrameWaitFrameResolve(sendFrame, waitFrame, property) {
@@ -1741,9 +1768,9 @@ class ZigbeeAdapter extends Adapter {
   // -------------------------------------------------------------------------
 
   addIfReady(node) {
-    this.saveDeviceInfo();
+    this.saveDeviceInfoDeferred();
 
-    if (!node.activeEndpointsPopulated) {
+    if (!node.activeEndpointsPopulated && !this.scanning) {
       if (this.debugFlow) {
         console.log('addIfReady:', node.addr64,
                     'activeEndpoints not populated yet');
@@ -1754,11 +1781,13 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.classifierAttributesPopulated) {
-        if (this.debugFlow) {
-          console.log('addIfReady:', node.addr64, 'endpoint', endpointNum,
-                      'classifier attributes not read yet');
+        if (!this.scanning) {
+          if (this.debugFlow) {
+            console.log('addIfReady:', node.addr64, 'endpoint', endpointNum,
+                        'classifier attributes not read yet');
+          }
+          this.populateNodeInfoEndpoints(node);
         }
-        this.populateNodeInfoEndpoints(node);
         return;
       }
     }
@@ -1766,7 +1795,7 @@ class ZigbeeAdapter extends Adapter {
 
     // We want the initial scan to be quick, so we ignore end devices
     // during the scan.
-    if (!this.scanning || node.isMainsPowered()) {
+    if (!this.scanning) {
       node.rebindIfRequired();
     }
   }
@@ -1786,6 +1815,7 @@ class ZigbeeAdapter extends Adapter {
       node.classify();
       super.handleDeviceAdded(node);
       node.added = true;
+      node.removed = false;
     }
   }
 
@@ -1867,11 +1897,11 @@ class ZigbeeAdapter extends Adapter {
       // We already know the active endpoints, no need to request
       // them again.
       this.populateNodeInfoEndpoints(node);
-    } else if (!node.queryingActiveEndpoints) {
+    } else if (!node.queryingActiveEndpoints && !this.scanning) {
       // We don't know the active endpoints, and a query for the active
       // endpoints hasn't been queued up => queue up a command to retrieve
       // the active endpoints
-      this.saveDeviceInfo();
+      this.saveDeviceInfoDeferred();
       this.queueCommandsAtFront(this.getActiveEndpointCommands(node));
     }
   }
@@ -2005,7 +2035,7 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.hasOwnProperty('profileId')) {
-        if (!endpoint.queryingSimpleDescriptor) {
+        if (!endpoint.queryingSimpleDescriptor && !this.scanning) {
           // We don't have the simpleDescriptor information
           // (profileId is missing) and we don't have a command queued up to
           // retrieve it - queue one up.
@@ -2027,7 +2057,9 @@ class ZigbeeAdapter extends Adapter {
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.classifierAttributesPopulated) {
-        this.populateClassifierAttributes(node, parseInt(endpointNum));
+        if (!this.scanning) {
+          this.populateClassifierAttributes(node, parseInt(endpointNum));
+        }
         return;
       }
     }
@@ -2058,7 +2090,7 @@ class ZigbeeAdapter extends Adapter {
     }
     cmdSeq = this.flattenCommands(cmdSeq);
     const priority = cmdSeq[0].priority;
-    let idx;
+    let idx = -1;
     if (typeof priority !== 'undefined') {
       // The command being inserted has a priority. This means
       // it will get inserted in front of the first command in
@@ -2069,7 +2101,7 @@ class ZigbeeAdapter extends Adapter {
                priority < cmd.priority;
       });
     }
-    if (typeof idx === 'undefined') {
+    if (idx < 0) {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
@@ -2087,7 +2119,7 @@ class ZigbeeAdapter extends Adapter {
     }
     cmdSeq = this.flattenCommands(cmdSeq);
     const priority = cmdSeq[0].priority;
-    let idx;
+    let idx = -1;
     if (typeof priority === 'undefined') {
       // The command being inserted has no priority. This means
       // it will be inserted in front of the first command
@@ -2105,7 +2137,7 @@ class ZigbeeAdapter extends Adapter {
                priority <= cmd.priority;
       });
     }
-    if (typeof idx === 'undefined') {
+    if (idx < 0) {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
