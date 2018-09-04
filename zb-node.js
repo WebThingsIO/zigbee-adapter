@@ -141,6 +141,7 @@ class ZigbeeNode extends Device {
     this.extendedTimeout = true;
     this.powerSource = POWERSOURCE_UNKNOWN;
     this.added = false;
+    this.removed = false;
     this.rebindRequired = true;
     this.zclSeqNum = 1;
     this.classified = false;

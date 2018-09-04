@@ -1447,6 +1447,7 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log(`removeThing(${node.addr64})`);
     }
+    node.removed = true;
     this.managementLeave(node);
   }
 
@@ -1478,6 +1479,8 @@ class ZigbeeAdapter extends Adapter {
         id: leaveFrame.id,
       }),
     ]);
+
+    node.added = false;
     this.handleDeviceRemoved(node);
     this.saveDeviceInfoDeferred();
     if (this.debugFlow) {
@@ -1543,6 +1546,12 @@ class ZigbeeAdapter extends Adapter {
 
   startPairing(timeoutSeconds) {
     console.log('Pairing mode started, timeout =', timeoutSeconds);
+    for (const nodeId in this.nodes) {
+      const node = this.nodes[nodeId];
+      if (node.removed) {
+        this.handleDeviceAdded(node);
+      }
+    }
     this.isPairing = true;
     this.permitJoin(timeoutSeconds);
   }
@@ -1806,6 +1815,7 @@ class ZigbeeAdapter extends Adapter {
       node.classify();
       super.handleDeviceAdded(node);
       node.added = true;
+      node.removed = false;
     }
   }
 
