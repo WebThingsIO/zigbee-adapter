@@ -143,6 +143,7 @@ class ZigbeeNode extends Device {
     this.added = false;
     this.rebindRequired = true;
     this.zclSeqNum = 1;
+    this.classified = false;
   }
 
   advanceZclSeqNum() {
@@ -264,6 +265,7 @@ class ZigbeeNode extends Device {
       DEBUG && console.log('classify: Calling generic classifier');
       zigbeeClassifier.classify(this);
     }
+    this.classified = true;
   }
 
   debugCmd(cmd, params) {

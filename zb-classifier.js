@@ -689,9 +689,7 @@ class ZigbeeClassifier {
     if (name[0] == '_') {
       property.visible = false;
     }
-    if (attr) {
-      property.initialReadNeeded = true;
-    }
+    property.setInitialReadNeeded();
 
     DEBUG && console.log('addProperty:   configReportNeeded =',
                          property.configReportNeeded,

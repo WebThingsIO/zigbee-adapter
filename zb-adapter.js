@@ -1046,29 +1046,34 @@ class ZigbeeAdapter extends Adapter {
     // allows us to process broadcasts which only come in with a 16-bit address.
     const node = this.createNodeIfRequired(frame.zdoAddr64, frame.zdoAddr16);
     if (node) {
-      // Xiaomi devices send a genReport right after sending the end device
-      // announcement, so we introduce a slight delay to allow this to happen
-      // before we assume that it's a regular device.
-      setTimeout(() => {
-        if (this.debugFlow) {
-          console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
-        }
-        if (!node.family) {
-          if (node.isMainsPowered()) {
-            // We get an end device announcement when adding devices through
-            // pairing, or for routers (typically not battery powered) when they
-            // get powered on. In this case we want to do an initialRead so that
-            // we can sync the state.
-            node.properties.forEach((property) => {
-              if (property.attr) {
-                // The actual read will occur later, once rebinding happens.
-                property.initialReadNeeded = true;
-              }
-            });
+      if (node.classified && !node.family) {
+        // For regular Zigbee nodes that we've already classified, we
+        // don't need to delay.
+        this.handleEndEndDeviceAnnouncementInternal(node);
+      } else {
+        // Xiaomi devices send a genReport right after sending the end device
+        // announcement, so we introduce a slight delay to allow this to happen
+        // before we assume that it's a regular device.
+        setTimeout(() => {
+          if (this.debugFlow) {
+            console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
           }
-          this.populateNodeInfo(node);
-        }
-      }, 500);
+          this.handleEndEndDeviceAnnouncementInternal(node);
+        }, 500);
+      }
+    }
+  }
+
+  handleEndEndDeviceAnnouncementInternal(node) {
+    if (node.isMainsPowered()) {
+      // We get an end device announcement when adding devices through
+      // pairing, or for routers (typically not battery powered) when they
+      // get powered on. In this case we want to do an initialRead so that
+      // we can sync the state.
+      node.properties.forEach((property) => {
+        property.setInitialReadNeeded();
+      });
+      this.populateNodeInfo(node);
     }
   }
 
