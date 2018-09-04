@@ -479,9 +479,11 @@ class ZigbeeAdapter extends Adapter {
 
       case C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME:
         if (this.zdo.isZdoFrame(frame)) {
+          const shortDescr = frame.shortDescr || '';
           console.log(label, 'Explicit Tx', frame.destination64, 'ZDO',
                       zdo.getClusterIdAsString(frame.clusterId),
-                      zdo.getClusterIdDescription(frame.clusterId));
+                      zdo.getClusterIdDescription(frame.clusterId),
+                      shortDescr);
         } else if (this.isZhaFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64,
                       'ZHA', frame.clusterId,
@@ -1473,6 +1475,10 @@ class ZigbeeAdapter extends Adapter {
     ]);
     this.handleDeviceRemoved(node);
     this.saveDeviceInfoDeferred();
+    if (this.debugFlow) {
+      console.log('----- Management Leave -----');
+      this.dumpNodes();
+    }
   }
 
   handleManagementLeaveResponse(frame) {
@@ -1506,6 +1512,11 @@ class ZigbeeAdapter extends Adapter {
 
   permitJoin(seconds) {
     this.networkJoinTime = seconds;
+
+    if (this.debugFlow) {
+      console.log(`----- Permit Join (${seconds}) -----`);
+      this.dumpNodes();
+    }
 
     const permitJoinFrame = this.zdo.makeFrame({
       destination64: '000000000000ffff',

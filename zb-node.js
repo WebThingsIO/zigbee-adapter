@@ -938,7 +938,7 @@ class ZigbeeNode extends Device {
 
   rebindIfRequired() {
     this.updateRebindRequired();
-    DEBUG && console.log('rebindIfRequired: rebindRequired =',
+    DEBUG && console.log(`rebindIfRequired: ${this.addr64} rebindRequired =`,
                          this.rebindRequired,
                          'rebinding =', this.rebinding);
     if (this.rebindRequired && !this.rebinding) {
