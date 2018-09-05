@@ -74,6 +74,8 @@ const WAIT_TIMEOUT_DELAY = 1 * 1000;
 const EXTENDED_TIMEOUT_DELAY = 10 * 1000;
 const WAIT_RETRY_MAX = 3;   // includes initial send
 
+const PERMIT_JOIN_PRIORITY = 1;
+
 const DEVICE_TYPE = {
   0x30001: 'ConnectPort X8 Gateway',
   0x30002: 'ConnectPort X4 Gateway',
@@ -337,9 +339,12 @@ class ZigbeeAdapter extends Adapter {
     this.scanning = false;
   }
 
-  AT(command, frame) {
+  AT(command, frame, priority) {
+    if (frame) {
+      frame.shortDescr = util.inspect(frame);
+    }
     return [
-      new Command(SEND_FRAME, this.at.makeFrame(command, frame)),
+      new Command(SEND_FRAME, this.at.makeFrame(command, frame), priority),
       new Command(WAIT_FRAME, {
         type: C.FRAME_TYPE.AT_COMMAND_RESPONSE,
         command: command,
@@ -697,6 +702,11 @@ class ZigbeeAdapter extends Adapter {
   }
 
   saveDeviceInfo() {
+    if (typeof this.deviceInfoFilename == 'undefined') {
+      // The adapter hasn't finished initializing
+      // (i.e. this.adapterInitialized() hasn't been called yet.)
+      return;
+    }
     const devInfo = {
       info: {
         deviceType: `0x${this.deviceTypeIdentifier.toString(16)}`,
@@ -866,6 +876,11 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleExplicitRx(frame) {
+    const node = this.nodes[frame.remote64];
+    if (node && node.addr16 != frame.remote16) {
+      node.addr16 = frame.renote16;
+      this.saveDeviceInfoDeferred();
+    }
     if (this.zdo.isZdoFrame(frame)) {
       try {
         this.zdo.parseZdoFrame(frame);
@@ -947,6 +962,11 @@ class ZigbeeAdapter extends Adapter {
     if (this.debugFlow) {
       console.log('Processing ROUTE_RECORD');
     }
+    const node = this.nodes[frame.remote64];
+    if (node && node.addr16 != frame.remote16) {
+      node.addr16 = frame.remote16;
+      this.saveDeviceInfoDeferred();
+    }
   }
 
   sendFrames(frames) {
@@ -1016,19 +1036,15 @@ class ZigbeeAdapter extends Adapter {
       return this.findNodeByAddr16(addr16);
     }
 
-    let saveDeviceInfo = false;
     let node = this.nodes[addr64];
     if (node) {
       // Update the 16-bit address, since it may have changed.
       if (node.addr16 != addr16) {
         node.addr16 = addr16;
-        saveDeviceInfo = true;
+        this.saveDeviceInfoDeferred();
       }
     } else {
       node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
-      saveDeviceInfo = true;
-    }
-    if (saveDeviceInfo) {
       this.saveDeviceInfoDeferred();
     }
     return node;
@@ -1065,7 +1081,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleEndEndDeviceAnnouncementInternal(node) {
-    if (node.isMainsPowered()) {
+    if (node.isMainsPowered() || !node.classified) {
       // We get an end device announcement when adding devices through
       // pairing, or for routers (typically not battery powered) when they
       // get powered on. In this case we want to do an initialRead so that
@@ -1281,9 +1297,7 @@ class ZigbeeAdapter extends Adapter {
         neighborNode = this.nodes[neighbor.addr64] =
           new ZigbeeNode(this, neighbor.addr64, neighbor.addr16);
       }
-      if (neighborNode.addr16 == 'fffe') {
-        neighborNode.addr16 = neighbor.addr16;
-      }
+      neighborNode.addr16 = neighbor.addr16;
       neighborNode.deviceType = neighbor.deviceType;
     }
 
@@ -1533,9 +1547,14 @@ class ZigbeeAdapter extends Adapter {
       permitDuration: seconds,
       trustCenterSignificance: 0,
     });
+    if (this.debugFrames) {
+      permitJoinFrame.shortDescr = `permitDuration: ${permitJoinFrame.permitDuration}`;
+    }
 
     this.queueCommandsAtFront([
-      this.AT(AT_CMD.NODE_JOIN_TIME, {networkJoinTime: seconds}),
+      this.AT(AT_CMD.NODE_JOIN_TIME,
+              {networkJoinTime: seconds},
+              PERMIT_JOIN_PRIORITY),
       new Command(SEND_FRAME, permitJoinFrame),
       new Command(WAIT_FRAME, {
         type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
@@ -1665,6 +1684,7 @@ class ZigbeeAdapter extends Adapter {
 
   // ----- Read Attribute ----------------------------------------------------
 
+  // readAttribute is used to support debugCmd - readAttr
   readAttribute(node, endpoint, profileId, clusterId, attrId) {
     this.waitFrameTimeoutFunc = this.readAttributeTimeout.bind(this);
     node.discoveringAttributes = true;

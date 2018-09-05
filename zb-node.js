@@ -521,7 +521,7 @@ class ZigbeeNode extends Device {
     for (attrInfo of payload.attrInfos.reverse()) {
       const readFrame = this.makeReadAttributeFrame(
         parseInt(frame.sourceEndpoint, 16),
-        frame.profileId,
+        ZHA_PROFILE_ID,
         clusterId,
         attrInfo.attrId
       );
@@ -816,7 +816,7 @@ class ZigbeeNode extends Device {
     const endpoint = this.activeEndpoints[genBasicEndpointNum];
     const readFrame = this.makeReadAttributeFrame(
       genBasicEndpointNum,
-      endpoint.profileId,
+      ZHA_PROFILE_ID,
       CLUSTER_ID_GENBASIC,
       [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
     );
