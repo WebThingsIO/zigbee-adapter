@@ -32,7 +32,7 @@ try {
   utils = gwa.Utils;
 }
 
-const DEBUG = false;
+const DEBUG = true;
 
 const C = xbeeApi.constants;
 
@@ -117,6 +117,7 @@ const DEVICE_INFO_FIELDS = [
   'longPollInterval',
   'shortPollInterval',
   'fastPollInterval',
+  'rxOnWhenIdle',
 ];
 
 class ZigbeeNode extends Device {
@@ -521,7 +522,7 @@ class ZigbeeNode extends Device {
     for (attrInfo of payload.attrInfos.reverse()) {
       const readFrame = this.makeReadAttributeFrame(
         parseInt(frame.sourceEndpoint, 16),
-        ZHA_PROFILE_ID,
+        frame.profileId,
         clusterId,
         attrInfo.attrId
       );
@@ -646,6 +647,8 @@ class ZigbeeNode extends Device {
           this.notifyPropertyChanged(property);
         }, this.occupancyTimeout * 1000);
       }
+    } else {
+      console.log('handleReadRsp: ##### No property found for frame #####');
     }
   }
 
@@ -816,7 +819,7 @@ class ZigbeeNode extends Device {
     const endpoint = this.activeEndpoints[genBasicEndpointNum];
     const readFrame = this.makeReadAttributeFrame(
       genBasicEndpointNum,
-      ZHA_PROFILE_ID,
+      endpoint.profileId,
       CLUSTER_ID_GENBASIC,
       [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
     );
@@ -1126,8 +1129,8 @@ class ZigbeeNode extends Device {
             direction: DIR_CLIENT_TO_SERVER,
             attrId: zclId.attr(clusterId, attr).value,
             dataType: zclId.attrType(clusterId, attr).value,
-            minRepIntval: property.configReport.minRepInterval,
-            maxRepIntval: property.configReport.maxRepInterval,
+            minRepInterval: property.configReport.minRepInterval,
+            maxRepInterval: property.configReport.maxRepInterval,
             repChange: property.configReport.repChange,
           };
         }),

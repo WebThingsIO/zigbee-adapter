@@ -141,13 +141,14 @@ class ZigbeeClassifier {
   }
 
   addColorProperty(node, lightingColorCtrlEndpoint) {
+    const endpoint = node.activeEndpoints[lightingColorCtrlEndpoint];
     this.addProperty(
       node,                           // device
       '_level',                       // name
       {                               // property description
         type: 'number',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
       CLUSTER_ID_GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
@@ -162,7 +163,7 @@ class ZigbeeClassifier {
         label: 'Color',
         type: 'string',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
       CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
       'currentHue,currentSaturation', // attr
@@ -172,6 +173,7 @@ class ZigbeeClassifier {
   }
 
   addBrightnessProperty(node, genLevelCtrlEndpoint) {
+    const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
     this.addProperty(
       node,                           // device
       'level',                        // name
@@ -183,7 +185,7 @@ class ZigbeeClassifier {
         minimum: 0,
         maximum: 100,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
       CLUSTER_ID_GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
@@ -214,6 +216,7 @@ class ZigbeeClassifier {
   }
 
   addLevelProperty(node, genLevelCtrlEndpoint) {
+    const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
     this.addProperty(
       node,                           // device
       'level',                        // name
@@ -225,7 +228,7 @@ class ZigbeeClassifier {
         minimum: 0,
         maximum: 100,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
       CLUSTER_ID_GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
@@ -236,6 +239,7 @@ class ZigbeeClassifier {
   }
 
   addOnProperty(node, genOnOffEndpoint) {
+    const endpoint = node.activeEndpoints[genOnOffEndpoint];
     this.addProperty(
       node,                           // device
       'on',                           // name
@@ -244,7 +248,7 @@ class ZigbeeClassifier {
         label: 'On/Off',
         type: 'boolean',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      endpoint.profileId,             // profileId
       genOnOffEndpoint,               // endpoint
       CLUSTER_ID_GENONOFF,            // clusterId
       'onOff',                        // attr
@@ -657,6 +661,9 @@ class ZigbeeClassifier {
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
               attr, setAttrFromValue, parseValueFromAttr, configReport) {
+    if (typeof profileId === 'string') {
+      profileId = parseInt(profileId, 16);
+    }
     const property = new ZigbeeProperty(node, name, descr, profileId,
                                         endpoint, clusterId, attr,
                                         setAttrFromValue, parseValueFromAttr);
