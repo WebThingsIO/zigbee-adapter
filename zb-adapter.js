@@ -231,14 +231,14 @@ class ZigbeeAdapter extends Adapter {
             try {
               this.handleFrame(frame);
             } catch (e) {
-              console.error('Error handling frame_raw');
-              console.error(e);
-              console.error(frame);
+              console.log('Error handling frame_raw');
+              console.log(e);
+              console.log(frame);
             }
           } catch (e) {
-            console.error('Error parsing raw frame_raw');
-            console.error(e);
-            console.error(rawFrame);
+            console.log('Error parsing raw frame_raw');
+            console.log(e);
+            console.log(rawFrame);
           }
         }
       });
@@ -247,9 +247,9 @@ class ZigbeeAdapter extends Adapter {
         try {
           this.handleFrame(frame);
         } catch (e) {
-          console.error('Error handling frame_object');
-          console.error(e);
-          console.error(frame);
+          console.log('Error handling frame_object');
+          console.log(e);
+          console.log(frame);
         }
       });
     }
@@ -259,7 +259,7 @@ class ZigbeeAdapter extends Adapter {
       baudRate: 9600,
     }, (err) => {
       if (err) {
-        console.error('SerialPort open err =', err);
+        console.log('SerialPort open err =', err);
       }
 
       // Hook up the Zigbee raw parser.
@@ -674,9 +674,9 @@ class ZigbeeAdapter extends Adapter {
           // ENOENT just means that the configuration file didn't exist. We
           // treat this as a success case.
           if (err.code != 'ENOENT') {
-            console.error('Error reading Zigbee device info file:',
-                          this.deviceInfoFilename);
-            console.error(err);
+            console.log('Error reading Zigbee device info file:',
+                        this.deviceInfoFilename);
+            console.log(err);
           }
           // If there are any errors, we just ignore them, and treat it like
           // the device info file doesn't exist.
@@ -913,21 +913,20 @@ class ZigbeeAdapter extends Adapter {
         if (clusterId in ZigbeeAdapter.zdoClusterHandler) {
           ZigbeeAdapter.zdoClusterHandler[clusterId].call(this, frame);
         } else {
-          console.error('No handler for ZDO cluster:',
-                        zdo.getClusterIdAsString(clusterId));
+          console.log('No handler for ZDO cluster:',
+                      zdo.getClusterIdAsString(clusterId));
         }
       } catch (e) {
-        console.error('handleExplicitRx: Caught an exception parsing',
-                      'ZDO frame');
-        console.error(e);
-        console.error(frame);
+        console.log('handleExplicitRx: Caught an exception parsing ZDO frame');
+        console.log(e);
+        console.log(frame);
       }
     } else if (this.isZhaFrame(frame) || this.isZllFrame(frame)) {
       try {
         zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
           if (error) {
-            console.error('Error parsing ZHA frame:', frame);
-            console.error(error);
+            console.log('Error parsing ZHA frame:', frame);
+            console.log(error);
           } else {
             frame.zcl = data;
             if (this.debugFrames) {
@@ -949,10 +948,9 @@ class ZigbeeAdapter extends Adapter {
           }
         });
       } catch (e) {
-        console.error('handleExplicitRx: Caught an exception parsing',
-                      'ZHA frame');
-        console.error(e);
-        console.error(frame);
+        console.log('handleExplicitRx: Caught an exception parsing ZHA frame');
+        console.log(e);
+        console.log(frame);
       }
     }
   }
@@ -962,9 +960,9 @@ class ZigbeeAdapter extends Adapter {
       // Note: For failed transmissions, the remote16 will always be set
       // to 0xfffd so there isn't any point in reporting it.
       if (this.debugFrames) {
-        console.error('Transmit Status ERROR:',
-                      this.getDeliveryStatusAsString(frame.deliveryStatus),
-                      'id:', frame.id);
+        console.log('Transmit Status ERROR:',
+                    this.getDeliveryStatusAsString(frame.deliveryStatus),
+                    'id:', frame.id);
         console.log(frame);
       }
     }
@@ -974,7 +972,7 @@ class ZigbeeAdapter extends Adapter {
       if (node) {
         node.extendedTimeout = true;
       } else {
-        console.error('Unable to find node for remote16 =', frame.remote16);
+        console.log('Unable to find node for remote16 =', frame.remote16);
       }
     }
   }
@@ -2291,9 +2289,9 @@ class ZigbeeAdapter extends Adapter {
           break;
         }
         default:
-          console.error('#####');
-          console.error(`##### UNKNOWN COMMAND: ${cmd.cmdType} #####`);
-          console.error('#####');
+          console.log('#####');
+          console.log(`##### UNKNOWN COMMAND: ${cmd.cmdType} #####`);
+          console.log('#####');
           break;
       }
     }
@@ -2332,8 +2330,11 @@ class ZigbeeAdapter extends Adapter {
     }
 
     if (this.lastFrameSent && waitFrame) {
+      waitFrame.waitRetryCount += 1;
       if (this.debugFrames) {
-        console.error('Resending ...');
+        console.log('Resending',
+                    `(${waitFrame.waitRetryCount}/${waitFrame.waitRetryMax})`,
+                    '...');
       }
       this.lastFrameSent.resend = true;
 

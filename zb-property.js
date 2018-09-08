@@ -71,7 +71,7 @@ class ZigbeeProperty extends Property {
       this.setAttrFromValue = Object.getPrototypeOf(this)[setAttrFromValue];
       if (!this.setAttrFromValue) {
         const err = `Unknown function: ${setAttrFromValue}`;
-        console.error(err);
+        console.log(err);
         throw err;
       }
     }
@@ -79,7 +79,7 @@ class ZigbeeProperty extends Property {
       this.parseValueFromAttr = Object.getPrototypeOf(this)[parseValueFromAttr];
       if (!this.parseValueFromAttr) {
         const err = `Unknown function: ${parseValueFromAttr}`;
-        console.error(err);
+        console.log(err);
         throw err;
       }
     }

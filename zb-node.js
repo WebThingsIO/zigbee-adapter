@@ -324,7 +324,7 @@ class ZigbeeNode extends Device {
         // Note: We allow attrId to be optional
         for (const p of ['endpoint', 'profileId', 'clusterId']) {
           if (!params.hasOwnProperty(p)) {
-            console.error('Missing parameter:', p);
+            console.log('Missing parameter:', p);
             paramMissing = true;
           }
         }
@@ -1390,10 +1390,10 @@ class ZigbeeNode extends Device {
         if (!attr) {
           attr = {key: 'unknown', value: attrEntry.attrId};
         }
-        console.error('Response:', frame.zcl.cmdId,
-                      'got status:', status.key, `(${status.value}) node:`,
-                      this.name, 'cluster:', cluster.key,
-                      `(${cluster.value}) attr:`, attr.key, `(${attr.value})`);
+        console.log('Response:', frame.zcl.cmdId,
+                    'got status:', status.key, `(${status.value}) node:`,
+                    this.name, 'cluster:', cluster.key,
+                    `(${cluster.value}) attr:`, attr.key, `(${attr.value})`);
         errorFound = true;
       }
     }

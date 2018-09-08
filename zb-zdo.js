@@ -213,8 +213,8 @@ class ZdoApi {
     if (zdoParser.hasOwnProperty(clusterId)) {
       zdoParser[clusterId](frame, reader);
     } else {
-      console.error('Received unrecognized ZDO Frame');
-      console.error(frame);
+      console.log('Received unrecognized ZDO Frame');
+      console.log(frame);
     }
   }
 }
