@@ -162,7 +162,8 @@ class ZdoApi {
     assert(frame, 'Frame parameter must be a frame object');
     assert(frame.destination64, 'Caller must provide frame.destination64');
     assert(frame.destination16, 'Caller must provide frame.destination16');
-    assert(frame.clusterId, 'Caller must provide frame.clusterId');
+    assert(typeof frame.clusterId !== 'undefined',
+           'Caller must provide frame.clusterId');
 
     const clusterId = getClusterIdAsInt(frame.clusterId);
     // Convert the clusterId to its hex form. This is easier to
@@ -413,11 +414,13 @@ zdoParser[zci.NETWORK_ADDRESS_RESPONSE] = function(frame, reader) {
   frame.status = reader.nextUInt8();
   frame.nwkAddr64 = reader.nextString(8, 'hex').swapHex();
   frame.nwkAddr16 = reader.nextString(2, 'hex').swapHex();
-  frame.numAssocDev = reader.nextUInt8();
-  frame.startIndex = reader.nextUInt8();
-  frame.assocAddr16 = [];
-  for (let i = 0; i < frame.numAssocDev; i++) {
-    frame.assocAddr16[i] = reader.nextString(2, 'hex').swapHex();
+  if (reader.offset < reader.buf.length) {
+    frame.numAssocDev = reader.nextUInt8();
+    frame.startIndex = reader.nextUInt8();
+    frame.assocAddr16 = [];
+    for (let i = 0; i < frame.numAssocDev; i++) {
+      frame.assocAddr16[i] = reader.nextString(2, 'hex').swapHex();
+    }
   }
 };
 
