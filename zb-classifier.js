@@ -28,6 +28,7 @@ try {
 }
 
 const ZHA_PROFILE_ID = zclId.profile('HA').value;
+const ZLL_PROFILE_ID = zclId.profile('LL').value;
 
 const CLUSTER_ID_GENBINARYINPUT = zclId.cluster('genBinaryInput').value;
 const CLUSTER_ID_GENBINARYINPUT_HEX =
@@ -64,6 +65,10 @@ const ZONE_STATUS_ALARM_MASK = 0x03;
 const ZONE_STATUS_TAMPER_MASK = 0x04;
 const ZONE_STATUS_LOW_BATTERY_MASK = 0x08;
 
+const DEVICE_ID_ONOFFSWITCH = zclId.device('HA', 'onOffSwitch').value;
+const DEVICE_ID_ONOFFSWITCH_HEX = utils.hexStr(DEVICE_ID_ONOFFSWITCH, 4);
+const DEVICE_ID_ONOFFOUTPUT = zclId.device('HA', 'onOffOutput').value;
+const DEVICE_ID_ONOFFOUTPUT_HEX = utils.hexStr(DEVICE_ID_ONOFFOUTPUT, 4);
 const DEVICE_ID_SMART_PLUG = zclId.device('HA', 'smartPlug').value;
 const DEVICE_ID_SMART_PLUG_HEX = utils.hexStr(DEVICE_ID_SMART_PLUG, 4);
 
@@ -106,6 +111,30 @@ const CONFIG_REPORT_INTEGER = {
   minRepInterval: 1,    // seconds
   maxRepInterval: 120,  // seconds
   repChange: 1,
+};
+
+const CONFIG_REPORT_CURRENT = {
+  minRepInterval: 5,    // seconds
+  maxRepInterval: 120,  // seconds
+  repChange: 10,
+};
+
+const CONFIG_REPORT_VOLTAGE = {
+  minRepInterval: 5,    // seconds
+  maxRepInterval: 120,  // seconds
+  repChange: 10,
+};
+
+const CONFIG_REPORT_POWER = {
+  minRepInterval: 5,    // seconds
+  maxRepInterval: 120,  // seconds
+  repChange: 10,
+};
+
+const CONFIG_REPORT_FREQUENCY = {
+  minRepInterval: 5,    // seconds
+  maxRepInterval: 120,  // seconds
+  repChange: 2,
 };
 
 const CONFIG_REPORT_BATTERY = {
@@ -289,7 +318,9 @@ class ZigbeeClassifier {
       CLUSTER_ID_HAELECTRICAL,        // clusterId
       'acCurrentMultiplier',          // attr
       '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
     );
     this.addProperty(
       node,                           // device
@@ -302,7 +333,9 @@ class ZigbeeClassifier {
       CLUSTER_ID_HAELECTRICAL,        // clusterId
       'acCurrentDivisor',             // attr
       '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
     );
     this.addProperty(
       node,                           // device
@@ -319,7 +352,7 @@ class ZigbeeClassifier {
       'rmsCurrent',                   // attr
       '',                             // setAttrFromValue
       'parseHaCurrentAttr',           // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      CONFIG_REPORT_CURRENT
     );
   }
 
@@ -339,7 +372,7 @@ class ZigbeeClassifier {
       'acFrequency',                  // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      CONFIG_REPORT_FREQUENCY
     );
   }
 
@@ -355,7 +388,9 @@ class ZigbeeClassifier {
       CLUSTER_ID_HAELECTRICAL,        // clusterId
       'acPowerMultiplier',            // attr
       '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
     );
     this.addProperty(
       node,                           // device
@@ -368,7 +403,9 @@ class ZigbeeClassifier {
       CLUSTER_ID_HAELECTRICAL,        // clusterId
       'acPowerDivisor',               // attr
       '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
     );
     this.addProperty(
       node,                           // device
@@ -385,11 +422,41 @@ class ZigbeeClassifier {
       'activePower',                  // attr
       '',                             // setAttrFromValue
       'parseHaInstantaneousPowerAttr', // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      CONFIG_REPORT_POWER
     );
   }
 
   addHaVoltageProperty(node, haElectricalEndpoint) {
+    this.addProperty(
+      node,                           // device
+      '_voltageMul',                  // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      haElectricalEndpoint,           // endpoint
+      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      'acVoltageMultiplier',          // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
+    );
+    this.addProperty(
+      node,                           // device
+      '_voltageDiv',                  // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      haElectricalEndpoint,           // endpoint
+      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      'acVoltageDivisor',             // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      1                               // defaultValue
+    );
     this.addProperty(
       node,                           // device
       'voltage',                      // name
@@ -404,8 +471,8 @@ class ZigbeeClassifier {
       CLUSTER_ID_HAELECTRICAL,        // clusterId
       'rmsVoltage',                   // attr
       '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      CONFIG_REPORT_INTEGER
+      'parseHaVoltageAttr',           // parseValueFromAttr
+      CONFIG_REPORT_VOLTAGE
     );
   }
 
@@ -660,16 +727,24 @@ class ZigbeeClassifier {
   }
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
-              attr, setAttrFromValue, parseValueFromAttr, configReport) {
+              attr, setAttrFromValue, parseValueFromAttr, configReport,
+              defaultValue) {
     if (typeof profileId === 'string') {
       profileId = parseInt(profileId, 16);
+    }
+    // Some lights, like the IKEA ones, don't seem to respond to read requests
+    // when the profileId is set to ZLL.
+    let isZll = false;
+    if (profileId == ZLL_PROFILE_ID) {
+      isZll = true;
+      profileId = ZHA_PROFILE_ID;
     }
     const property = new ZigbeeProperty(node, name, descr, profileId,
                                         endpoint, clusterId, attr,
                                         setAttrFromValue, parseValueFromAttr);
     node.properties.set(name, property);
 
-    DEBUG && console.log('addProperty: ', node.addr64, name);
+    DEBUG && console.log('addProperty:', node.addr64, name);
 
     if (node.hasOwnProperty('devInfoProperties') &&
         node.devInfoProperties.hasOwnProperty(name)) {
@@ -685,6 +760,11 @@ class ZigbeeClassifier {
         }
       }
     }
+    if (isZll) {
+      // The ZLL spec says "Attribute reporting shall not be used in this
+      // profile", which means that we'll never get reports.
+      property.fireAndForget = true;
+    }
     DEBUG && console.log('addProperty:   fireAndForget =',
                          property.fireAndForget);
 
@@ -697,6 +777,7 @@ class ZigbeeClassifier {
       property.visible = false;
     }
     property.setInitialReadNeeded();
+    property.defaultValue = defaultValue;
 
     DEBUG && console.log('addProperty:   configReportNeeded =',
                          property.configReportNeeded,
@@ -890,8 +971,15 @@ class ZigbeeClassifier {
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
-      this.addLevelProperty(node, genLevelCtrlEndpoint);
-      node['@type'].push('MultiLevelSwitch');
+      const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
+      if (endpoint.deviceId != DEVICE_ID_ONOFFSWITCH_HEX &&
+          endpoint.deviceId != DEVICE_ID_ONOFFOUTPUT_HEX) {
+        // The Samsung SmartSwitch advertises the genLevelCtrl cluster,
+        // but it doesn't do anything. It also advertises itself as an
+        // onOffOutput, so we use that to filter out the level control.
+        this.addLevelProperty(node, genLevelCtrlEndpoint);
+        node['@type'].push('MultiLevelSwitch');
+      }
     }
     this.addHaInstantaneousPowerProperty(node, haElectricalEndpoint);
     this.addHaCurrentProperty(node, haElectricalEndpoint);

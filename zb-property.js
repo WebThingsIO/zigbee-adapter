@@ -144,6 +144,12 @@ class ZigbeeProperty extends Property {
    */
 
   parseAttrEntry(attrEntry) {
+    // For readRsp, attrEntry includes a status, for report it doesn't
+    if (typeof attrEntry.status !== 'undefined') {
+      if (attrEntry.status != 0) {
+        attrEntry.attrData = this.defaultValue;
+      }
+    }
     return this.parseValueFromAttr(attrEntry);
   }
 
@@ -246,6 +252,34 @@ class ZigbeeProperty extends Property {
       power = demand * this.multiplier / this.divisor;
     }
     return [power, `${power}`];
+  }
+
+  /**
+   * @method parseHaVoltageAttr
+   *
+   * Converts the rmsVoltage attribute into voltage (volts)
+   * for devices which support the haElectricalMeasurement cluster.
+   */
+  parseHaVoltageAttr(attrEntry) {
+    if (!this.hasOwnProperty('multiplier')) {
+      const multiplierProperty = this.device.findProperty('_voltageMul');
+      if (multiplierProperty && multiplierProperty.value) {
+        this.multiplier = multiplierProperty.value;
+      }
+    }
+    if (!this.hasOwnProperty('divisor')) {
+      const divisorProperty = this.device.findProperty('_voltageDiv');
+      if (divisorProperty && divisorProperty.value) {
+        this.divisor = divisorProperty.value;
+      }
+    }
+
+    let voltage = 0;
+    if (this.multiplier && this.divisor) {
+      const rmsVoltage = attrEntry.attrData;
+      voltage = rmsVoltage * this.multiplier / this.divisor;
+    }
+    return [voltage, `${voltage}`];
   }
 
   /**
@@ -434,9 +468,12 @@ class ZigbeeProperty extends Property {
   }
 
   setInitialReadNeeded() {
+    if (!this.hasOwnProperty('initialReadNeeded')) {
+      this.initialReadNeeded = false;
+    }
     if (!this.attr) {
       // This property has no attributes which means that its event driven
-      // and there is nothing that we can actuall read.
+      // and there is nothing that we can actually read.
       return;
     }
     if (!this.visible && typeof this.value != 'undefined') {
