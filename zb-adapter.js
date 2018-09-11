@@ -213,7 +213,6 @@ class ZigbeeAdapter extends Adapter {
     this.running = false;
     this.waitFrame = null;
     this.waitTimeout = null;
-    this.waitRetryCount = 0;
     this.lastFrameSent = null;
 
     this.serialNumber = '0000000000000000';
@@ -1877,6 +1876,9 @@ class ZigbeeAdapter extends Adapter {
         'sendOnSuccess',
         'callback',
         'timeoutFunc',
+        'waitRetryCount',
+        'waitRetryMax',
+        'extraParams',
       ];
       for (const propertyName in this.waitFrame) {
         if (specialNames.includes(propertyName)) {
@@ -1894,7 +1896,6 @@ class ZigbeeAdapter extends Adapter {
         const sendOnSuccess = this.waitFrame.sendOnSuccess;
         const callback = this.waitFrame.callback;
         this.waitFrame = null;
-        this.waitRetryCount = 0;
         if (this.waitTimeout) {
           clearTimeout(this.waitTimeout);
           this.waitTimeout = null;
@@ -2250,7 +2251,12 @@ class ZigbeeAdapter extends Adapter {
         }
         case WAIT_FRAME: {
           this.waitFrame = cmd.cmdData;
-          this.waitRetryCount += 1;
+          if (!this.waitFrame.hasOwnProperty('waitRetryCount')) {
+            this.waitFrame.waitRetryCount = 1;
+          }
+          if (!this.waitFrame.hasOwnProperty('waitRetryMax')) {
+            this.waitFrame.waitRetryMax = WAIT_RETRY_MAX;
+          }
           let timeoutDelay = WAIT_TIMEOUT_DELAY;
           if (this.lastFrameSent && this.lastFrameSent.destination64) {
             const node = this.nodes[this.lastFrameSent.destination64];
@@ -2312,7 +2318,7 @@ class ZigbeeAdapter extends Adapter {
     const timeoutFunc = waitFrame.timeoutFunc;
     this.waitFrame = null;
 
-    if (this.waitRetryCount > WAIT_RETRY_MAX) {
+    if (waitFrame.waitRetryCount >= waitFrame.waitRetryMax) {
       if (this.debugFlow) {
         console.log('WAIT_FRAME exceeded max retry count');
       }
