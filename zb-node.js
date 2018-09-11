@@ -11,6 +11,7 @@
 
 const assert = require('assert');
 const cloneDeep = require('clone-deep');
+const util = require('util');
 const xbeeApi = require('xbee-api');
 const zclId = require('zcl-id');
 const zcl = require('zcl-packet');
@@ -32,7 +33,7 @@ try {
   utils = gwa.Utils;
 }
 
-const DEBUG = true;
+const DEBUG = false;
 
 const C = xbeeApi.constants;
 
@@ -101,6 +102,7 @@ const ATTR_ID_SSIASZONE_ZONEID =
   zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneId').value;
 
 const STATUS_SUCCESS = zclId.status('success').value;
+const STATUS_UNSUPPORTED_ATTRIB = zclId.status('unsupAttribute').value;
 
 const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
 
@@ -145,7 +147,6 @@ class ZigbeeNode extends Device {
       this.defaultName = `${deviceId}-Node`;
     }
     this.discoveringAttributes = false;
-    this.fireAndForget = false;
     this.extendedTimeout = true;
     this.powerSource = POWERSOURCE_UNKNOWN;
     this.added = false;
@@ -241,7 +242,7 @@ class ZigbeeNode extends Device {
     dict.neighbors = this.neighbors;
     dict.activeEndpoints = cloneDeep(this.activeEndpoints);
     dict.isCoordinator = this.isCoordinator;
-    dict.fireAndForget = this.fireAndForget;
+    dict.rebindRequired = this.rebindRequired;
     for (const endpointNum in dict.activeEndpoints) {
       const endpoint = dict.activeEndpoints[endpointNum];
       let clusterId;
@@ -428,12 +429,27 @@ class ZigbeeNode extends Device {
     const profileId = parseInt(frame.profileId, 16);
     const clusterId = parseInt(frame.clusterId, 16);
     const endpoint = parseInt(frame.sourceEndpoint, 16);
-
     for (const property of this.properties.values()) {
       if (profileId == property.profileId &&
           endpoint == property.endpoint &&
           clusterId == property.clusterId) {
         if (this.frameHasAttr(frame, property)) {
+          return property;
+        }
+      }
+    }
+  }
+
+  findPropertyByAttrId(profileId, clusterId, endpoint, attrId) {
+    // Remember that a property can have multiple attrIds
+    // (i.e. attrId is an array).
+    for (const property of this.properties.values()) {
+      if (profileId == property.profileId &&
+          endpoint == property.endpoint &&
+          clusterId == property.clusterId) {
+        if (attrId == property.attrId ||
+          (Array.isArray(property.attrId) &&
+            property.attrId.includes(attrId))) {
           return property;
         }
       }
@@ -467,16 +483,34 @@ class ZigbeeNode extends Device {
   }
 
   handleConfigReportRsp(frame) {
-    const property = this.findPropertyFromFrame(frame);
-    if (property) {
-      if (this.reportZclStatusError(frame)) {
-        // Some devices, like Hue bulbs, don't support configReports on the
-        // ZHA clusters. This means that we need to treat them as
-        // 'fire and forget'.
+    this.reportZclStatusError(frame);
 
-        property.fireAndForget = true;
+    const profileId = parseInt(frame.profileId, 16);
+    const clusterId = parseInt(frame.clusterId, 16);
+    const endpoint = parseInt(frame.sourceEndpoint, 16);
+
+    for (const attrIdx in frame.extraParams) {
+      const attrId = frame.extraParams[attrIdx];
+      const property =
+        this.findPropertyByAttrId(profileId, clusterId, endpoint, attrId);
+      if (property) {
+        // If the configReport was successful, then only a single status
+        // is returned and no attrId's are included.
+        const status =
+          (frame.extraParams.length == frame.zcl.payload.length) ?
+            frame.zcl.payload[attrIdx].status :
+            frame.zcl.payload[0].status;
+        if (status != STATUS_SUCCESS) {
+          // If the device doesn't support configReports, then treat it as
+          // 'fire and forget'.
+          property.fireAndForget = true;
+        }
+        property.configReportNeeded = false;
+      } else {
+        console.log('##### handleConfigReportRsp:',
+                    'Property not found for attrId:', attrId, 'frame:');
+        console.log(util.inspect(frame, {depth: null}));
       }
-      property.configReportNeeded = false;
     }
   }
 
@@ -604,50 +638,71 @@ class ZigbeeNode extends Device {
       }
     }
 
-    const property = this.findPropertyFromFrame(frame);
-    if (property) {
-      // Note: attrEntry might be an array.
-      const attrEntry = this.getAttrEntryFromFrameForProperty(frame, property);
-      if (!attrEntry) {
-        // This can happen for a property associated with the ssIasZone
-        // cluster, and a read initiated from a command line tool.
-        // We just ignore the readRsp.
-        return;
-      }
-      const [value, logValue] = property.parseAttrEntry(attrEntry);
-      property.setCachedValue(value);
-      property.initialReadNeeded = false;
-      console.log(this.name,
-                  'property:', property.name,
-                  'profileId:', utils.hexStr(property.profileId, 4),
-                  'endpoint:', property.endpoint,
-                  'clusterId:', utils.hexStr(property.clusterId, 4),
-                  frame.zcl.cmdId,
-                  'value:', logValue);
-      const deferredSet = property.deferredSet;
-      if (deferredSet) {
-        property.deferredSet = null;
-        deferredSet.resolve(property.value);
-      }
-      this.notifyPropertyChanged(property);
+    const profileId = parseInt(frame.profileId, 16);
+    const clusterId = parseInt(frame.clusterId, 16);
+    const endpoint = parseInt(frame.sourceEndpoint, 16);
+    let propertyFound = false;
 
-      if (property.clusterId == CLUSTER_ID_OCCUPANCY_SENSOR &&
-          this.occupancyTimeout) {
-        if (this.occupancyTimer) {
-          // remove any previously created timer
-          clearTimeout(this.occupancyTimer);
+    for (const attrEntry of frame.zcl.payload) {
+      const property =
+        this.findPropertyByAttrId(profileId, clusterId, endpoint,
+                                  attrEntry.attrId);
+      if (property) {
+        propertyFound = true;
+        // readRsp has a status but report doesn't
+        if (attrEntry.hasOwnProperty('status')) {
+          switch (attrEntry.status) {
+            case STATUS_SUCCESS:
+              break;
+            case STATUS_UNSUPPORTED_ATTRIB:
+              if (property.hasOwnProperty('defaultValue')) {
+                attrEntry.dataType =
+                  zclId.attrType(clusterId, attrEntry.attrId).value;
+                attrEntry.attrData = property.defaultValue;
+                break;
+              }
+              break;
+            default:
+              continue;
+          }
         }
-        // create a new timer
-        this.occupancyTimer = setTimeout(() => {
-          this.occupancyTimer = null;
-          property.setCachedValue(false);
-          console.log(this.name,
-                      'property:', property.name,
-                      'timeout - clearing value');
-          this.notifyPropertyChanged(property);
-        }, this.occupancyTimeout * 1000);
+
+        const [value, logValue] = property.parseAttrEntry(attrEntry);
+        property.setCachedValue(value);
+        property.initialReadNeeded = false;
+        console.log(this.name,
+                    'property:', property.name,
+                    'profileId:', utils.hexStr(property.profileId, 4),
+                    'endpoint:', property.endpoint,
+                    'clusterId:', utils.hexStr(property.clusterId, 4),
+                    frame.zcl.cmdId,
+                    'value:', logValue);
+        const deferredSet = property.deferredSet;
+        if (deferredSet) {
+          property.deferredSet = null;
+          deferredSet.resolve(property.value);
+        }
+        this.notifyPropertyChanged(property);
+
+        if (property.clusterId == CLUSTER_ID_OCCUPANCY_SENSOR &&
+            this.occupancyTimeout) {
+          if (this.occupancyTimer) {
+            // remove any previously created timer
+            clearTimeout(this.occupancyTimer);
+          }
+          // create a new timer
+          this.occupancyTimer = setTimeout(() => {
+            this.occupancyTimer = null;
+            property.setCachedValue(false);
+            console.log(this.name,
+                        'property:', property.name,
+                        'timeout - clearing value');
+            this.notifyPropertyChanged(property);
+          }, this.occupancyTimeout * 1000);
+        }
       }
-    } else {
+    }
+    if (!propertyFound && frame.clusterId != CLUSTER_ID_GENBASIC_HEX) {
       console.log('handleReadRsp: ##### No property found for frame #####');
     }
   }
@@ -816,10 +871,9 @@ class ZigbeeNode extends Device {
       // talk to it.
       return;
     }
-    const endpoint = this.activeEndpoints[genBasicEndpointNum];
     const readFrame = this.makeReadAttributeFrame(
       genBasicEndpointNum,
-      endpoint.profileId,
+      ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
       CLUSTER_ID_GENBASIC,
       [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
     );
@@ -1120,22 +1174,30 @@ class ZigbeeNode extends Device {
       attrs = [attrs];
     }
 
+    const payload = attrs.map((attr) => {
+      return {
+        direction: DIR_CLIENT_TO_SERVER,
+        attrId: zclId.attr(clusterId, attr).value,
+        dataType: zclId.attrType(clusterId, attr).value,
+        minRepInterval: property.configReport.minRepInterval,
+        maxRepInterval: property.configReport.maxRepInterval,
+        repChange: property.configReport.repChange,
+      };
+    });
+    const attrIds = payload.map((attrEntry) => {
+      return attrEntry.attrId;
+    });
+
     const frame = this.makeZclFrameForProperty(
       property,
       {
         cmd: 'configReport',
-        payload: attrs.map((attr) => {
-          return {
-            direction: DIR_CLIENT_TO_SERVER,
-            attrId: zclId.attr(clusterId, attr).value,
-            dataType: zclId.attrType(clusterId, attr).value,
-            minRepInterval: property.configReport.minRepInterval,
-            maxRepInterval: property.configReport.maxRepInterval,
-            repChange: property.configReport.repChange,
-          };
-        }),
+        payload: payload,
       }
     );
+    // The configReportResponse doesn't include attrId's if everything
+    // was successfull.
+    frame.extraParams = attrIds;
     return frame;
   }
 
