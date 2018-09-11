@@ -971,7 +971,7 @@ class ZigbeeAdapter extends Adapter {
       } catch (e) {
         console.log('handleExplicitRx: Caught an exception parsing ZDO frame');
         console.log(e);
-        console.log(frame);
+        console.log(util.inspect(frame, {depth: null}));
       }
     } else if (this.isZhaFrame(frame) || this.isZllFrame(frame)) {
       try {
@@ -1002,7 +1002,7 @@ class ZigbeeAdapter extends Adapter {
       } catch (e) {
         console.log('handleExplicitRx: Caught an exception parsing ZHA frame');
         console.log(e);
-        console.log(frame);
+        console.log(util.inspect(frame, {depth: null}));
       }
     }
   }

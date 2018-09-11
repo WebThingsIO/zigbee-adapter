@@ -668,6 +668,9 @@ class ZigbeeNode extends Device {
         }
 
         const [value, logValue] = property.parseAttrEntry(attrEntry);
+        if (typeof value === 'undefined') {
+          continue;
+        }
         property.setCachedValue(value);
         property.initialReadNeeded = false;
         console.log(this.name,

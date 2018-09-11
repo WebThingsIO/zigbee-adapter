@@ -29,6 +29,13 @@ try {
   utils = gwa.Utils;
 }
 
+const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
+
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentHue').value;
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentSaturation').value;
+
 /**
  * @function levelToPercent
  *
@@ -159,19 +166,18 @@ class ZigbeeProperty extends Property {
    * Converts the ZCL 'currentHue' and 'currentSaturation' attributes (uint8's)
    * into an RGB color string.
    */
-  parseColorAttr(attrEntries) {
-    let hue = 0;
-    let sat = 0;
-    for (const attrEntry of attrEntries) {
-      switch (attrEntry.attrId) {
-        case 0:
-          hue = attrEntry.attrData;
-          break;
-        case 1:
-          sat = attrEntry.attrData;
-          break;
-      }
+  parseColorAttr(attrEntry) {
+    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE) {
+      // We expect that we'll always get the hue in one call, and
+      // the saturation in a later call. For hue, we just record it.
+      this.hue = attrEntry.attrData;
+      return [];
     }
+    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION) {
+      return [];
+    }
+    const hue = this.hue;
+    const sat = attrEntry.attrData;
     let level = 0;
     const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
