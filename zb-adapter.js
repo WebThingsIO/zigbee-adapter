@@ -1013,6 +1013,9 @@ class ZigbeeAdapter extends Adapter {
           id: frame.id,
         };
       }
+      if (frame.extraParams) {
+        waitFrame.extraParams = frame.extraParams;
+      }
       commands.push(new Command(SEND_FRAME, frame));
       commands.push(new Command(WAIT_FRAME, waitFrame));
     }
@@ -1861,6 +1864,9 @@ class ZigbeeAdapter extends Adapter {
     this.frameDumped = false;
     const frameHandler = ZigbeeAdapter.frameHandler[frame.type];
     if (frameHandler) {
+      if (this.waitFrame && this.waitFrame.extraParams) {
+        frame.extraParams = this.waitFrame.extraParams;
+      }
       frameHandler.call(this, frame);
     }
     if (this.debugFrames && !this.frameDumped) {
