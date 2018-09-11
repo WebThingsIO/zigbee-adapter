@@ -180,15 +180,15 @@ class ZigbeeAdapter extends Adapter {
 
     // debugFrames causes a 1-line summary to be printed for each frame
     // which is sent or received.
-    this.debugFrames = true;
+    this.debugFrames = false;
 
     // debugFrameDetail causes detailed information about each frame to be
     // printed.
-    this.debugDumpFrameDetail = true;
+    this.debugDumpFrameDetail = false;
 
     // Use debugFlow if you need to debug the flow of the program. This causes
     // prints at the beginning of many functions to print some info.
-    this.debugFlow = true;
+    this.debugFlow = false;
 
     // debugFrameParsing causes frame detail about the initial frame, before
     // we do any parsing of the data to be printed. This is useful to enable
@@ -338,6 +338,55 @@ class ZigbeeAdapter extends Adapter {
     console.log('----- Scan Complete -----');
     this.saveDeviceInfo();
     this.scanning = false;
+    this.enumerateAllNodes(this.updateNetworkAddress);
+  }
+
+  updateNetworkAddress(node) {
+    if (!node.rxOnWhenIdle) {
+      // Ignore nodes which won't be listening
+      if (this.debugFlow) {
+        console.log('updateNetworkAddress: Skipping:', node.addr64,
+                    'since rxOnWhenIdle is 0');
+      }
+      return;
+    }
+    const updateFrame = this.zdo.makeFrame({
+      destination64: '000000000000ffff',
+      destination16: 'fffe',
+      clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
+      addr64: node.addr64,
+      requestType: 0, // 0 = Single Device Response
+      startIndex: 0,
+    });
+    this.sendFrameWaitFrameAtFront(updateFrame, {
+      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+      zdoSeq: updateFrame.zdoSeq,
+      waitRetryMax: 2,
+    });
+  }
+
+  handleNetworkAddressResponse(frame) {
+    if (frame.status != STATUS_SUCCESS) {
+      if (this.debugFlow) {
+        console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
+                    'due to status:', this.frameStatus(frame));
+      }
+      return;
+    }
+    const node = this.nodes[frame.nwkAddr64];
+    if (!node) {
+      console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
+                  'due to unknown addr64');
+      return;
+    }
+
+    if (node.addr16 != frame.nwkAddr16) {
+      node.addr16 = frame.nwkAddr16;
+      this.saveDeviceInfoDeferred();
+    }
+    if (node.rebindRequired) {
+      this.populateNodeInfo(node);
+    }
   }
 
   AT(command, frame, priority) {
@@ -442,6 +491,28 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  frameStatus(frame) {
+    if (frame.hasOwnProperty('status')) {
+      const status = zclId.status(frame.status);
+      if (status) {
+        return status;
+      }
+      // Something that zclId doesn't know about.
+      return {
+        key: 'unknown',
+        value: frame.status,
+      };
+    }
+
+    // Frames sent from the device not in response to an ExplicitTx
+    // (like "End Device Announcement") won't have a status.
+    return {
+      key: 'none',
+      // eslint-disable-next-line no-undefined
+      value: undefined,
+    };
+  }
+
   dumpFrame(label, frame, dumpFrameDetail) {
     if (typeof dumpFrameDetail === 'undefined') {
       dumpFrameDetail = this.debugDumpFrameDetail;
@@ -452,7 +523,6 @@ class ZigbeeAdapter extends Adapter {
       frameTypeStr = `Unknown(0x${frame.type.toString(16)})`;
     }
     let atCmdStr;
-    let status;
 
     switch (frame.type) {
       case C.FRAME_TYPE.AT_COMMAND:
@@ -512,24 +582,7 @@ class ZigbeeAdapter extends Adapter {
 
       case C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX:
         if (this.zdo.isZdoFrame(frame)) {
-          if (frame.hasOwnProperty('status')) {
-            status = zclId.status(frame.status);
-          } else {
-            // Frames sent from the device not in response to an ExplicitTx
-            // (like "End Device Announcement") won't have a status.
-            status = {
-              key: 'none',
-              // eslint-disable-next-line no-undefined
-              value: undefined,
-            };
-          }
-          if (!status) {
-            // Something that zclId doesn't know about.
-            status = {
-              key: 'unknown',
-              value: frame.status,
-            };
-          }
+          const status = this.frameStatus(frame);
           console.log(label, 'Explicit Rx', frame.remote64,
                       'ZDO', frame.clusterId,
                       zdo.getClusterIdDescription(frame.clusterId),
@@ -1103,6 +1156,10 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleEndEndDeviceAnnouncementInternal(node) {
+    if (this.debugFlow) {
+      console.log('handleEndEndDeviceAnnouncementInternal: isMainsPowered:',
+                  node.isMainsPowered(), 'classified:', node.classified);
+    }
     if (node.isMainsPowered() || !node.classified) {
       // We get an end device announcement when adding devices through
       // pairing, or for routers (typically not battery powered) when they
@@ -1966,20 +2023,19 @@ class ZigbeeAdapter extends Adapter {
                   'classifierAttributesPopulated =',
                   endpoint.classifierAttributesPopulated);
     }
+
     if (endpoint.classifierAttributesPopulated) {
       this.addIfReady(node);
       return;
     }
 
-    if (node.endpointHasZhaInputClusterIdHex(
-      endpoint, CLUSTER_ID_LIGHTINGCOLORCTRL_HEX)) {
-      node.lightingColorCtrlEndpoint = endpointNum;
+    if (node.lightingColorCtrlEndpoint) {
       if (node.hasOwnProperty('colorCapabilities')) {
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
         const readFrame = node.makeReadAttributeFrame(
           endpointNum,
-          ZHA_PROFILE_ID,
+          ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
           CLUSTER_ID_LIGHTINGCOLORCTRL,
           ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES);
         this.sendFrameWaitFrameAtFront(readFrame, {
@@ -1992,9 +2048,7 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.endpointHasZhaInputClusterIdHex(endpoint,
-                                             CLUSTER_ID_SSIASZONE_HEX)) {
-      node.ssIasZoneEndpoint = endpointNum;
+    if (node.ssIasZoneEndpoint) {
       if (node.hasOwnProperty('zoneType')) {
         if (this.debugFlow) {
           console.log('populateClassifierAttributes has zoneType - done');
@@ -2101,6 +2155,18 @@ class ZigbeeAdapter extends Adapter {
         return;
       }
     }
+
+    // Assign significant endpoint numbers here, before the call to addIfReady.
+    // These are significant because the classifier expects that they've been
+    // initialized already. If we're using cached device info, it's possible
+    // that classifierAttributesPopulated will be set to true the first time
+    // through this function.
+    node.lightingColorCtrlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_LIGHTINGCOLORCTRL_HEX);
+    node.ssIasZoneEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_SSIASZONE_HEX);
 
     // Since we got here, all of the simple descriptors have been populated.
     // Check to see that we have all of the classifier attributes
@@ -2402,6 +2468,8 @@ fh[C.FRAME_TYPE.ROUTE_RECORD] =
 const zch = ZigbeeAdapter.zdoClusterHandler = {};
 zch[zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE] =
   ZigbeeAdapter.prototype.handleActiveEndpointsResponse;
+zch[zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE] =
+  ZigbeeAdapter.prototype.handleNetworkAddressResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_LEAVE_RESPONSE] =
   ZigbeeAdapter.prototype.handleManagementLeaveResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_LQI_RESPONSE] =
