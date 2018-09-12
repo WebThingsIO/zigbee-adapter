@@ -78,6 +78,8 @@ const WAIT_RETRY_MAX = 3;   // includes initial send
 
 const PERMIT_JOIN_PRIORITY = 1;
 
+const ADDR16_UNKNOWN = 'fffe';
+
 const DEVICE_TYPE = {
   0x30001: 'ConnectPort X8 Gateway',
   0x30002: 'ConnectPort X4 Gateway',
@@ -750,7 +752,7 @@ class ZigbeeAdapter extends Adapter {
           const devInfoNode = devInfo.nodes[nodeId];
           let node = this.nodes[nodeId];
           if (!node) {
-            node = new ZigbeeNode(this, devInfoNode.addr64, 'fffe');
+            node = new ZigbeeNode(this, devInfoNode.addr64, ADDR16_UNKNOWN);
             this.nodes[nodeId] = node;
           }
           node.fromDeviceInfo(devInfoNode);

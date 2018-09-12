@@ -446,12 +446,11 @@ class ZigbeeNode extends Device {
     for (const property of this.properties.values()) {
       if (profileId == property.profileId &&
           endpoint == property.endpoint &&
-          clusterId == property.clusterId) {
-        if (attrId == property.attrId ||
-          (Array.isArray(property.attrId) &&
-            property.attrId.includes(attrId))) {
-          return property;
-        }
+          clusterId == property.clusterId &&
+          (attrId == property.attrId ||
+            (Array.isArray(property.attrId) &&
+            property.attrId.includes(attrId)))) {
+        return property;
       }
     }
   }
