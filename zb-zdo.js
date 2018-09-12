@@ -45,6 +45,11 @@ String.prototype.swapHex = function() {
   return this.match(/.{2}/g).reverse().join('');
 };
 
+zci.NETWORK_ADDRESS_REQUEST = 0x0000;
+zci[zci.NETWORK_ADDRESS_REQUEST] = 'Network Address Req (0x0002)';
+zci.NETWORK_ADDRESS_RESPONSE = 0x8000;
+zci[zci.NETWORK_ADDRESS_RESPONSE] = 'Network Address Resp (0x8002)';
+
 zci.NODE_DESCRIPTOR_REQUEST = 0x0002;
 zci[zci.NODE_DESCRIPTOR_REQUEST] = 'Node Descriptor Req (0x0002)';
 zci.NODE_DESCRIPTOR_RESPONSE = 0x8002;
@@ -157,7 +162,8 @@ class ZdoApi {
     assert(frame, 'Frame parameter must be a frame object');
     assert(frame.destination64, 'Caller must provide frame.destination64');
     assert(frame.destination16, 'Caller must provide frame.destination16');
-    assert(frame.clusterId, 'Caller must provide frame.clusterId');
+    assert(typeof frame.clusterId !== 'undefined',
+           'Caller must provide frame.clusterId');
 
     const clusterId = getClusterIdAsInt(frame.clusterId);
     // Convert the clusterId to its hex form. This is easier to
@@ -208,8 +214,8 @@ class ZdoApi {
     if (zdoParser.hasOwnProperty(clusterId)) {
       zdoParser[clusterId](frame, reader);
     } else {
-      console.error('Received unrecognized ZDO Frame');
-      console.error(frame);
+      console.log('Received unrecognized ZDO Frame');
+      console.log(frame);
     }
   }
 }
@@ -276,6 +282,12 @@ zdoBuilder[zci.MATCH_DESCRIPTOR_RESPONSE] = function(frame, builder) {
   for (const endpoint of frame.endpoints) {
     builder.appendUInt8(endpoint);
   }
+};
+
+zdoBuilder[zci.NETWORK_ADDRESS_REQUEST] = function(frame, builder) {
+  builder.appendString(frame.addr64.swapHex(), 'hex');
+  builder.appendUInt8(frame.requestType);
+  builder.appendUInt8(frame.startIndex);
 };
 
 zdoBuilder[zci.NODE_DESCRIPTOR_REQUEST] = function(frame, builder) {
@@ -395,6 +407,20 @@ zdoParser[zci.MATCH_DESCRIPTOR_REQUEST] = function(frame, reader) {
   frame.outputClusters = [];
   for (let i = 0; i < frame.outputClusterCount; i++) {
     frame.outputClusters[i] = reader.nextString(2, 'hex').swapHex();
+  }
+};
+
+zdoParser[zci.NETWORK_ADDRESS_RESPONSE] = function(frame, reader) {
+  frame.status = reader.nextUInt8();
+  frame.nwkAddr64 = reader.nextString(8, 'hex').swapHex();
+  frame.nwkAddr16 = reader.nextString(2, 'hex').swapHex();
+  if (reader.offset < reader.buf.length) {
+    frame.numAssocDev = reader.nextUInt8();
+    frame.startIndex = reader.nextUInt8();
+    frame.assocAddr16 = [];
+    for (let i = 0; i < frame.numAssocDev; i++) {
+      frame.assocAddr16[i] = reader.nextString(2, 'hex').swapHex();
+    }
   }
 };
 

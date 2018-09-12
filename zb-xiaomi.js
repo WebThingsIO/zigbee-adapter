@@ -185,7 +185,7 @@ class XiaomiFamily extends ZigbeeFamily {
   init(node) {
     const attribs = MODEL_IDS[node.modelId];
     if (!attribs) {
-      console.error('xiaomi.classify: Unknown modelId:', node.modelId);
+      console.log('xiaomi.classify: Unknown modelId:', node.modelId);
       return;
     }
     if (node.inited) {

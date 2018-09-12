@@ -29,6 +29,13 @@ try {
   utils = gwa.Utils;
 }
 
+const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
+
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentHue').value;
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentSaturation').value;
+
 /**
  * @function levelToPercent
  *
@@ -71,7 +78,7 @@ class ZigbeeProperty extends Property {
       this.setAttrFromValue = Object.getPrototypeOf(this)[setAttrFromValue];
       if (!this.setAttrFromValue) {
         const err = `Unknown function: ${setAttrFromValue}`;
-        console.error(err);
+        console.log(err);
         throw err;
       }
     }
@@ -79,7 +86,7 @@ class ZigbeeProperty extends Property {
       this.parseValueFromAttr = Object.getPrototypeOf(this)[parseValueFromAttr];
       if (!this.parseValueFromAttr) {
         const err = `Unknown function: ${parseValueFromAttr}`;
-        console.error(err);
+        console.log(err);
         throw err;
       }
     }
@@ -144,6 +151,12 @@ class ZigbeeProperty extends Property {
    */
 
   parseAttrEntry(attrEntry) {
+    // For readRsp, attrEntry includes a status, for report it doesn't
+    if (typeof attrEntry.status !== 'undefined') {
+      if (attrEntry.status != 0) {
+        attrEntry.attrData = this.defaultValue;
+      }
+    }
     return this.parseValueFromAttr(attrEntry);
   }
 
@@ -153,19 +166,18 @@ class ZigbeeProperty extends Property {
    * Converts the ZCL 'currentHue' and 'currentSaturation' attributes (uint8's)
    * into an RGB color string.
    */
-  parseColorAttr(attrEntries) {
-    let hue = 0;
-    let sat = 0;
-    for (const attrEntry of attrEntries) {
-      switch (attrEntry.attrId) {
-        case 0:
-          hue = attrEntry.attrData;
-          break;
-        case 1:
-          sat = attrEntry.attrData;
-          break;
-      }
+  parseColorAttr(attrEntry) {
+    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE) {
+      // We expect that we'll always get the hue in one call, and
+      // the saturation in a later call. For hue, we just record it.
+      this.hue = attrEntry.attrData;
+      return [];
     }
+    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION) {
+      return [];
+    }
+    const hue = this.hue;
+    const sat = attrEntry.attrData;
     let level = 0;
     const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
@@ -246,6 +258,34 @@ class ZigbeeProperty extends Property {
       power = demand * this.multiplier / this.divisor;
     }
     return [power, `${power}`];
+  }
+
+  /**
+   * @method parseHaVoltageAttr
+   *
+   * Converts the rmsVoltage attribute into voltage (volts)
+   * for devices which support the haElectricalMeasurement cluster.
+   */
+  parseHaVoltageAttr(attrEntry) {
+    if (!this.hasOwnProperty('multiplier')) {
+      const multiplierProperty = this.device.findProperty('_voltageMul');
+      if (multiplierProperty && multiplierProperty.value) {
+        this.multiplier = multiplierProperty.value;
+      }
+    }
+    if (!this.hasOwnProperty('divisor')) {
+      const divisorProperty = this.device.findProperty('_voltageDiv');
+      if (divisorProperty && divisorProperty.value) {
+        this.divisor = divisorProperty.value;
+      }
+    }
+
+    let voltage = 0;
+    if (this.multiplier && this.divisor) {
+      const rmsVoltage = attrEntry.attrData;
+      voltage = rmsVoltage * this.multiplier / this.divisor;
+    }
+    return [voltage, `${voltage}`];
   }
 
   /**
@@ -434,9 +474,12 @@ class ZigbeeProperty extends Property {
   }
 
   setInitialReadNeeded() {
+    if (!this.hasOwnProperty('initialReadNeeded')) {
+      this.initialReadNeeded = false;
+    }
     if (!this.attr) {
       // This property has no attributes which means that its event driven
-      // and there is nothing that we can actuall read.
+      // and there is nothing that we can actually read.
       return;
     }
     if (!this.visible && typeof this.value != 'undefined') {
