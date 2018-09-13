@@ -601,7 +601,7 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint);
+    rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint, 16);
     this.adapter.sendFrameNow(rspFrame);
   }
 

@@ -695,6 +695,7 @@ class ZigbeeAdapter extends Adapter {
       const name = utils.padRight(node.name, 32);
       console.log('Node:', node.addr64, node.addr16,
                   'Name:', name,
+                  'rebindRequired:', node.rebindRequired,
                   'endpoints:', Object.keys(node.activeEndpoints));
       for (const neighbor of node.neighbors) {
         console.log('  Neighbor: %s %s DT: %s R: %s PJ: %s D: %s ' +
@@ -1496,17 +1497,11 @@ class ZigbeeAdapter extends Adapter {
         clusterId: zdo.getClusterIdAsString(
           zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE),
         zdoSeq: simpleDescFrame.zdoSeq,
+        timeoutFunc: () => {
+          endpoint.queryingSimpleDescriptor = false;
+        },
       }),
-      FUNC(this, this.clearQueryingSimpleDescriptor, [node, endpointNum]),
     ];
-  }
-
-  clearQueryingSimpleDescriptor(node, endpointNum) {
-    // Called to cover the case where no response is received.
-    const endpoint = node.activeEndpoints[endpointNum];
-    if (endpoint) {
-      endpoint.queryingSimpleDescriptor = false;
-    }
   }
 
   handleSimpleDescriptorResponse(frame) {
@@ -1993,7 +1988,8 @@ class ZigbeeAdapter extends Adapter {
 
   populateNodeInfo(node) {
     if (this.debugFlow) {
-      console.log('populateNodeInfo node.addr64 =', node.addr64);
+      console.log('populateNodeInfo node.addr64 =', node.addr64,
+                  'rebindRequired:', node.rebindRequired);
     }
     if (node.addr64 == this.serialNumber) {
       // We don't populate information for the coordinator (i.e. dongle)
