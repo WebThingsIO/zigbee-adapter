@@ -568,6 +568,8 @@ class ZigbeeNode extends Device {
   }
 
   handleEnrollReq(reqFrame) {
+    this.zoneType = reqFrame.zcl.payload.zonetype;
+
     // If the cieAddr hasn't been set, then we can wind up receiving an
     // enrollReq, and never receive an endDeviceAnnouncement, so we make sure
     // that the cieAddr gets set.

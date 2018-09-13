@@ -2025,12 +2025,12 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.lightingColorCtrlEndpoint) {
+    if (endpointNum == node.lightingColorCtrlEndpoint) {
       if (node.hasOwnProperty('colorCapabilities')) {
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
         const readFrame = node.makeReadAttributeFrame(
-          endpointNum,
+          node.lightingColorCtrlEndpoint,
           ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
           CLUSTER_ID_LIGHTINGCOLORCTRL,
           ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES);
@@ -2044,21 +2044,29 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.ssIasZoneEndpoint) {
+    if (endpointNum == node.ssIasZoneEndpoint) {
       if (node.hasOwnProperty('zoneType')) {
         if (this.debugFlow) {
           console.log('populateClassifierAttributes has zoneType - done');
         }
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
+        if (node.readingZoneType) {
+          if (this.debugFlow) {
+            console.log('populateClassifierAttributes: read of zoneType',
+                        'already in progress');
+          }
+          return;
+        }
         if (this.debugFlow) {
           console.log('populateClassifierAttributes has no zoneType -',
                       'querying via read');
         }
         // zoneType is the only field that the classifier actually needs.
         // We read the status and cieAddr to save a read later.
+        node.readingZoneType = true;
         const readFrame = node.makeReadAttributeFrame(
-          endpointNum,
+          node.ssIasZoneEndpoint,
           ZHA_PROFILE_ID,
           CLUSTER_ID_SSIASZONE,
           [
@@ -2071,7 +2079,13 @@ class ZigbeeAdapter extends Adapter {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.zcl.seqNum,
-          callback: this.populateClassifierAttributesIasZone.bind(this),
+          callback: (frame) => {
+            node.readingZoneType = false;
+            this.populateClassifierAttributesIasZone(frame);
+          },
+          timeoutFunc: () => {
+            node.readingZoneType = false;
+          },
         });
       }
       return;
@@ -2080,7 +2094,6 @@ class ZigbeeAdapter extends Adapter {
     // Since we got to here, this endpoint doesn't need any classifier
     // attributes
     this.setClassifierAttributesPopulated(node, endpointNum);
-    endpoint.classifierAttributesPopulated = true;
   }
 
   populateClassifierAttributesLightingControl(frame) {
