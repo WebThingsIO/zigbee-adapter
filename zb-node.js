@@ -456,8 +456,10 @@ class ZigbeeNode extends Device {
   }
 
   handleCheckin(frame) {
+    const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
+    this.genPollCtrlEndpoint = sourceEndpoint;
     const rspFrame = this.makeZclFrame(
-      parseInt(frame.sourceEndpoint, 16),
+      sourceEndpoint,
       frame.profileId,
       CLUSTER_ID_GENPOLLCTRL,
       {
@@ -474,10 +476,8 @@ class ZigbeeNode extends Device {
         },
       }
     );
+    this.writeCheckinInterval();
     this.adapter.sendFrameNow(rspFrame);
-    if (!this.rebindRequired) {
-      this.writeCheckinInterval(SLOW_CHECKIN_INTERVAL);
-    }
     this.rebindIfRequired();
   }
 
@@ -568,6 +568,8 @@ class ZigbeeNode extends Device {
   }
 
   handleEnrollReq(reqFrame) {
+    this.zoneType = reqFrame.zcl.payload.zonetype;
+
     // If the cieAddr hasn't been set, then we can wind up receiving an
     // enrollReq, and never receive an endDeviceAnnouncement, so we make sure
     // that the cieAddr gets set.
@@ -583,6 +585,8 @@ class ZigbeeNode extends Device {
   }
 
   handleQueryNextImageReq(frame) {
+    this.adapter.populateNodeInfo(this);
+
     // For the time being, we always indicate that we have no images.
     const rspFrame = this.makeZclFrame(
       parseInt(frame.sourceEndpoint, 16),
@@ -601,7 +605,7 @@ class ZigbeeNode extends Device {
         },
       }
     );
-    rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint);
+    rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint, 16);
     this.adapter.sendFrameNow(rspFrame);
   }
 
@@ -800,6 +804,9 @@ class ZigbeeNode extends Device {
         }
       }
     }
+    if (frame.zcl.frameCntl.disDefaultRsp == 0) {
+      this.adapter.populateNodeInfo(this);
+    }
   }
 
   handleZhaResponse(frame) {
@@ -959,6 +966,11 @@ class ZigbeeNode extends Device {
   }
 
   writeCheckinInterval(interval) {
+    if (!interval) {
+      interval =
+        this.rebindRequired ? FAST_CHECKIN_INTERVAL : SLOW_CHECKIN_INTERVAL;
+    }
+
     DEBUG && console.log(`writeCheckinInterval(${interval})`,
                          `this.checkinInterval: ${this.checkinInterval}`);
     if (!this.genPollCtrlEndpoint) {
@@ -966,11 +978,17 @@ class ZigbeeNode extends Device {
         'writeCheckinInterval: exiting - no genPollCtrlEndpoint');
       return;
     }
+    if (this.writingCheckinInterval) {
+      DEBUG && console.log(
+        'writeCheckinInterval: exiting - write already in progress');
+      return;
+    }
     if (typeof this.checkinInterval === 'undefined') {
       this.checkinInterval = 0;
     }
 
     if (this.checkinInterval != interval) {
+      this.writingCheckinInterval = true;
       const writeFrame = this.makeWriteAttributeFrame(
         this.genPollCtrlEndpoint,
         ZHA_PROFILE_ID,
@@ -981,8 +999,12 @@ class ZigbeeNode extends Device {
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
+          this.writingCheckinInterval = false;
           this.checkinInterval = interval;
           this.adapter.saveDeviceInfoDeferred();
+        },
+        timeoutFunc: () => {
+          this.writingCheckinInterval = false;
         },
       });
     }

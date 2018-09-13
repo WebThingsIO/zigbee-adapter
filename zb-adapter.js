@@ -78,8 +78,6 @@ const WAIT_RETRY_MAX = 3;   // includes initial send
 
 const PERMIT_JOIN_PRIORITY = 1;
 
-const ADDR16_UNKNOWN = 'fffe';
-
 const DEVICE_TYPE = {
   0x30001: 'ConnectPort X8 Gateway',
   0x30002: 'ConnectPort X4 Gateway',
@@ -697,6 +695,7 @@ class ZigbeeAdapter extends Adapter {
       const name = utils.padRight(node.name, 32);
       console.log('Node:', node.addr64, node.addr16,
                   'Name:', name,
+                  'rebindRequired:', node.rebindRequired,
                   'endpoints:', Object.keys(node.activeEndpoints));
       for (const neighbor of node.neighbors) {
         console.log('  Neighbor: %s %s DT: %s R: %s PJ: %s D: %s ' +
@@ -752,7 +751,7 @@ class ZigbeeAdapter extends Adapter {
           const devInfoNode = devInfo.nodes[nodeId];
           let node = this.nodes[nodeId];
           if (!node) {
-            node = new ZigbeeNode(this, devInfoNode.addr64, ADDR16_UNKNOWN);
+            node = new ZigbeeNode(this, devInfoNode.addr64, devInfoNode.addr16);
             this.nodes[nodeId] = node;
           }
           node.fromDeviceInfo(devInfoNode);
@@ -1498,17 +1497,11 @@ class ZigbeeAdapter extends Adapter {
         clusterId: zdo.getClusterIdAsString(
           zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE),
         zdoSeq: simpleDescFrame.zdoSeq,
+        timeoutFunc: () => {
+          endpoint.queryingSimpleDescriptor = false;
+        },
       }),
-      FUNC(this, this.clearQueryingSimpleDescriptor, [node, endpointNum]),
     ];
-  }
-
-  clearQueryingSimpleDescriptor(node, endpointNum) {
-    // Called to cover the case where no response is received.
-    const endpoint = node.activeEndpoints[endpointNum];
-    if (endpoint) {
-      endpoint.queryingSimpleDescriptor = false;
-    }
   }
 
   handleSimpleDescriptorResponse(frame) {
@@ -1995,7 +1988,8 @@ class ZigbeeAdapter extends Adapter {
 
   populateNodeInfo(node) {
     if (this.debugFlow) {
-      console.log('populateNodeInfo node.addr64 =', node.addr64);
+      console.log('populateNodeInfo node.addr64 =', node.addr64,
+                  'rebindRequired:', node.rebindRequired);
     }
     if (node.addr64 == this.serialNumber) {
       // We don't populate information for the coordinator (i.e. dongle)
@@ -2031,12 +2025,12 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.lightingColorCtrlEndpoint) {
+    if (endpointNum == node.lightingColorCtrlEndpoint) {
       if (node.hasOwnProperty('colorCapabilities')) {
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
         const readFrame = node.makeReadAttributeFrame(
-          endpointNum,
+          node.lightingColorCtrlEndpoint,
           ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
           CLUSTER_ID_LIGHTINGCOLORCTRL,
           ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES);
@@ -2050,21 +2044,29 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.ssIasZoneEndpoint) {
+    if (endpointNum == node.ssIasZoneEndpoint) {
       if (node.hasOwnProperty('zoneType')) {
         if (this.debugFlow) {
           console.log('populateClassifierAttributes has zoneType - done');
         }
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
+        if (node.readingZoneType) {
+          if (this.debugFlow) {
+            console.log('populateClassifierAttributes: read of zoneType',
+                        'already in progress');
+          }
+          return;
+        }
         if (this.debugFlow) {
           console.log('populateClassifierAttributes has no zoneType -',
                       'querying via read');
         }
         // zoneType is the only field that the classifier actually needs.
         // We read the status and cieAddr to save a read later.
+        node.readingZoneType = true;
         const readFrame = node.makeReadAttributeFrame(
-          endpointNum,
+          node.ssIasZoneEndpoint,
           ZHA_PROFILE_ID,
           CLUSTER_ID_SSIASZONE,
           [
@@ -2077,7 +2079,13 @@ class ZigbeeAdapter extends Adapter {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.zcl.seqNum,
-          callback: this.populateClassifierAttributesIasZone.bind(this),
+          callback: (frame) => {
+            node.readingZoneType = false;
+            this.populateClassifierAttributesIasZone(frame);
+          },
+          timeoutFunc: () => {
+            node.readingZoneType = false;
+          },
         });
       }
       return;
@@ -2086,7 +2094,6 @@ class ZigbeeAdapter extends Adapter {
     // Since we got to here, this endpoint doesn't need any classifier
     // attributes
     this.setClassifierAttributesPopulated(node, endpointNum);
-    endpoint.classifierAttributesPopulated = true;
   }
 
   populateClassifierAttributesLightingControl(frame) {
@@ -2135,6 +2142,16 @@ class ZigbeeAdapter extends Adapter {
   populateNodeInfoEndpoints(node) {
     if (this.debugFlow) {
       console.log('populateNodeInfoEndpoints node.addr64 =', node.addr64);
+    }
+
+    // As soon as we know about the genPollCtrl endpoint, set the checkin
+    // interval
+    const genPollCtrlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_GENPOLLCTRL_HEX);
+    if (genPollCtrlEndpoint && !this.scanning) {
+      node.genPollCtrlEndpoint = genPollCtrlEndpoint;
+      node.writeCheckinInterval();
     }
 
     // Check to see that have all of the simple descriptors
