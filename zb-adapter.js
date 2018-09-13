@@ -2144,6 +2144,16 @@ class ZigbeeAdapter extends Adapter {
       console.log('populateNodeInfoEndpoints node.addr64 =', node.addr64);
     }
 
+    // As soon as we know about the genPollCtrl endpoint, set the checkin
+    // interval
+    const genPollCtrlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID_GENPOLLCTRL_HEX);
+    if (genPollCtrlEndpoint && !this.scanning) {
+      node.genPollCtrlEndpoint = genPollCtrlEndpoint;
+      node.writeCheckinInterval();
+    }
+
     // Check to see that have all of the simple descriptors
     for (const endpointNum in node.activeEndpoints) {
       const endpoint = node.activeEndpoints[endpointNum];

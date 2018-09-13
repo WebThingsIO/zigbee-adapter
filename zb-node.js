@@ -456,8 +456,10 @@ class ZigbeeNode extends Device {
   }
 
   handleCheckin(frame) {
+    const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
+    this.genPollCtrlEndpoint = sourceEndpoint;
     const rspFrame = this.makeZclFrame(
-      parseInt(frame.sourceEndpoint, 16),
+      sourceEndpoint,
       frame.profileId,
       CLUSTER_ID_GENPOLLCTRL,
       {
@@ -474,10 +476,8 @@ class ZigbeeNode extends Device {
         },
       }
     );
+    this.writeCheckinInterval();
     this.adapter.sendFrameNow(rspFrame);
-    if (!this.rebindRequired) {
-      this.writeCheckinInterval(SLOW_CHECKIN_INTERVAL);
-    }
     this.rebindIfRequired();
   }
 
@@ -961,6 +961,11 @@ class ZigbeeNode extends Device {
   }
 
   writeCheckinInterval(interval) {
+    if (!interval) {
+      interval =
+        this.rebindRequired ? FAST_CHECKIN_INTERVAL : SLOW_CHECKIN_INTERVAL;
+    }
+
     DEBUG && console.log(`writeCheckinInterval(${interval})`,
                          `this.checkinInterval: ${this.checkinInterval}`);
     if (!this.genPollCtrlEndpoint) {
@@ -968,11 +973,17 @@ class ZigbeeNode extends Device {
         'writeCheckinInterval: exiting - no genPollCtrlEndpoint');
       return;
     }
+    if (this.writingCheckinInterval) {
+      DEBUG && console.log(
+        'writeCheckinInterval: exiting - write already in progress');
+      return;
+    }
     if (typeof this.checkinInterval === 'undefined') {
       this.checkinInterval = 0;
     }
 
     if (this.checkinInterval != interval) {
+      this.writingCheckinInterval = true;
       const writeFrame = this.makeWriteAttributeFrame(
         this.genPollCtrlEndpoint,
         ZHA_PROFILE_ID,
@@ -983,8 +994,12 @@ class ZigbeeNode extends Device {
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
+          this.writingCheckinInterval = false;
           this.checkinInterval = interval;
           this.adapter.saveDeviceInfoDeferred();
+        },
+        timeoutFunc: () => {
+          this.writingCheckinInterval = false;
         },
       });
     }
