@@ -456,6 +456,12 @@ class ZigbeeNode extends Device {
   }
 
   handleCheckin(frame) {
+    if (this.adapter.scanning) {
+      if (this.adapter.debugFlow) {
+        console.log('Ignoring checking - scanning in progress');
+      }
+      return;
+    }
     const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
     this.genPollCtrlEndpoint = sourceEndpoint;
     const rspFrame = this.makeZclFrame(
@@ -585,7 +591,9 @@ class ZigbeeNode extends Device {
   }
 
   handleQueryNextImageReq(frame) {
-    this.adapter.populateNodeInfo(this);
+    if (!this.adapter.scanning) {
+      this.adapter.populateNodeInfo(this);
+    }
 
     // For the time being, we always indicate that we have no images.
     const rspFrame = this.makeZclFrame(
@@ -611,6 +619,13 @@ class ZigbeeNode extends Device {
 
   handleReadRsp(frame) {
     DEBUG && console.log('handleReadRsp node:', this.addr64);
+
+    if (this.adapter.scanning && frame.zcl.cmdId === 'report') {
+      if (this.adapter.debugFlow) {
+        console.log('Ignoring report - scanning in progress');
+      }
+      return;
+    }
 
     this.reportZclStatusError(frame);
     if (this.discoveringAttributes && frame.zcl.cmdId === 'readRsp') {
@@ -708,7 +723,10 @@ class ZigbeeNode extends Device {
         }
       }
     }
-    if (!propertyFound && frame.clusterId != CLUSTER_ID_GENBASIC_HEX) {
+    if (!propertyFound &&
+        frame.clusterId != CLUSTER_ID_GENBASIC_HEX &&
+        frame.clusterId != CLUSTER_ID_SSIASZONE_HEX &&
+        frame.clusterId != CLUSTER_ID_GENPOLLCTRL_HEX) {
       console.log('handleReadRsp: ##### No property found for frame #####');
     }
   }
@@ -805,7 +823,9 @@ class ZigbeeNode extends Device {
       }
     }
     if (frame.zcl.frameCntl.disDefaultRsp == 0) {
-      this.adapter.populateNodeInfo(this);
+      if (!this.adapter.scanning) {
+        this.adapter.populateNodeInfo(this);
+      }
     }
   }
 

@@ -83,22 +83,138 @@ const ZONE_TYPE_NAME = {
   // non-switch sensors which also report a zoneType of 0, we may need
   // to use further refinements, like the presence of the binaryInput
   // cluster.
-  0x0000: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
-  0x000d: {name: 'motion', label: 'Motion', descr: 'Motion Sensor'},
-  0x0015: {name: 'switch', label: 'Open', descr: 'Contact Switch'},
-  0x0028: {name: 'fire', label: 'Fire', descr: 'Fire Sensor'},
-  0x002a: {name: 'water', label: 'Water', descr: 'Water Sensor'},
-  0x002b: {name: 'co', label: 'CO', descr: 'Carbon Monoxide Sensor'},
-  0x002c: {name: 'ped', label: 'Pressed', descr: 'Personal Emergency Device'},
+  0x0000: {
+    name: 'switch',
+    '@type': ['DoorSensor'],
+    propertyName: 'open',
+    propertyDescr: {
+      '@type': 'OpenProperty',
+      type: 'boolean',
+      label: 'Open',
+      description: 'Contact Switch',
+    },
+  },
+  0x000d: {
+    name: 'motion',
+    '@type': ['MotionSensor'],
+    propertyName: 'motion',
+    propertyDescr: {
+      '@type': 'MotionProperty',
+      type: 'boolean',
+      label: 'Motion',
+      description: 'Motion Sensor',
+    },
+  },
+  0x0015: {
+    name: 'switch',
+    '@type': ['DoorSensor'],
+    propertyName: 'open',
+    propertyDescr: {
+      '@type': 'OpenProperty',
+      type: 'boolean',
+      label: 'Open',
+      description: 'Contact Switch',
+    },
+  },
+  0x0028: {
+    name: 'fire',
+    '@type': ['BinarySensor'],
+    propertyName: 'on',
+    propertyDescr: {
+      '@type': 'BooleanProperty',
+      type: 'boolean',
+      label: 'Fire',
+      description: 'Fire Sensor',
+    },
+  },
+  0x002a: {
+    name: 'water',
+    '@type': ['BinarySensor'],
+    propertyName: 'on',
+    propertyDescr: {
+      '@type': 'BooleanProperty',
+      type: 'boolean',
+      label: 'Water',
+      description: 'Water Sensor',
+    },
+  },
+  0x002b: {
+    name: 'co',
+    '@type': ['BinarySensor'],
+    propertyName: 'on',
+    propertyDescr: {
+      '@type': 'BooleanProperty',
+      type: 'boolean',
+      label: 'CO',
+      description: 'Carbon Monoxide Sensor',
+    },
+  },
+  0x002c: {
+    name: 'ped',
+    '@type': ['PushButton'],
+    propertyName: 'pushed',
+    propertyDescr: {
+      '@type': 'PushedProperty',
+      type: 'boolean',
+      label: 'Pressed',
+      description: 'Personal Emergency Device',
+    },
+  },
   0x002d: {
     name: 'vibration',
-    label: 'Vibrating',
-    descr: 'Vibration/Movement Sensor',
+    '@type': ['BinarySensor'],
+    propertyName: 'on',
+    propertyDescr: {
+      '@type': 'BooleanProperty',
+      type: 'boolean',
+      label: 'Vibrating',
+      description: 'Vibration/Movement Sensor',
+    },
   },
-  0x010f: {name: 'remote-panic', label: 'Pressed', descr: 'Remote Control'},
-  0x0115: {name: 'keyfob-panic', label: 'Pressed', descr: 'Keyfob'},
-  0x021d: {name: 'keypad-panic', label: 'Pressed', descr: 'Keypad'},
-  0x0226: {name: 'glass', label: 'Breakage', descr: 'Glass Break Sensor'},
+  0x010f: {
+    name: 'remote-panic',
+    '@type': ['PushButton'],
+    propertyName: 'pushed',
+    propertyDescr: {
+      '@type': 'PushedProperty',
+      type: 'boolean',
+      label: 'Pressed',
+      description: 'Remote Control',
+    },
+  },
+  0x0115: {
+    name: 'keyfob-panic',
+    '@type': ['PushButton'],
+    propertyName: 'pushed',
+    propertyDescr: {
+      '@type': 'PushedProperty',
+      type: 'boolean',
+      label: 'Pressed',
+      description: 'Keyfob',
+    },
+  },
+  0x021d: {
+    name: 'keypad-panic',
+    '@type': ['PushButton'],
+    propertyName: 'pushed',
+    propertyDescr: {
+      '@type': 'PushedProperty',
+      type: 'boolean',
+      label: 'Pressed',
+      description: 'Keypad',
+    },
+  },
+  0x0226: {
+    name: 'glass',
+    '@type': ['BinarySensor'],
+    propertyName: 'on',
+    propertyDescr: {
+      '@type': 'BooleanProperty',
+      type: 'boolean',
+      label: 'Breakage',
+      description: 'Glass Break Sensor',
+    },
+  },
 };
 
 // One way to do a deepEqual that turns out to be fairly performant.
@@ -675,16 +791,11 @@ class ZigbeeClassifier {
     );
   }
 
-  addZoneTypeProperty(node, name, label, descr) {
+  addZoneTypeProperty(node, propertyName, propertyDescr) {
     this.addProperty(
       node,                           // device
-      'on',                           // name
-      {                               // property description
-        '@type': 'BooleanProperty',
-        type: 'boolean',
-        label: label,
-        description: descr,
-      },
+      propertyName,                   // name
+      propertyDescr,                  // property description
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
       CLUSTER_ID_SSIASZONE,           // clusterId
@@ -908,18 +1019,29 @@ class ZigbeeClassifier {
 
   initBinarySensorFromZoneType(node) {
     node.type = Constants.THING_TYPE_BINARY_SENSOR;
-    node['@type'] = ['BinarySensor'];
-    let name = 'thing';
-    let label = '';
-    let descr = '';
+    let propertyName;
+    let propertyDescr;
+    let name;
     if (ZONE_TYPE_NAME.hasOwnProperty(node.zoneType)) {
       name = ZONE_TYPE_NAME[node.zoneType].name;
-      label = ZONE_TYPE_NAME[node.zoneType].label;
-      descr = ZONE_TYPE_NAME[node.zoneType].descr;
+      node['@type'] = ZONE_TYPE_NAME[node.zoneType]['@type'];
+      propertyName = ZONE_TYPE_NAME[node.zoneType].propertyName;
+      propertyDescr = ZONE_TYPE_NAME[node.zoneType].propertyDescr;
+    } else {
+      // This is basically 'just in case'
+      name = 'thing';
+      node['@type'] = ['BinarySensor'];
+      propertyName = 'on';
+      propertyDescr = {
+        '@type': 'BooleanProperty',
+        type: 'boolean',
+        label: `ZoneType${node.zoneType}`,
+        descr: `ZoneType${node.zoneType}`,
+      };
     }
     node.name = `${node.id}-${name}`;
 
-    this.addZoneTypeProperty(node, name, label, descr);
+    this.addZoneTypeProperty(node, propertyName, propertyDescr);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {

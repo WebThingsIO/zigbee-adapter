@@ -202,6 +202,10 @@ class ZigbeeAdapter extends Adapter {
     this.frameDumped = false;
     this.isPairing = false;
 
+    // Indicate that we're scanning so we don't try to talk to devices
+    // until after we're initialized.
+    this.scanning = true;
+
     this.xb = new xbeeApi.XBeeAPI({
       api_mode: 1,
       raw_frames: this.debugRawFrames,
@@ -322,7 +326,6 @@ class ZigbeeAdapter extends Adapter {
 
   startScan() {
     console.log('----- Scan Starting -----');
-    this.scanning = true;
     this.enumerateAllNodes(this.scanNode);
   }
 
@@ -1133,6 +1136,12 @@ class ZigbeeAdapter extends Adapter {
     if (this.isPairing) {
       this.cancelPairing();
     }
+    if (this.scanning) {
+      if (this.debugFlow) {
+        console.log('Ignoring END_DEVICE_ANNOUNCEMENT - scanning in progress');
+      }
+      return;
+    }
 
     // Create the node now, since we know the 64 and 16 bit addresses. This
     // allows us to process broadcasts which only come in with a 16-bit address.
@@ -1178,6 +1187,12 @@ class ZigbeeAdapter extends Adapter {
   handleMatchDescriptorRequest(frame) {
     const node = this.createNodeIfRequired(frame.remote64, frame.remote16);
     if (!node) {
+      return;
+    }
+    if (this.scanning) {
+      if (this.debugFlow) {
+        console.log('Ignoring Match Descriptor Request - scanning in progress');
+      }
       return;
     }
 
