@@ -585,6 +585,8 @@ class ZigbeeNode extends Device {
   }
 
   handleQueryNextImageReq(frame) {
+    this.adapter.populateNodeInfo(this);
+
     // For the time being, we always indicate that we have no images.
     const rspFrame = this.makeZclFrame(
       parseInt(frame.sourceEndpoint, 16),
@@ -801,6 +803,9 @@ class ZigbeeNode extends Device {
           this.notifyPropertyChanged(property);
         }
       }
+    }
+    if (frame.zcl.frameCntl.disDefaultRsp == 0) {
+      this.adapter.populateNodeInfo(this);
     }
   }
 
