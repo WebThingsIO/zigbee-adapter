@@ -282,6 +282,28 @@ class ZigbeeNode extends Device {
     console.log('debugCmd:', this.addr64, cmd, params);
     switch (cmd) {
 
+      case 'bind': {
+        let paramMissing = false;
+        // Note: We allow attrId to be optional
+        for (const p of ['srcEndpoint', 'clusterId']) {
+          if (!params.hasOwnProperty(p)) {
+            console.log('Missing parameter:', p);
+            paramMissing = true;
+          }
+        }
+        if (!paramMissing) {
+          if (typeof params.srcEndpoint === 'string') {
+            params.srcEndpoint = parseInt(params.srcEndpoint);
+          }
+          console.log('Issuing bind for endpoint:', params.srcEndpoint,
+                      'clusterId', params.clusterId);
+          const bindFrame = this.makeBindFrame(params.srcEndpoint,
+                                               params.clusterId);
+          this.sendFrames([bindFrame]);
+        }
+        break;
+      }
+
       case 'debug':
         if (params.hasOwnProperty('debugFlow')) {
           console.log('Setting debugFlow to', params.debugFlow);
@@ -330,6 +352,9 @@ class ZigbeeNode extends Device {
           }
         }
         if (!paramMissing) {
+          if (typeof params.endpoint === 'string') {
+            params.endpoint = parseInt(params.endpoint);
+          }
           console.log('Issuing read attribute for endpoint:', params.endpoint,
                       'profileId:', params.profileId,
                       'clusterId', params.clusterId,
