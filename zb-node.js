@@ -462,6 +462,16 @@ class ZigbeeNode extends Device {
       }
       return;
     }
+
+    if (this.adapter.cmdQueue.length == 0) {
+      // This is a bit of a hack, but is needed until I rewrite the
+      // whole binding/configReport/initialRead to be able to work
+      // incrementally. The fact that the command queue is empty
+      // means that we're no longer rebinding since everything has
+      // either been sent or timed out.
+      this.rebinding = false;
+    }
+
     const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
     this.genPollCtrlEndpoint = sourceEndpoint;
     const rspFrame = this.makeZclFrame(
@@ -691,6 +701,11 @@ class ZigbeeNode extends Device {
         }
         property.setCachedValue(value);
         property.initialReadNeeded = false;
+        if (frame.zcl.cmdId == 'report') {
+          // The fact that we received a report means that we don't need
+          // to setup binding/configReporting
+          property.configReportNeeded = false;
+        }
         console.log(this.name,
                     'property:', property.name,
                     'profileId:', utils.hexStr(property.profileId, 4),
