@@ -304,6 +304,20 @@ class ZigbeeNode extends Device {
         break;
       }
 
+      case 'bindings': {
+        const bindingsFrame = this.makeBindingsFrame(0);
+        bindingsFrame.callback = (frame) => {
+          const nextIndex = frame.startIndex + frame.numEntriesThisResponse;
+          if (nextIndex < frame.numEntries) {
+            const nextFrame = this.makeBindingsFrame(nextIndex);
+            nextFrame.callback = frame.callback;
+            this.sendFrames([nextFrame]);
+          }
+        };
+        this.sendFrames([bindingsFrame]);
+        break;
+      }
+
       case 'debug':
         if (params.hasOwnProperty('debugFlow')) {
           console.log('Setting debugFlow to', params.debugFlow);
@@ -1217,6 +1231,17 @@ class ZigbeeNode extends Device {
     if (configReportFrames) {
       frame.sendOnSuccess = configReportFrames;
     }
+    return frame;
+  }
+
+  makeBindingsFrame(startIndex) {
+    DEBUG && console.log('makeBindingsFrame: startIndex =', startIndex);
+    const frame = this.adapter.zdo.makeFrame({
+      destination64: this.addr64,
+      destination16: this.addr16,
+      clusterId: zdo.CLUSTER_ID.MANAGEMENT_BIND_REQUEST,
+      startIndex: startIndex,
+    });
     return frame;
   }
 

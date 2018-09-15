@@ -953,6 +953,10 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  handleManagementBindResponse(_frame) {
+    console.log('handleManagementBindResponse');
+  }
+
   handleExplicitRx(frame) {
     const node = this.nodes[frame.remote64];
     if (node && node.addr16 != frame.remote16) {
@@ -2504,6 +2508,8 @@ zch[zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE] =
   ZigbeeAdapter.prototype.handleActiveEndpointsResponse;
 zch[zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE] =
   ZigbeeAdapter.prototype.handleNetworkAddressResponse;
+zch[zdo.CLUSTER_ID.MANAGEMENT_BIND_RESPONSE] =
+  ZigbeeAdapter.prototype.handleManagementBindResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_LEAVE_RESPONSE] =
   ZigbeeAdapter.prototype.handleManagementLeaveResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_LQI_RESPONSE] =

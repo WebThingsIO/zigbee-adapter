@@ -88,6 +88,11 @@ zci[zci.MANAGEMENT_RTG_REQUEST] = 'Mgmt RTG (Routing Table) Req (0x0032)';
 zci.MANAGEMENT_RTG_RESPONSE = 0x8032;
 zci[zci.MANAGEMENT_RTG_RESPONSE] = 'Mgmt RTG (Routing Table) Resp (0x8032)';
 
+zci.MANAGEMENT_BIND_REQUEST = 0x0033;
+zci[zci.MANAGEMENT_BIND_REQUEST] = 'Mgmt BIND (Binding Table) Req (0x0033)';
+zci.MANAGEMENT_BIND_RESPONSE = 0x8033;
+zci[zci.MANAGEMENT_BIND_RESPONSE] = 'Mgmt BIND (Binding Table) Resp (0x8033)';
+
 zci.MANAGEMENT_LEAVE_REQUEST = 0x0034;
 zci[zci.MANAGEMENT_LEAVE_REQUEST] = 'Mgmt Leave Req (0x0034)';
 zci.MANAGEMENT_LEAVE_RESPONSE = 0x8034;
@@ -257,6 +262,10 @@ zdoBuilder[zci.BIND_REQUEST] = function(frame, builder) {
   }
 };
 
+zdoBuilder[zci.MANAGEMENT_BIND_REQUEST] = function(frame, builder) {
+  builder.appendUInt8(frame.startIndex);
+};
+
 zdoBuilder[zci.MANAGEMENT_LEAVE_REQUEST] = function(frame, builder) {
   builder.appendString(frame.destination64.swapHex(), 'hex');
   builder.appendUInt8(frame.leaveOptions);
@@ -325,6 +334,35 @@ zdoParser[zci.END_DEVICE_ANNOUNCEMENT] = function(frame, reader) {
   frame.zdoAddr16 = reader.nextString(2, 'hex').swapHex();
   frame.zdoAddr64 = reader.nextString(8, 'hex').swapHex();
   frame.capability = reader.nextUInt8();
+  frame.alternatePanCoordinator = (frame.capability >> 0) & 1;
+  frame.fullFunctionDevice = (frame.capability >> 1) & 1;
+  frame.acPower = (frame.capability >> 2) & 1;
+  frame.rxOnWhenIdle = (frame.capability >> 3) & 1;
+  frame.securityCapability = (frame.capability >> 6) & 1;
+  frame.allocShortAddress = (frame.capability >> 7) & 1;
+};
+
+zdoParser[zci.MANAGEMENT_BIND_RESPONSE] = function(frame, reader) {
+  frame.status = reader.nextUInt8();
+  frame.numEntries = reader.nextUInt8();
+  frame.startIndex = reader.nextUInt8();
+  frame.numEntriesThisResponse = reader.nextUInt8();
+  frame.bindings = [];
+
+  for (let i = 0; i < frame.numEntriesThisResponse; i++) {
+    const binding = frame.bindings[i] = {};
+
+    binding.srcAddr64 = reader.nextString(8, 'hex').swapHex();
+    binding.srcEndpoint = reader.nextString(1, 'hex');
+    binding.clusterId = reader.nextString(2, 'hex').swapHex();
+    binding.dstAddrMode = reader.nextUInt8();
+    if (binding.dstAddrMode == 1) {
+      binding.dstAddr16 = reader.nextString(2, 'hex').swapHex();
+    } else if (binding.dstAddrMode == 3) {
+      binding.dstAddr64 = reader.nextString(8, 'hex').swapHex();
+      binding.dstEndpoint = reader.nextString(1, 'hex');
+    }
+  }
 };
 
 zdoParser[zci.MANAGEMENT_LEAVE_RESPONSE] = function(frame, reader) {
