@@ -983,35 +983,63 @@ class ZigbeeAdapter extends Adapter {
       }
     } else if (this.isZhaFrame(frame) || this.isZllFrame(frame)) {
       try {
-        zcl.parse(frame.data, parseInt(frame.clusterId, 16), (error, data) => {
-          if (error) {
-            console.log('Error parsing ZHA frame:', frame);
-            console.log(error);
-          } else {
-            frame.zcl = data;
-            if (this.debugFrames) {
-              this.dumpFrame('Rcvd:', frame);
-            }
-            // Add some special fields to ease waitFrame processing.
-            if (frame.zcl.seqNum) {
-              frame.zclSeqNum = frame.zcl.seqNum;
-            }
-            if (frame.zcl.cmdId) {
-              frame.zclCmdId = frame.zcl.cmdId;
-            }
-            const node = this.findNodeFromFrame(frame);
-            if (node) {
-              node.handleZhaResponse(frame);
+        // The OSRAM lightify sends a manufacturer specific command
+        // which the zcl-parse library doesn't deal with, so we put a check
+        // for that here.
+        const zclData = frame.data;
+        if (zclData.length == 5 &&
+            zclData[0] == 0x05 &&
+            zclData[1] == 0x4e &&
+            zclData[2] == 0x10 &&
+            zclData[4] == 0x03) {
+          this.handleZclFrame(frame, {
+            frameCntl: {
+              frameType: 1,
+              manufSpec: 1,
+              direction: 0,
+              disDefaultRsp: 0,
+            },
+            manufCode: 0x104e,
+            seqNum: zclData[3],
+            cmdId: 'confirm',   // Made up - i.e. not from spec
+            payload: {},
+          });
+        } else {
+          const clusterId = parseInt(frame.clusterId, 16);
+          zcl.parse(zclData, clusterId, (error, zclData) => {
+            if (error) {
+              console.log('Error parsing ZHA frame:', frame);
+              console.log(error);
             } else {
-              console.log('Node:', frame.remote64, frame.remote16, 'not found');
+              this.handleZclFrame(frame, zclData);
             }
-          }
-        });
+          });
+        }
       } catch (e) {
         console.log('handleExplicitRx: Caught an exception parsing ZHA frame');
         console.log(e);
         console.log(util.inspect(frame, {depth: null}));
       }
+    }
+  }
+
+  handleZclFrame(frame, zclData) {
+    frame.zcl = zclData;
+    if (this.debugFrames) {
+      this.dumpFrame('Rcvd:', frame);
+    }
+    // Add some special fields to ease waitFrame processing.
+    if (frame.zcl.seqNum) {
+      frame.zclSeqNum = frame.zcl.seqNum;
+    }
+    if (frame.zcl.cmdId) {
+      frame.zclCmdId = frame.zcl.cmdId;
+    }
+    const node = this.findNodeFromFrame(frame);
+    if (node) {
+      node.handleZhaResponse(frame);
+    } else {
+      console.log('Node:', frame.remote64, frame.remote16, 'not found');
     }
   }
 

@@ -908,10 +908,12 @@ class ZigbeeClassifier {
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENBINARYINPUT_HEX);
     const genLevelCtrlEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
+    const genLevelCtrlOutputEndpoint =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
     const genOnOffEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
-    // const genOnOffOutputEndpoint =
-    //   node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
+    const genOnOffOutputEndpoint =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
     const msOccupancySensingEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID_OCCUPANCY_SENSOR_HEX);
@@ -931,13 +933,14 @@ class ZigbeeClassifier {
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
-      console.log('    seMeteringEndpoint =', seMeteringEndpoint);
-      console.log('  haElectricalEndpoint =', haElectricalEndpoint);
-      console.log('genBinaryInputEndpoint =', genBinaryInputEndpoint);
-      console.log('  genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
-      console.log('      genOnOffEndpoint =', genOnOffEndpoint);
-      // console.log('genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
-      console.log('     colorCapabilities =', node.colorCapabilities);
+      console.log('        seMeteringEndpoint =', seMeteringEndpoint);
+      console.log('      haElectricalEndpoint =', haElectricalEndpoint);
+      console.log('    genBinaryInputEndpoint =', genBinaryInputEndpoint);
+      console.log('      genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
+      console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
+      console.log('          genOnOffEndpoint =', genOnOffEndpoint);
+      console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('         colorCapabilities =', node.colorCapabilities);
       console.log('msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
       console.log('     msTemperatureEndpoint =', msTemperatureEndpoint);
       console.log('       genPowerCfgEndpoint =', genPowerCfgEndpoint);
@@ -983,6 +986,10 @@ class ZigbeeClassifier {
       this.initOnOffSwitch(node, genOnOffEndpoint);
       return;
     }
+    // if (genLevelCtrlOutputEndpoint) {
+    //    this.initMultiLevelButton(genOnOffOutputEndpoint,
+    //                              genLevelCtrlOutputEndpoint);
+    // }
     if (genBinaryInputEndpoint) {
       this.initBinarySensor(node, genBinaryInputEndpoint);
       // return;
