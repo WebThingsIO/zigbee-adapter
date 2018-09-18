@@ -556,7 +556,9 @@ class ZigbeeAdapter extends Adapter {
         }
         break;
 
-      case C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME:
+      case C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME: {
+        const cluster = zclId.cluster(parseInt(frame.clusterId, 16));
+        const clusterKey = cluster && cluster.key || '???';
         if (this.zdo.isZdoFrame(frame)) {
           const shortDescr = frame.shortDescr || '';
           console.log(label, 'Explicit Tx', frame.destination64,
@@ -566,13 +568,11 @@ class ZigbeeAdapter extends Adapter {
                       shortDescr);
         } else if (this.isZhaFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64,
-                      'ZHA', frame.clusterId,
-                      zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                      'ZHA', frame.clusterId, clusterKey,
                       frame.zcl.cmd, frame.zcl.payload);
         } else if (this.isZllFrame(frame)) {
           console.log(label, 'Explicit Tx', frame.destination64,
-                      'ZLL', frame.clusterId,
-                      zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                      'ZLL', frame.clusterId, clusterKey,
                       frame.zcl.cmd, frame.zcl.payload);
         } else {
           console.log(label, 'Explicit Tx', frame.destination64,
@@ -582,8 +582,11 @@ class ZigbeeAdapter extends Adapter {
           console.log(label, util.inspect(frame, {depth: null}));
         }
         break;
+      }
 
-      case C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX:
+      case C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX: {
+        const cluster = zclId.cluster(parseInt(frame.clusterId, 16));
+        const clusterKey = cluster && cluster.key || '???';
         if (this.zdo.isZdoFrame(frame)) {
           const status = this.frameStatus(frame);
           console.log(label, 'Explicit Rx', frame.remote64,
@@ -593,25 +596,21 @@ class ZigbeeAdapter extends Adapter {
         } else if (this.isZhaFrame(frame)) {
           if (frame.zcl) {
             console.log(label, 'Explicit Rx', frame.remote64,
-                        'ZHA', frame.clusterId,
-                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        'ZHA', frame.clusterId, clusterKey,
                         frame.zcl ? frame.zcl.cmdId : '???', frame.zcl.payload);
           } else {
             console.log(label, 'Explicit Rx', frame.remote64,
-                        'ZHA', frame.clusterId,
-                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        'ZHA', frame.clusterId, clusterKey,
                         '??? no zcl ???');
           }
         } else if (this.isZllFrame(frame)) {
           if (frame.zcl) {
             console.log(label, 'Explicit Rx', frame.remote64,
-                        'ZLL', frame.clusterId,
-                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        'ZLL', frame.clusterId, clusterKey,
                         frame.zcl ? frame.zcl.cmdId : '???', frame.zcl.payload);
           } else {
             console.log(label, 'Explicit Rx', frame.remote64,
-                        'ZLL', frame.clusterId,
-                        zclId.cluster(parseInt(frame.clusterId, 16)).key,
+                        'ZLL', frame.clusterId, clusterKey,
                         '??? no zcl ???');
           }
         } else {
@@ -622,6 +621,7 @@ class ZigbeeAdapter extends Adapter {
           console.log(label, util.inspect(frame, {depth: null}));
         }
         break;
+      }
 
       case C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS:
         if (dumpFrameDetail || frame.deliveryStatus !== 0) {
@@ -1700,20 +1700,28 @@ class ZigbeeAdapter extends Adapter {
 
   // ----- Discover Attributes -----------------------------------------------
 
-  discoverAttributes(node) {
+  discoverAttributes(node, discoverEndpointNum, discoverCluster) {
     this.waitFrameTimeoutFunc = this.discoverAttributesTimeout.bind(this);
     node.discoveringAttributes = true;
-    console.log('**** Starting discovery for node:', node.id, '*****');
+    console.log('discover: **** Starting discovery for node:', node.id,
+                'endpointNum:', discoverEndpointNum,
+                'clusterId:', discoverCluster, '*****');
     let commands = [];
     for (const endpointNum in node.activeEndpoints) {
+      if (discoverEndpointNum && endpointNum != discoverEndpointNum) {
+        continue;
+      }
       const endpoint = node.activeEndpoints[endpointNum];
 
       commands = commands.concat(
         FUNC(this, this.print,
-             [`  Input clusters for endpoint ${endpointNum}`])
+             [`discover:   Input clusters for endpoint ${endpointNum}`])
       );
       if (endpoint.inputClusters && endpoint.inputClusters.length) {
         for (const inputCluster of endpoint.inputClusters) {
+          if (discoverCluster && discoverCluster != inputCluster) {
+            continue;
+          }
           const inputClusterId = parseInt(inputCluster, 16);
           const zclCluster = zclId.clusterId.get(inputClusterId);
           let inputClusterStr = inputCluster;
@@ -1721,7 +1729,7 @@ class ZigbeeAdapter extends Adapter {
             inputClusterStr += ` - ${zclCluster.key}`;
           }
           commands = commands.concat(
-            FUNC(this, this.print, [`    ${inputClusterStr}`])
+            FUNC(this, this.print, [`discover:     ${inputClusterStr}`])
           );
 
           const discoverFrame =
@@ -1743,10 +1751,13 @@ class ZigbeeAdapter extends Adapter {
 
       commands = commands.concat(
         FUNC(this, this.print,
-             [`  Output clusters for endpoint ${endpointNum}`])
+             [`discover:   Output clusters for endpoint ${endpointNum}`])
       );
       if (endpoint.outputClusters && endpoint.outputClusters.length) {
         for (const outputCluster of endpoint.outputClusters) {
+          if (discoverCluster && discoverCluster != outputCluster) {
+            continue;
+          }
           const outputClusterId = parseInt(outputCluster, 16);
           const zclCluster = zclId.clusterId.get(outputClusterId);
           let outputClusterStr = outputCluster;
@@ -1754,7 +1765,7 @@ class ZigbeeAdapter extends Adapter {
             outputClusterStr += ` - ${zclCluster.key}`;
           }
           commands = commands.concat(
-            FUNC(this, this.print, [`    ${outputClusterStr}`])
+            FUNC(this, this.print, [`discover:     ${outputClusterStr}`])
           );
           const discoverFrame =
             node.makeDiscoverAttributesFrame(parseInt(endpointNum),
@@ -1779,7 +1790,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   doneDiscoverAttributes(node) {
-    console.log('***** Discovery done for node:', node.id, '*****');
+    console.log('discover: ***** Discovery done for node:', node.id, '*****');
     this.waitFrameTimeoutFunc = null;
     node.discoveringAttributes = false;
   }
@@ -1793,7 +1804,8 @@ class ZigbeeAdapter extends Adapter {
       for (const attrEntry of frame.zcl.payload) {
         const attr = zclId.attr(clusterId, attrEntry.attrId);
         const attrStr = attr ? attr.key : 'unknown';
-        console.log('      AttrId:', `${attrStr} (${attrEntry.attrId})`,
+        console.log('discover:       AttrId:',
+                    `${attrStr} (${attrEntry.attrId})`,
                     'read failed');
       }
     }

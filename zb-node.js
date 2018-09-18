@@ -342,7 +342,12 @@ class ZigbeeNode extends Device {
         break;
 
       case 'discoverAttr':
-        this.adapter.discoverAttributes(this);
+        if (typeof params.endpoint === 'string') {
+          params.endpoint = parseInt(params.endpoint);
+        }
+        this.adapter.discoverAttributes(this,
+                                        params.endpoint,
+                                        params.clusterId);
         break;
 
       case 'info': {
@@ -368,6 +373,14 @@ class ZigbeeNode extends Device {
         if (!paramMissing) {
           if (typeof params.endpoint === 'string') {
             params.endpoint = parseInt(params.endpoint);
+          }
+          if (Array.isArray(params.attrId)) {
+            for (const i in params.attrId) {
+              if (typeof params.attrId[i] === 'string') {
+                // The spec uses hex attributeIds
+                params.attrId[i] = parseInt(params.attrId[i], 16);
+              }
+            }
           }
           console.log('Issuing read attribute for endpoint:', params.endpoint,
                       'profileId:', params.profileId,
@@ -667,7 +680,8 @@ class ZigbeeNode extends Device {
   }
 
   handleReadRsp(frame) {
-    DEBUG && console.log('handleReadRsp node:', this.addr64);
+    DEBUG && console.log('handleReadRsp node:', this.addr64,
+                         'discoveringAttributes', this.discoveringAttributes);
 
     if (this.adapter.scanning && frame.zcl.cmdId === 'report') {
       if (this.adapter.debugFlow) {
@@ -685,7 +699,7 @@ class ZigbeeNode extends Device {
           const attrStr = attr ? attr.key : 'unknown';
           const dataType = zclId.dataType(attrEntry.dataType);
           const dataTypeStr = dataType ? dataType.key : 'unknown';
-          console.log('      AttrId:',
+          console.log('discover:       AttrId:',
                       `${attrStr} ( ${attrEntry.attrId})`,
                       'dataType:', `${dataTypeStr} (${attrEntry.dataType})`,
                       'data:', attrEntry.attrData);
