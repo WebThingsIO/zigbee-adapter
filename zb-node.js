@@ -62,6 +62,8 @@ const ATTR_ID_GENBASIC_POWERSOURCE =
 const POWERSOURCE_UNKNOWN = 0;
 const POWERSOURCE_BATTERY = 3;
 
+const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
+
 const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
 
 const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
@@ -861,6 +863,146 @@ class ZigbeeNode extends Device {
     }
   }
 
+  handleButtonCommand(frame) {
+    const endpoint = parseInt(frame.sourceEndpoint, 16);
+    DEBUG && console.log('handleButtonCommand:', this.addr64,
+                         `EP:${endpoint} CL:${frame.clusterId}`,
+                         `cmd:${frame.zcl.cmdId}`);
+    const profileId = parseInt(frame.profileId, 16);
+    const clusterId = parseInt(frame.clusterId, 16);
+    for (const property of this.properties.values()) {
+      if (profileId == property.profileId &&
+          endpoint == property.endpoint &&
+          clusterId == property.clusterId) {
+        switch (frame.zcl.cmdId) {
+          case 'on':   // on property
+            this.handleButtonOnOffCommand(property, true);
+            break;
+          case 'off': // on property]
+            this.handleButtonOnOffCommand(property, false);
+            break;
+          case 'moveWithOnOff': // level property
+            this.handleButtonMoveWithOnOffCommand(property,
+                                                  frame.zcl.payload.movemode,
+                                                  frame.zcl.payload.rate);
+            return;
+          case 'move':  // level property
+            this.handleButtonMoveCommand(property,
+                                         frame.zcl.payload.movemode,
+                                         frame.zcl.payload.rate,
+                                         false);
+            return;
+          case 'stop':  // level property
+            this.handleButtonStopCommand(property);
+            return;
+        }
+      }
+    }
+  }
+
+  handleButtonOnOffCommand(property, newValue) {
+    DEBUG && console.log('handleButtonOnOffCommmand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'value:', newValue);
+    if (newValue == property.value) {
+      // Already at desired value, nothing else to do
+      return;
+    }
+    property.setCachedValue(newValue);
+    console.log(this.name,
+                'property:', property.name,
+                'value:', property.value);
+    this.notifyPropertyChanged(property);
+  }
+
+  handleButtonMoveWithOnOffCommand(property, moveMode, rate) {
+    DEBUG && console.log('handleButtonMoveWithOnOffCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'moveMode:', moveMode,
+                         'rate:', rate);
+    if (this.onOffProperty && !this.onOffProperty.value) {
+      // onOff Property was off - turn it on
+      this.handleButtonOnOffCommand(this.onOffProperty, true);
+    }
+    this.handleButtonMoveCommand(property, moveMode, rate, true);
+    // implies turn off if level reaches zero
+  }
+
+  handleButtonMoveCommand(property, moveMode, rate, offAtZero) {
+    DEBUG && console.log('handleButtonMoveCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'moveMode:', moveMode,
+                         'rate:', rate,
+                         'offAtZero:', offAtZero);
+    // moveMode: 0 = up, 1 = down
+    // rate: units/second
+
+    if (property.moveTimer) {
+      // There's already a timer running.
+      return;
+    }
+
+    const updatesPerSecond = 4;
+    const delta = (moveMode ? -1 : 1) * rate / updatesPerSecond;
+
+    this.moveTimerCallback(property, delta, offAtZero);
+    if ((property.value > 0 && delta < 0) ||
+        (property.value < 100 && delta > 0)) {
+      // We haven't hit the end, setup a timer to move towards it.
+      property.moveTimer = setInterval(this.moveTimerCallback.bind(this),
+                                       1000 / updatesPerSecond,
+                                       property, delta, offAtZero);
+    }
+  }
+
+  moveTimerCallback(property, delta, offAtZero) {
+    let newValue = Math.round(property.value + delta);
+    newValue = Math.max(0, newValue);
+    newValue = Math.min(100, newValue);
+
+    DEBUG && console.log('moveTimerCallback:',
+                         this.addr64,
+                         'property:', property.name,
+                         'value:', property.value,
+                         'delta:', delta,
+                         'newValue:', newValue,
+                         'offAtZero:', offAtZero);
+
+    // Cancel the timer if we don't need it any more.
+    if ((newValue == property.value) ||
+        (newValue == 0 && delta < 0) ||
+        (newValue == 100 && delta > 0)) {
+      this.handleButtonStopCommand(property);
+    }
+
+    // Update the value, if it changed
+    if (newValue != property.value) {
+      property.setCachedValue(newValue);
+      console.log(this.name,
+                  'property:', property.name,
+                  'value:', property.value);
+      this.notifyPropertyChanged(property);
+    }
+
+    // Turn it off, if instructed and we hit zero
+    if (offAtZero && property.value == 0 && this.onOffProperty) {
+      this.handleButtonOnOffCommand(this.onOffProperty, false);
+    }
+  }
+
+  handleButtonStopCommand(property) {
+    DEBUG && console.log('handleButtonStopCommand:',
+                         this.addr64,
+                         'property:', property.name);
+    if (property.moveTimer) {
+      clearInterval(property.moveTimer);
+      property.moveTimer = null;
+    }
+  }
+
   handleStatusChangeNotification(frame) {
     const zoneStatus = frame.zcl.payload.zonestatus;
     const profileId = parseInt(frame.profileId, 16);
@@ -932,6 +1074,13 @@ class ZigbeeNode extends Device {
           return;
         case 'checkin':
           this.handleCheckin(frame);
+          break;
+        case 'on':
+        case 'off':
+        case 'moveWithOnOff':
+        case 'move':
+        case 'stop':
+          this.handleButtonCommand(frame);
           break;
         case 'writeNoRsp':
           // Don't generate a defaultRsp to a writeNoRsp command.

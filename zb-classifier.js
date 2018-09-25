@@ -416,6 +416,63 @@ class ZigbeeClassifier {
     );
   }
 
+  addButtonOnProperty(node, genOnOffOutputEndpoint) {
+    const property = this.addProperty(
+      node,                           // device
+      'on',                           // name
+      {                               // property description
+        '@type': 'BooleanProperty',
+        label: 'On/Off',
+        type: 'boolean',
+        readOnly: true,
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genOnOffOutputEndpoint,         // endpoint
+      CLUSTER_ID_GENONOFF,            // clusterId
+      '',                             // attr
+      '',                             // setAttrFromValue
+      ''                              // parseValueFromAttr
+    );
+    property.bindNeeded = true;
+    if (typeof property.value === 'undefined') {
+      property.value = false;
+    }
+    node.onOffProperty = property;
+    DEBUG && console.log('addProperty:',
+                         '  bindNeeded:', property.bindNeeded,
+                         'value:', property.value);
+  }
+
+  addButtonLevelProperty(node, genLevelCtrlOutputEndpoint) {
+    const property = this.addProperty(
+      node,                           // device
+      'level',                        // name
+      {                               // property description
+        '@type': 'LevelProperty',
+        label: 'Level',
+        type: 'number',
+        unit: 'percent',
+        minimum: 0,
+        maximum: 100,
+        readOnly: true,
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      genLevelCtrlOutputEndpoint,     // endpoint
+      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      '',                             // attr
+      '',                             // setAttrFromValue
+      ''                              // parseValueFromAttr
+    );
+    property.bindNeeded = true;
+    if (typeof property.value === 'undefined') {
+      property.value = 0;
+    }
+    node.levelProperty = property;
+    DEBUG && console.log('addProperty:',
+                         '  bindNeeded:', property.bindNeeded,
+                         'value:', property.value);
+  }
+
   addPresentValueProperty(node, genBinaryInputEndpoint) {
     this.addProperty(
       node,                           // device
@@ -1029,10 +1086,10 @@ class ZigbeeClassifier {
       this.initOnOffSwitch(node, genOnOffEndpoint);
       return;
     }
-    // if (genLevelCtrlOutputEndpoint) {
-    //    this.initMultiLevelButton(genOnOffOutputEndpoint,
-    //                              genLevelCtrlOutputEndpoint);
-    // }
+    if (genLevelCtrlOutputEndpoint) {
+      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+      return;
+    }
     if (genBinaryInputEndpoint) {
       this.initBinarySensor(node, genBinaryInputEndpoint);
       // return;
@@ -1136,6 +1193,14 @@ class ZigbeeClassifier {
     } else {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
     }
+  }
+
+  initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
+    node.name = `${node.id}-button`;
+    node.type = 'multiLevelButton';
+    node['@type'] = ['MultiLevelButton'];
+    this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
+    this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
