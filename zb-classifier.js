@@ -855,7 +855,9 @@ class ZigbeeClassifier {
                                         setAttrFromValue, parseValueFromAttr);
     node.properties.set(name, property);
 
-    DEBUG && console.log('addProperty:', node.addr64, name);
+    DEBUG && console.log('addProperty:', node.addr64, name,
+                         `EP:${property.endpoint}`,
+                         `CL:${utils.hexStr(property.clusterId, 4)}`);
 
     if (node.hasOwnProperty('devInfoProperties') &&
         node.devInfoProperties.hasOwnProperty(name)) {

@@ -320,6 +320,7 @@ class ZigbeeAdapter extends Adapter {
             FUNC(this, this.handleDeviceAdded, [coordinator]),
             FUNC(this, this.startScan),
             FUNC(this, this.scanComplete),
+            FUNC(this, this.updateComplete),
           ]));
     });
   }
@@ -342,6 +343,11 @@ class ZigbeeAdapter extends Adapter {
     this.saveDeviceInfo();
     this.scanning = false;
     this.enumerateAllNodes(this.updateNetworkAddress);
+  }
+
+  updateComplete() {
+    this.dumpNodes();
+    console.log('----- Update Network Addresses Complete -----');
   }
 
   updateNetworkAddress(node) {
@@ -1163,7 +1169,8 @@ class ZigbeeAdapter extends Adapter {
 
   handleEndDeviceAnnouncement(frame) {
     if (this.debugFlow) {
-      console.log('Processing END_DEVICE_ANNOUNCEMENT');
+      console.log('Processing END_DEVICE_ANNOUNCEMENT',
+                  frame.zdoAddr64, frame.zdoAddr16);
     }
     if (this.isPairing) {
       this.cancelPairing();
@@ -1199,8 +1206,10 @@ class ZigbeeAdapter extends Adapter {
 
   handleEndEndDeviceAnnouncementInternal(node) {
     if (this.debugFlow) {
-      console.log('handleEndEndDeviceAnnouncementInternal: isMainsPowered:',
-                  node.isMainsPowered(), 'classified:', node.classified);
+      console.log('handleEndEndDeviceAnnouncementInternal:', node.addr64,
+                  'isMainsPowered:', node.isMainsPowered(),
+                  'classified:', node.classified,
+                  'rebindRequired:', node.rebindRequired);
     }
     if (node.isMainsPowered() || !node.classified) {
       // We get an end device announcement when adding devices through

@@ -1240,7 +1240,7 @@ class ZigbeeNode extends Device {
       bindDstEndpoint: 1, // Endpoint on the coordinator
     });
     if (this.adapter.debugFrames) {
-      frame.shortDescr = `EP:${endpoint} CL:${clusterId}`;
+      frame.shortDescr = `EP:${endpoint} CL:${utils.hexStr(clusterId, 4)}`;
     }
     if (configReportFrames) {
       frame.sendOnSuccess = configReportFrames;
