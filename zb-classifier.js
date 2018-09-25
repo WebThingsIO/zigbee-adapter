@@ -918,7 +918,7 @@ class ZigbeeClassifier {
       node,                           // device
       'lowBattery',                   // name
       {                               // property description
-        '@type': 'LowPatteryProperty',
+        '@type': 'LowBatteryProperty',
         type: 'boolean',
         label: 'Low Battery',
         readOnly: true,

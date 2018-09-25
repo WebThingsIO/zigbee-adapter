@@ -62,8 +62,6 @@ const ATTR_ID_GENBASIC_POWERSOURCE =
 const POWERSOURCE_UNKNOWN = 0;
 const POWERSOURCE_BATTERY = 3;
 
-const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
-
 const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
 
 const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
@@ -878,7 +876,7 @@ class ZigbeeNode extends Device {
           case 'on':   // on property
             this.handleButtonOnOffCommand(property, true);
             break;
-          case 'off': // on property]
+          case 'off': // on property
             this.handleButtonOnOffCommand(property, false);
             break;
           case 'moveWithOnOff': // level property
