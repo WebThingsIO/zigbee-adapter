@@ -92,6 +92,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Open',
       description: 'Contact Switch',
+      readOnly: true,
     },
   },
   0x000d: {
@@ -103,6 +104,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Motion',
       description: 'Motion Sensor',
+      readOnly: true,
     },
   },
   0x0015: {
@@ -114,6 +116,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Open',
       description: 'Contact Switch',
+      readOnly: true,
     },
   },
   0x0028: {
@@ -125,6 +128,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Fire',
       description: 'Fire Sensor',
+      readOnly: true,
     },
   },
   0x002a: {
@@ -136,6 +140,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Water',
       description: 'Water Sensor',
+      readOnly: true,
     },
   },
   0x002b: {
@@ -147,6 +152,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'CO',
       description: 'Carbon Monoxide Sensor',
+      readOnly: true,
     },
   },
   0x002c: {
@@ -158,6 +164,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Pressed',
       description: 'Personal Emergency Device',
+      readOnly: true,
     },
   },
   0x002d: {
@@ -169,6 +176,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Vibrating',
       description: 'Vibration/Movement Sensor',
+      readOnly: true,
     },
   },
   0x010f: {
@@ -180,6 +188,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Pressed',
       description: 'Remote Control',
+      readOnly: true,
     },
   },
   0x0115: {
@@ -191,6 +200,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Pressed',
       description: 'Keyfob',
+      readOnly: true,
     },
   },
   0x021d: {
@@ -202,6 +212,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Pressed',
       description: 'Keypad',
+      readOnly: true,
     },
   },
   0x0226: {
@@ -213,6 +224,7 @@ const ZONE_TYPE_NAME = {
       type: 'boolean',
       label: 'Breakage',
       description: 'Glass Break Sensor',
+      readOnly: true,
     },
   },
 };
@@ -349,6 +361,7 @@ class ZigbeeClassifier {
         label: 'Temperature',
         type: 'number',
         unit: 'celsius',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       genDeviceTempCfgEndpoint,       // endpoint
@@ -411,6 +424,7 @@ class ZigbeeClassifier {
         '@type': 'BooleanProperty',
         label: 'Present',
         type: 'boolean',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       genBinaryInputEndpoint,         // endpoint
@@ -428,6 +442,7 @@ class ZigbeeClassifier {
       '_currentMul',                  // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -443,6 +458,7 @@ class ZigbeeClassifier {
       '_currentDiv',                  // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -461,6 +477,7 @@ class ZigbeeClassifier {
         label: 'Current',
         type: 'number',
         unit: 'ampere',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -481,6 +498,7 @@ class ZigbeeClassifier {
         label: 'Frequency',
         type: 'number',
         unit: 'hertz',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -498,6 +516,7 @@ class ZigbeeClassifier {
       '_powerMul',                    // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -513,6 +532,7 @@ class ZigbeeClassifier {
       '_powerDiv',                    // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -531,6 +551,7 @@ class ZigbeeClassifier {
         label: 'Power',
         type: 'number',
         unit: 'watt',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -548,6 +569,7 @@ class ZigbeeClassifier {
       '_voltageMul',                  // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -563,6 +585,7 @@ class ZigbeeClassifier {
       '_voltageDiv',                  // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -581,6 +604,7 @@ class ZigbeeClassifier {
         label: 'Voltage',
         type: 'number',
         unit: 'volt',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       haElectricalEndpoint,           // endpoint
@@ -598,6 +622,7 @@ class ZigbeeClassifier {
       '_multiplier',                  // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       seMeteringEndpoint,             // endpoint
@@ -611,6 +636,7 @@ class ZigbeeClassifier {
       '_divisor',                     // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       seMeteringEndpoint,             // endpoint
@@ -627,6 +653,7 @@ class ZigbeeClassifier {
         label: 'Power',
         type: 'number',
         unit: 'watt',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       seMeteringEndpoint,             // endpoint
@@ -647,6 +674,7 @@ class ZigbeeClassifier {
         type: 'boolean',
         label: 'Occupied',
         description: 'Occupancy Sensor',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msOccupancySensingEndpoint,     // endpoint
@@ -662,6 +690,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'Sensor Type',
         type: 'string',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msOccupancySensingEndpoint,     // endpoint
@@ -678,6 +707,7 @@ class ZigbeeClassifier {
       '_minIlluminance',              // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msMeasurementEndpoint,          // endpoint
@@ -691,6 +721,7 @@ class ZigbeeClassifier {
       '_maxIlluminance',              // name
       {                               // property description
         type: 'number',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msMeasurementEndpoint,          // endpoint
@@ -707,6 +738,7 @@ class ZigbeeClassifier {
         label: 'Illuminance',
         type: 'number',
         unit: 'lux',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msMeasurementEndpoint,          // endpoint
@@ -732,6 +764,7 @@ class ZigbeeClassifier {
         label: 'Voltage',
         type: 'number',
         unit: 'volt',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       genPowerCfgEndpoint,            // endpoint
@@ -750,6 +783,7 @@ class ZigbeeClassifier {
       {                               // property description
         type: 'number',
         unit: 'celsius',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msTemperatureEndpoint,          // endpoint
@@ -764,6 +798,7 @@ class ZigbeeClassifier {
       {                               // property description
         type: 'number',
         unit: 'celsius',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msTemperatureEndpoint,          // endpoint
@@ -780,6 +815,7 @@ class ZigbeeClassifier {
         label: 'Temperature',
         type: 'number',
         unit: 'celsius',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       msTemperatureEndpoint,          // endpoint
@@ -811,6 +847,7 @@ class ZigbeeClassifier {
         '@type': 'TamperProperty',
         type: 'boolean',
         label: 'Tamper',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
@@ -827,6 +864,7 @@ class ZigbeeClassifier {
         '@type': 'LowPatteryProperty',
         type: 'boolean',
         label: 'Low Battery',
+        readOnly: true,
       },
       ZHA_PROFILE_ID,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
