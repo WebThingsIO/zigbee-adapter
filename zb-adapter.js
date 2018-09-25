@@ -1111,6 +1111,12 @@ class ZigbeeAdapter extends Adapter {
       if (frame.extraParams) {
         waitFrame.extraParams = frame.extraParams;
       }
+      if (frame.callback) {
+        waitFrame.callback = frame.callback;
+      }
+      if (frame.timeoutFunc) {
+        waitFrame.timeoutFunc = frame.timeoutFunc;
+      }
       commands.push(new Command(SEND_FRAME, frame));
       commands.push(new Command(WAIT_FRAME, waitFrame));
     }
@@ -1190,6 +1196,9 @@ class ZigbeeAdapter extends Adapter {
         // For regular Zigbee nodes that we've already classified, we
         // don't need to delay.
         this.handleEndEndDeviceAnnouncementInternal(node);
+        if (!this.scanning) {
+          node.rebindIfRequired();
+        }
       } else {
         // Xiaomi devices send a genReport right after sending the end device
         // announcement, so we introduce a slight delay to allow this to happen

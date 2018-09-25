@@ -952,57 +952,72 @@ class ZigbeeNode extends Device {
     DEBUG && console.log('rebind called for node:', this.addr64,
                          'rebindRequired =', this.rebindRequired);
 
-    this.rebinding = true;
+    for (const property of this.properties.values()) {
+      if (property.bindNeeded) {
+        this.rebinding = true;
+        const bindFrame = this.makeBindFrame(property.endpoint,
+                                             property.clusterId);
+        bindFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: bind response for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.bindNeeded = false;
+          // We only need to bind per endpoint/cluster. Since we've
+          // just successfully done a bind, mark any remaining
+          // matching bind requests as being unnecessary.
+          this.properties.forEach((p) => {
+            if (p.endpoint == property.endpoint &&
+                p.clusterId == property.clusterId) {
+              p.bindNeeded = false;
+            }
+          });
+          this.rebind();
+        };
+        bindFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
+        this.sendFrames([bindFrame]);
+        return;
+      }
 
-    // Ask for the zclVersion. This is a mandatory attribute for the genBasic
-    // cluster. If the device responds, then we'll go through the binding
-    // process, otherwise, we'll wait until we get an end-device-announcement
-    // (battery powered devices will be sleeping until they wakeup and announce
-    // themselves to us.)
-
-    const genBasicEndpointNum =
-      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENBASIC_HEX);
-
-    if (!genBasicEndpointNum) {
-      // If the device doesn't support genBasic, then we don't want to
-      // talk to it.
-      return;
-    }
-    const readFrame = this.makeReadAttributeFrame(
-      genBasicEndpointNum,
-      ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
-      CLUSTER_ID_GENBASIC,
-      [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
-    );
-    this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-      zclCmdId: 'readRsp',
-      zclSeqNum: readFrame.zcl.seqNum,
-      callback: this.rebindCallback.bind(this),
-      timeoutFunc: () => {
-        this.rebinding = false;
-      },
-    });
-  }
-
-  rebindCallback(frame) {
-    this.handleGenericZclReadRsp(frame);
-    this.extendedTimeout = this.powerSource == POWERSOURCE_BATTERY;
-
-    // Go ahead and do the actual binding.
-    let frames = [];
-    this.properties.forEach((property) => {
       if (property.configReportNeeded) {
-        frames = frames.concat(this.makeConfigReportFrame(property));
+        this.rebinding = true;
+        const configFrame = this.makeConfigReportFrame(property);
+        configFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: configReportRsp for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.configReportNeeded = false;
+          this.rebind();
+        };
+        configFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
+        this.sendFrames([configFrame]);
+        return;
       }
+
       if (property.initialReadNeeded) {
-        frames = frames.concat(
-          this.makeReadAttributeFrameForProperty(property));
+        this.rebinding = true;
+        const readFrame = this.makeReadAttributeFrameForProperty(property);
+        readFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: readRsp for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.initialReadNeeded = false;
+          this.rebind();
+        };
+        readFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
       }
-    });
-    if (frames.length > 0) {
-      this.sendFrames(this.addBindFramesFor(frames));
     }
+
+    // Since we got this far, all of the binding, configReporting, and
+    // initial reads have been performed.
 
     this.rebindIasZone();
   }
@@ -1017,6 +1032,7 @@ class ZigbeeNode extends Device {
     }
 
     if (!this.hasOwnProperty('cieAddr')) {
+      this.rebinding = true;
       const readFrame = this.makeReadAttributeFrame(
         this.ssIasZoneEndpoint,
         ZHA_PROFILE_ID,
@@ -1043,14 +1059,18 @@ class ZigbeeNode extends Device {
     if (this.genPollCtrlEndpoint) {
       // We need to bind the poll control endpoint in order to receive
       // checkin reports.
+      this.rebinding = true;
       const bindFrame = this.makeBindFrame(this.genPollCtrlEndpoint,
                                            CLUSTER_ID_GENPOLLCTRL_HEX);
+      bindFrame.callback = () => {
+        this.rebinding = false;
+        this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
+      };
+      bindFrame.timeoutFunc = () => {
+        this.rebinding = false;
+      };
       this.sendFrames([bindFrame]);
-
-      this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
     }
-
-    this.rebindIfRequired();
   }
 
   writeCheckinInterval(interval) {
@@ -1076,6 +1096,7 @@ class ZigbeeNode extends Device {
     }
 
     if (this.checkinInterval != interval) {
+      this.rebinding = true;
       this.writingCheckinInterval = true;
       const writeFrame = this.makeWriteAttributeFrame(
         this.genPollCtrlEndpoint,
@@ -1087,11 +1108,14 @@ class ZigbeeNode extends Device {
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
+          this.rebinding = false;
           this.writingCheckinInterval = false;
           this.checkinInterval = interval;
           this.adapter.saveDeviceInfoDeferred();
+          this.rebindIfRequired();
         },
         timeoutFunc: () => {
+          this.rebinding = false;
           this.writingCheckinInterval = false;
         },
       });

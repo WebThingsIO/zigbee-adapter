@@ -929,6 +929,9 @@ class ZigbeeClassifier {
     }
     property.setInitialReadNeeded();
     property.defaultValue = defaultValue;
+    if (property.configReportNeeded) {
+      property.bindNeeded = true;
+    }
 
     DEBUG && console.log('addProperty:   configReportNeeded =',
                          property.configReportNeeded,
