@@ -282,6 +282,42 @@ class ZigbeeNode extends Device {
     console.log('debugCmd:', this.addr64, cmd, params);
     switch (cmd) {
 
+      case 'bind': {
+        let paramMissing = false;
+        // Note: We allow attrId to be optional
+        for (const p of ['srcEndpoint', 'clusterId']) {
+          if (!params.hasOwnProperty(p)) {
+            console.log('Missing parameter:', p);
+            paramMissing = true;
+          }
+        }
+        if (!paramMissing) {
+          if (typeof params.srcEndpoint === 'string') {
+            params.srcEndpoint = parseInt(params.srcEndpoint);
+          }
+          console.log('Issuing bind for endpoint:', params.srcEndpoint,
+                      'clusterId', params.clusterId);
+          const bindFrame = this.makeBindFrame(params.srcEndpoint,
+                                               params.clusterId);
+          this.sendFrames([bindFrame]);
+        }
+        break;
+      }
+
+      case 'bindings': {
+        const bindingsFrame = this.makeBindingsFrame(0);
+        bindingsFrame.callback = (frame) => {
+          const nextIndex = frame.startIndex + frame.numEntriesThisResponse;
+          if (nextIndex < frame.numEntries) {
+            const nextFrame = this.makeBindingsFrame(nextIndex);
+            nextFrame.callback = frame.callback;
+            this.sendFrames([nextFrame]);
+          }
+        };
+        this.sendFrames([bindingsFrame]);
+        break;
+      }
+
       case 'debug':
         if (params.hasOwnProperty('debugFlow')) {
           console.log('Setting debugFlow to', params.debugFlow);
@@ -306,7 +342,12 @@ class ZigbeeNode extends Device {
         break;
 
       case 'discoverAttr':
-        this.adapter.discoverAttributes(this);
+        if (typeof params.endpoint === 'string') {
+          params.endpoint = parseInt(params.endpoint);
+        }
+        this.adapter.discoverAttributes(this,
+                                        params.endpoint,
+                                        params.clusterId);
         break;
 
       case 'info': {
@@ -330,6 +371,17 @@ class ZigbeeNode extends Device {
           }
         }
         if (!paramMissing) {
+          if (typeof params.endpoint === 'string') {
+            params.endpoint = parseInt(params.endpoint);
+          }
+          if (Array.isArray(params.attrId)) {
+            for (const i in params.attrId) {
+              if (typeof params.attrId[i] === 'string') {
+                // The spec uses hex attributeIds
+                params.attrId[i] = parseInt(params.attrId[i], 16);
+              }
+            }
+          }
           console.log('Issuing read attribute for endpoint:', params.endpoint,
                       'profileId:', params.profileId,
                       'clusterId', params.clusterId,
@@ -462,6 +514,16 @@ class ZigbeeNode extends Device {
       }
       return;
     }
+
+    if (this.adapter.cmdQueue.length == 0) {
+      // This is a bit of a hack, but is needed until I rewrite the
+      // whole binding/configReport/initialRead to be able to work
+      // incrementally. The fact that the command queue is empty
+      // means that we're no longer rebinding since everything has
+      // either been sent or timed out.
+      this.rebinding = false;
+    }
+
     const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
     this.genPollCtrlEndpoint = sourceEndpoint;
     const rspFrame = this.makeZclFrame(
@@ -618,7 +680,8 @@ class ZigbeeNode extends Device {
   }
 
   handleReadRsp(frame) {
-    DEBUG && console.log('handleReadRsp node:', this.addr64);
+    DEBUG && console.log('handleReadRsp node:', this.addr64,
+                         'discoveringAttributes', this.discoveringAttributes);
 
     if (this.adapter.scanning && frame.zcl.cmdId === 'report') {
       if (this.adapter.debugFlow) {
@@ -636,7 +699,7 @@ class ZigbeeNode extends Device {
           const attrStr = attr ? attr.key : 'unknown';
           const dataType = zclId.dataType(attrEntry.dataType);
           const dataTypeStr = dataType ? dataType.key : 'unknown';
-          console.log('      AttrId:',
+          console.log('discover:       AttrId:',
                       `${attrStr} ( ${attrEntry.attrId})`,
                       'dataType:', `${dataTypeStr} (${attrEntry.dataType})`,
                       'data:', attrEntry.attrData);
@@ -691,6 +754,11 @@ class ZigbeeNode extends Device {
         }
         property.setCachedValue(value);
         property.initialReadNeeded = false;
+        if (frame.zcl.cmdId == 'report') {
+          // The fact that we received a report means that we don't need
+          // to setup binding/configReporting
+          property.configReportNeeded = false;
+        }
         console.log(this.name,
                     'property:', property.name,
                     'profileId:', utils.hexStr(property.profileId, 4),
@@ -793,6 +861,146 @@ class ZigbeeNode extends Device {
     }
   }
 
+  handleButtonCommand(frame) {
+    const endpoint = parseInt(frame.sourceEndpoint, 16);
+    DEBUG && console.log('handleButtonCommand:', this.addr64,
+                         `EP:${endpoint} CL:${frame.clusterId}`,
+                         `cmd:${frame.zcl.cmdId}`);
+    const profileId = parseInt(frame.profileId, 16);
+    const clusterId = parseInt(frame.clusterId, 16);
+    for (const property of this.properties.values()) {
+      if (profileId == property.profileId &&
+          endpoint == property.endpoint &&
+          clusterId == property.clusterId) {
+        switch (frame.zcl.cmdId) {
+          case 'on':   // on property
+            this.handleButtonOnOffCommand(property, true);
+            break;
+          case 'off': // on property
+            this.handleButtonOnOffCommand(property, false);
+            break;
+          case 'moveWithOnOff': // level property
+            this.handleButtonMoveWithOnOffCommand(property,
+                                                  frame.zcl.payload.movemode,
+                                                  frame.zcl.payload.rate);
+            return;
+          case 'move':  // level property
+            this.handleButtonMoveCommand(property,
+                                         frame.zcl.payload.movemode,
+                                         frame.zcl.payload.rate,
+                                         false);
+            return;
+          case 'stop':  // level property
+            this.handleButtonStopCommand(property);
+            return;
+        }
+      }
+    }
+  }
+
+  handleButtonOnOffCommand(property, newValue) {
+    DEBUG && console.log('handleButtonOnOffCommmand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'value:', newValue);
+    if (newValue == property.value) {
+      // Already at desired value, nothing else to do
+      return;
+    }
+    property.setCachedValue(newValue);
+    console.log(this.name,
+                'property:', property.name,
+                'value:', property.value);
+    this.notifyPropertyChanged(property);
+  }
+
+  handleButtonMoveWithOnOffCommand(property, moveMode, rate) {
+    DEBUG && console.log('handleButtonMoveWithOnOffCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'moveMode:', moveMode,
+                         'rate:', rate);
+    if (this.onOffProperty && !this.onOffProperty.value) {
+      // onOff Property was off - turn it on
+      this.handleButtonOnOffCommand(this.onOffProperty, true);
+    }
+    this.handleButtonMoveCommand(property, moveMode, rate, true);
+    // implies turn off if level reaches zero
+  }
+
+  handleButtonMoveCommand(property, moveMode, rate, offAtZero) {
+    DEBUG && console.log('handleButtonMoveCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'moveMode:', moveMode,
+                         'rate:', rate,
+                         'offAtZero:', offAtZero);
+    // moveMode: 0 = up, 1 = down
+    // rate: units/second
+
+    if (property.moveTimer) {
+      // There's already a timer running.
+      return;
+    }
+
+    const updatesPerSecond = 4;
+    const delta = (moveMode ? -1 : 1) * rate / updatesPerSecond;
+
+    this.moveTimerCallback(property, delta, offAtZero);
+    if ((property.value > 0 && delta < 0) ||
+        (property.value < 100 && delta > 0)) {
+      // We haven't hit the end, setup a timer to move towards it.
+      property.moveTimer = setInterval(this.moveTimerCallback.bind(this),
+                                       1000 / updatesPerSecond,
+                                       property, delta, offAtZero);
+    }
+  }
+
+  moveTimerCallback(property, delta, offAtZero) {
+    let newValue = Math.round(property.value + delta);
+    newValue = Math.max(0, newValue);
+    newValue = Math.min(100, newValue);
+
+    DEBUG && console.log('moveTimerCallback:',
+                         this.addr64,
+                         'property:', property.name,
+                         'value:', property.value,
+                         'delta:', delta,
+                         'newValue:', newValue,
+                         'offAtZero:', offAtZero);
+
+    // Cancel the timer if we don't need it any more.
+    if ((newValue == property.value) ||
+        (newValue == 0 && delta < 0) ||
+        (newValue == 100 && delta > 0)) {
+      this.handleButtonStopCommand(property);
+    }
+
+    // Update the value, if it changed
+    if (newValue != property.value) {
+      property.setCachedValue(newValue);
+      console.log(this.name,
+                  'property:', property.name,
+                  'value:', property.value);
+      this.notifyPropertyChanged(property);
+    }
+
+    // Turn it off, if instructed and we hit zero
+    if (offAtZero && property.value == 0 && this.onOffProperty) {
+      this.handleButtonOnOffCommand(this.onOffProperty, false);
+    }
+  }
+
+  handleButtonStopCommand(property) {
+    DEBUG && console.log('handleButtonStopCommand:',
+                         this.addr64,
+                         'property:', property.name);
+    if (property.moveTimer) {
+      clearInterval(property.moveTimer);
+      property.moveTimer = null;
+    }
+  }
+
   handleStatusChangeNotification(frame) {
     const zoneStatus = frame.zcl.payload.zonestatus;
     const profileId = parseInt(frame.profileId, 16);
@@ -865,6 +1073,13 @@ class ZigbeeNode extends Device {
         case 'checkin':
           this.handleCheckin(frame);
           break;
+        case 'on':
+        case 'off':
+        case 'moveWithOnOff':
+        case 'move':
+        case 'stop':
+          this.handleButtonCommand(frame);
+          break;
         case 'writeNoRsp':
           // Don't generate a defaultRsp to a writeNoRsp command.
           return;
@@ -884,57 +1099,72 @@ class ZigbeeNode extends Device {
     DEBUG && console.log('rebind called for node:', this.addr64,
                          'rebindRequired =', this.rebindRequired);
 
-    this.rebinding = true;
+    for (const property of this.properties.values()) {
+      if (property.bindNeeded) {
+        this.rebinding = true;
+        const bindFrame = this.makeBindFrame(property.endpoint,
+                                             property.clusterId);
+        bindFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: bind response for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.bindNeeded = false;
+          // We only need to bind per endpoint/cluster. Since we've
+          // just successfully done a bind, mark any remaining
+          // matching bind requests as being unnecessary.
+          this.properties.forEach((p) => {
+            if (p.endpoint == property.endpoint &&
+                p.clusterId == property.clusterId) {
+              p.bindNeeded = false;
+            }
+          });
+          this.rebind();
+        };
+        bindFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
+        this.sendFrames([bindFrame]);
+        return;
+      }
 
-    // Ask for the zclVersion. This is a mandatory attribute for the genBasic
-    // cluster. If the device responds, then we'll go through the binding
-    // process, otherwise, we'll wait until we get an end-device-announcement
-    // (battery powered devices will be sleeping until they wakeup and announce
-    // themselves to us.)
-
-    const genBasicEndpointNum =
-      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENBASIC_HEX);
-
-    if (!genBasicEndpointNum) {
-      // If the device doesn't support genBasic, then we don't want to
-      // talk to it.
-      return;
-    }
-    const readFrame = this.makeReadAttributeFrame(
-      genBasicEndpointNum,
-      ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
-      CLUSTER_ID_GENBASIC,
-      [ATTR_ID_GENBASIC_ZCLVERSION, ATTR_ID_GENBASIC_POWERSOURCE],
-    );
-    this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-      zclCmdId: 'readRsp',
-      zclSeqNum: readFrame.zcl.seqNum,
-      callback: this.rebindCallback.bind(this),
-      timeoutFunc: () => {
-        this.rebinding = false;
-      },
-    });
-  }
-
-  rebindCallback(frame) {
-    this.handleGenericZclReadRsp(frame);
-    this.extendedTimeout = this.powerSource == POWERSOURCE_BATTERY;
-
-    // Go ahead and do the actual binding.
-    let frames = [];
-    this.properties.forEach((property) => {
       if (property.configReportNeeded) {
-        frames = frames.concat(this.makeConfigReportFrame(property));
+        this.rebinding = true;
+        const configFrame = this.makeConfigReportFrame(property);
+        configFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: configReportRsp for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.configReportNeeded = false;
+          this.rebind();
+        };
+        configFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
+        this.sendFrames([configFrame]);
+        return;
       }
+
       if (property.initialReadNeeded) {
-        frames = frames.concat(
-          this.makeReadAttributeFrameForProperty(property));
+        this.rebinding = true;
+        const readFrame = this.makeReadAttributeFrameForProperty(property);
+        readFrame.callback = (_frame) => {
+          DEBUG && console.log('rebind: readRsp for',
+                               `EP:${property.endpoint}`,
+                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+          this.rebinding = false;
+          property.initialReadNeeded = false;
+          this.rebind();
+        };
+        readFrame.timeoutFunc = () => {
+          this.rebinding = false;
+        };
       }
-    });
-    if (frames.length > 0) {
-      this.sendFrames(this.addBindFramesFor(frames));
     }
+
+    // Since we got this far, all of the binding, configReporting, and
+    // initial reads have been performed.
 
     this.rebindIasZone();
   }
@@ -949,6 +1179,7 @@ class ZigbeeNode extends Device {
     }
 
     if (!this.hasOwnProperty('cieAddr')) {
+      this.rebinding = true;
       const readFrame = this.makeReadAttributeFrame(
         this.ssIasZoneEndpoint,
         ZHA_PROFILE_ID,
@@ -975,14 +1206,18 @@ class ZigbeeNode extends Device {
     if (this.genPollCtrlEndpoint) {
       // We need to bind the poll control endpoint in order to receive
       // checkin reports.
+      this.rebinding = true;
       const bindFrame = this.makeBindFrame(this.genPollCtrlEndpoint,
                                            CLUSTER_ID_GENPOLLCTRL_HEX);
+      bindFrame.callback = () => {
+        this.rebinding = false;
+        this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
+      };
+      bindFrame.timeoutFunc = () => {
+        this.rebinding = false;
+      };
       this.sendFrames([bindFrame]);
-
-      this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
     }
-
-    this.rebindIfRequired();
   }
 
   writeCheckinInterval(interval) {
@@ -1008,6 +1243,7 @@ class ZigbeeNode extends Device {
     }
 
     if (this.checkinInterval != interval) {
+      this.rebinding = true;
       this.writingCheckinInterval = true;
       const writeFrame = this.makeWriteAttributeFrame(
         this.genPollCtrlEndpoint,
@@ -1019,11 +1255,14 @@ class ZigbeeNode extends Device {
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
+          this.rebinding = false;
           this.writingCheckinInterval = false;
           this.checkinInterval = interval;
           this.adapter.saveDeviceInfoDeferred();
+          this.rebindIfRequired();
         },
         timeoutFunc: () => {
+          this.rebinding = false;
           this.writingCheckinInterval = false;
         },
       });
@@ -1172,11 +1411,22 @@ class ZigbeeNode extends Device {
       bindDstEndpoint: 1, // Endpoint on the coordinator
     });
     if (this.adapter.debugFrames) {
-      frame.shortDescr = `EP:${endpoint} CL:${clusterId}`;
+      frame.shortDescr = `EP:${endpoint} CL:${utils.hexStr(clusterId, 4)}`;
     }
     if (configReportFrames) {
       frame.sendOnSuccess = configReportFrames;
     }
+    return frame;
+  }
+
+  makeBindingsFrame(startIndex) {
+    DEBUG && console.log('makeBindingsFrame: startIndex =', startIndex);
+    const frame = this.adapter.zdo.makeFrame({
+      destination64: this.addr64,
+      destination16: this.addr16,
+      clusterId: zdo.CLUSTER_ID.MANAGEMENT_BIND_REQUEST,
+      startIndex: startIndex,
+    });
     return frame;
   }
 
