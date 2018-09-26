@@ -111,6 +111,7 @@ const DEVICE_INFO_FIELDS = [
   'activeEndpointsPopulated',
   'nodeInfoEndpointsPopulated',
   'colorCapabilities',
+  'colorMode',
   'zoneType',
   'modelId',
   'appVersion',
@@ -398,6 +399,10 @@ class ZigbeeNode extends Device {
       default:
         console.log('Unrecognized debugCmd:', cmd);
     }
+  }
+
+  handleDeviceDescriptionUpdated() {
+    this.adapter.handleDeviceDescriptionUpdated(this);
   }
 
   isMainsPowered() {
@@ -1100,12 +1105,17 @@ class ZigbeeNode extends Device {
                          'rebindRequired =', this.rebindRequired);
 
     for (const property of this.properties.values()) {
+      DEBUG && console.log('rebind:   property:', property.name,
+                           'bindNeeded:', property.bindNeeded,
+                           'configReportNeeded:', property.configReportNeeded,
+                           'initialReadNeeded:', property.initialReadNeeded);
       if (property.bindNeeded) {
         this.rebinding = true;
         const bindFrame = this.makeBindFrame(property.endpoint,
                                              property.clusterId);
         bindFrame.callback = (_frame) => {
-          DEBUG && console.log('rebind: bind response for',
+          DEBUG && console.log('rebind:   bind response for property:',
+                               property.name,
                                `EP:${property.endpoint}`,
                                `CL:${utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;
@@ -1132,7 +1142,8 @@ class ZigbeeNode extends Device {
         this.rebinding = true;
         const configFrame = this.makeConfigReportFrame(property);
         configFrame.callback = (_frame) => {
-          DEBUG && console.log('rebind: configReportRsp for',
+          DEBUG && console.log('rebind:   configReportRsp for property:',
+                               property.name,
                                `EP:${property.endpoint}`,
                                `CL:${utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;
@@ -1150,7 +1161,8 @@ class ZigbeeNode extends Device {
         this.rebinding = true;
         const readFrame = this.makeReadAttributeFrameForProperty(property);
         readFrame.callback = (_frame) => {
-          DEBUG && console.log('rebind: readRsp for',
+          DEBUG && console.log('rebind:   readRsp for property:',
+                               property.name,
                                `EP:${property.endpoint}`,
                                `CL:${utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;

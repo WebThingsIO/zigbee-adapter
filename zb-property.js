@@ -189,6 +189,44 @@ class ZigbeeProperty extends Property {
     return [colorStr, colorStr];
   }
 
+  parseColorTemperatureAttr(attrEntry) {
+    // NOTE: the zigbee attributes for color temperature are stored
+    //       in units of mireds, which are inversly proportional to
+    // degrees kelvin, which is why the min/max are reversed below.
+    //
+    // i.e. 6500K corresponds to a colorTempPhysicalMin = 153
+    //      2700L corresponds to a colorTempPhysicalMax = 370
+
+    let thingDescriptionUpdated = false;
+
+    // We set the min/max here so that updated values get sent to the
+    // gateway when we do the propertyChanged notification.
+    if (!this.hasOwnProperty('maximum')) {
+      const minColorTempProperty = this.device.findProperty('_minTemperature');
+      if (minColorTempProperty && minColorTempProperty.value) {
+        this.minimumMireds = minColorTempProperty.value; // mireds
+        this.maximum = Math.trunc(1000000 / this.minimumMireds);
+        thingDescriptionUpdated = true;
+      }
+    }
+    if (!this.hasOwnProperty('minimum')) {
+      const maxColorTempProperty = this.device.findProperty('_maxTemperature');
+      if (maxColorTempProperty && maxColorTempProperty.value) {
+        this.maximumMireds = maxColorTempProperty.value; // mireds
+        this.minimum = Math.trunc(1000000 / this.maximumMireds);
+        thingDescriptionUpdated = true;
+      }
+    }
+
+    if (thingDescriptionUpdated) {
+      this.device.handleDeviceDescriptionUpdated();
+    }
+
+    const colorTempMireds = attrEntry.attrData;
+    const colorTemp = Math.trunc(1000000 / colorTempMireds);
+    return [colorTemp, `${colorTemp}K (${colorTempMireds})`];
+  }
+
   /**
    * @method parseLevelAttr
    *
@@ -520,6 +558,52 @@ class ZigbeeProperty extends Property {
                   10],  // 10ths of a second
       },
       `hsv: [${hue}, ${sat}, ${level}]`,
+    ];
+  }
+
+  /**
+   * @method setColorTemperatureValue
+   *
+   * Convert the color temperature property value (degrees K) into
+   * the ZCL moveToColorTemperature, along with the color temperature
+   * in mireds.
+   */
+  setColorTemperatureValue(propertyValue) {
+    // NOTE: the zigbee attributes for color temperature are stored
+    //       in units of mireds, which are inversly proportional to
+    // degrees kelvin, which is why the min/max are reversed below.
+    //
+    // i.e. 6500K corresponds to a colorTempPhysicalMin = 153
+    //      2700L corresponds to a colorTempPhysicalMax = 370
+
+    if (!this.hasOwnProperty('maximum')) {
+      const minColorTempProperty = this.device.findProperty('_minTemperature');
+      if (minColorTempProperty && minColorTempProperty.value) {
+        this.minimumMireds = minColorTempProperty.value; // mireds
+        this.maximum = Math.trunc(1000000 / this.minimumMireds);
+      }
+    }
+    if (!this.hasOwnProperty('minimum')) {
+      const maxColorTempProperty = this.device.findProperty('_maxTemperature');
+      if (maxColorTempProperty && maxColorTempProperty.value) {
+        this.maximumMireds = maxColorTempProperty.value; // mireds
+        this.minimum = Math.trunc(1000000 / this.maximumMireds);
+      }
+    }
+    let colorTempMireds = Math.trunc(1000000 / propertyValue);
+    if (this.hasOwnProperty('minimumMireds')) {
+      colorTempMireds = Math.max(this.minimumMireds, colorTempMireds);
+    }
+    if (this.hasOwnProperty('maximumMireds')) {
+      colorTempMireds = Math.min(this.maximumMireds, colorTempMireds);
+    }
+    return [
+      {
+        frameCntl: {frameType: 1},
+        cmd: 'moveToColorTemp',
+        payload: [colorTempMireds],
+      },
+      `colorTemp: ${colorTempMireds} (${propertyValue}K)`,
     ];
   }
 

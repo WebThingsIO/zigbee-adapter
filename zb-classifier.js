@@ -61,6 +61,14 @@ const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
 const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
 const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 
+const COLOR_CAPABILITY_HUE_SAT = (1 << 0);
+// const COLOR_CAPABILITY_ENHANCED_HUE_SAT = (1 << 1);
+const COLOR_CAPABILITY_TEMPERATURE = (1 << 4);
+
+// const COLOR_MODE_HUE_SAT  = 0;
+// const COLOR_MODE_XY = 1;
+const COLOR_MODE_TEMPERATURE = 2;
+
 const ZONE_STATUS_ALARM_MASK = 0x03;
 const ZONE_STATUS_TAMPER_MASK = 0x04;
 const ZONE_STATUS_LOW_BATTERY_MASK = 0x08;
@@ -326,6 +334,55 @@ class ZigbeeClassifier {
       'currentHue,currentSaturation', // attr
       'setColorValue',                // setAttrFromValue
       'parseColorAttr'                // parseValueFromAttr
+    );
+  }
+
+  addColorTemperatureProperty(node, lightingColorCtrlEndpoint) {
+    this.addProperty(
+      node,                           // device
+      '_minTemperature',              // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      'colorTempPhysicalMin',         // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      153                             // defaultValue (153 = 6500K)
+    );
+    this.addProperty(
+      node,                           // device
+      '_maxTemperature',              // name
+      {                               // property description
+        type: 'number',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      'colorTempPhysicalMax',         // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      370                             // defaultValue (370 = 2700K)
+    );
+    this.addProperty(
+      node,                           // device
+      'colorTemperature',             // name
+      {                               // property description
+        '@type': 'ColorTemperatureProperty',
+        label: 'Color Temperature',
+        type: 'number',
+        unit: 'kelvin',
+      },
+      ZHA_PROFILE_ID,                 // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      'colorTemperature',             // attr
+      'setColorTemperatureValue',     // setAttrFromValue
+      'parseColorTemperatureAttr'     // parseValueFromAttr
     );
   }
 
@@ -963,6 +1020,12 @@ class ZigbeeClassifier {
           jsonEqual(property.attr, devInfo.attr)) {
         property.fireAndForget = devInfo.fireAndForget;
         property.value = devInfo.value;
+        if (devInfo.hasOwnProperty('minimum')) {
+          property.minimum = devInfo.minimum;
+        }
+        if (devInfo.hasOwnProperty('maximum')) {
+          property.maximum = devInfo.maximum;
+        }
         if (devInfo.hasOwnProperty('level')) {
           property.level = devInfo.level;
         }
@@ -986,13 +1049,12 @@ class ZigbeeClassifier {
     }
     property.setInitialReadNeeded();
     property.defaultValue = defaultValue;
-    if (property.configReportNeeded) {
-      property.bindNeeded = true;
-    }
+    property.bindNeeded = property.configReportNeeded;
 
-    DEBUG && console.log('addProperty:   configReportNeeded =',
-                         property.configReportNeeded,
-                         'initialReadNeeded =', property.initialReadNeeded);
+    DEBUG && console.log('addProperty:   ',
+                         'bindNeeded:', property.bindNeeded,
+                         'configReportNeeded:', property.configReportNeeded,
+                         'initialReadNeeded:', property.initialReadNeeded);
 
     return property;
   }
@@ -1027,12 +1089,15 @@ class ZigbeeClassifier {
     const genDeviceTempCfgEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID_GENDEVICETEMPCFG_HEX);
+    const lightLinkEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_LIGHTLINK_HEX);
     const ssIasZoneEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
+      console.log('                   modelId =', node.modelId);
       console.log('        seMeteringEndpoint =', seMeteringEndpoint);
       console.log('      haElectricalEndpoint =', haElectricalEndpoint);
       console.log('    genBinaryInputEndpoint =', genBinaryInputEndpoint);
@@ -1040,7 +1105,11 @@ class ZigbeeClassifier {
       console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
       console.log('          genOnOffEndpoint =', genOnOffEndpoint);
       console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('    lightingContolEndpoint =',
+                  node.lightingColorCtrlEndpoint);
       console.log('         colorCapabilities =', node.colorCapabilities);
+      console.log('                 colorMode =', node.colorMode);
+      console.log('         lightLinkEndpoint =', lightLinkEndpoint);
       console.log('msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
       console.log('     msTemperatureEndpoint =', msTemperatureEndpoint);
       console.log('       genPowerCfgEndpoint =', genPowerCfgEndpoint);
@@ -1070,16 +1139,20 @@ class ZigbeeClassifier {
       return;
     }
 
-    if (haElectricalEndpoint) {
+    if (haElectricalEndpoint &&
+        !lightLinkEndpoint &&
+        !node.lightingColorCtrlEndpoint) {
       this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
       return;
     }
-    if (seMeteringEndpoint) {
+    if (seMeteringEndpoint &&
+        !lightLinkEndpoint &&
+        !node.lightingColorCtrlEndpoint) {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
       return;
     }
     if (genLevelCtrlEndpoint) {
-      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint);
+      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
       return;
     }
     if (genOnOffEndpoint) {
@@ -1165,14 +1238,15 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genOnOffEndpoint);
   }
 
-  initMultiLevelSwitch(node, genLevelCtrlEndpoint) {
-    const lightLinkEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_LIGHTLINK_HEX);
-    DEBUG && console.log('     lightLinkEndpoint =', lightLinkEndpoint);
+  initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
     let colorSupported = false;
-    if (lightLinkEndpoint) {
-      if (node.hasOwnProperty('colorCapabilities') &&
-          (node.colorCapabilities & 3) != 0) {
+    const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
+                                node.colorCapabilities) || 0;
+    const colorMode = (node.hasOwnProperty('colorMode') &&
+                        node.colorMode) || 0;
+    if (lightLinkEndpoint || node.lightingColorCtrlEndpoint) {
+      // It looks like a
+      if ((colorCapabilities & COLOR_CAPABILITY_HUE_SAT) != 0) {
         // Hue and Saturation are supported
         colorSupported = true;
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
@@ -1188,10 +1262,19 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genLevelCtrlEndpoint);
     if (colorSupported) {
       this.addColorProperty(node, node.lightingColorCtrlEndpoint);
-    } else if (lightLinkEndpoint) {
-      this.addBrightnessProperty(node, genLevelCtrlEndpoint);
     } else {
-      this.addLevelProperty(node, genLevelCtrlEndpoint);
+      if ((colorCapabilities & COLOR_CAPABILITY_TEMPERATURE) != 0 ||
+          (colorMode & COLOR_MODE_TEMPERATURE) != 0) {
+        // Color temperature is basically a specialized way of selecting
+        // a color, so we don't include this property with full-color
+        // bulbs.
+        this.addColorTemperatureProperty(node, node.lightingColorCtrlEndpoint);
+      }
+      if (lightLinkEndpoint) {
+        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+      } else {
+        this.addLevelProperty(node, genLevelCtrlEndpoint);
+      }
     }
   }
 
