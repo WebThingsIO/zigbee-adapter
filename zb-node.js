@@ -1160,6 +1160,8 @@ class ZigbeeNode extends Device {
         readFrame.timeoutFunc = () => {
           this.rebinding = false;
         };
+        this.sendFrames([readFrame]);
+        return;
       }
     }
 
