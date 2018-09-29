@@ -414,6 +414,17 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseNumericHundrethsAttr
+   *
+   * Converts generic numeric attributes in a number, and divides
+   * the number by 100.
+   */
+  parseNumericHundredthsAttr(attrEntry) {
+    const value = attrEntry.attrData / 100;
+    return [value, `${value}`];
+  }
+
+  /**
    * @method parseOccupiedAttr
    *
    * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'

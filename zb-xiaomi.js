@@ -43,6 +43,14 @@ const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
 const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
   utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
 
+const CLUSTER_ID_TEMPERATURE_SENSOR = zclId.cluster('msTemperatureMeasurement').value;
+const CLUSTER_ID_TEMPERATURE_SENSOR_HEX =
+  utils.hexStr(CLUSTER_ID_TEMPERATURE_SENSOR, 4);
+
+const CLUSTER_ID_HUMIDITY_SENSOR = zclId.cluster('msRelativeHumidity').value;
+const CLUSTER_ID_HUMIDITY_SENSOR_HEX =
+  utils.hexStr(CLUSTER_ID_HUMIDITY_SENSOR, 4);
+
 const POWERSOURCE_BATTERY = 3;
 
 // The following github repository has a bunch of useful information
@@ -50,6 +58,41 @@ const POWERSOURCE_BATTERY = 3;
 // https://github.com/Frans-Willem/AqaraHub/tree/master/documentation/devices
 
 const MODEL_IDS = {
+  'lumi.sensor_ht': {
+    name: 'temphumid',
+    type: Constants.THING_TYPE_MULTI_LEVEL_SENSOR,
+    '@type': ['MultiLevelSensor'],
+    powerSource: POWERSOURCE_BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: ZHA_PROFILE_ID_HEX,
+        inputClusters: [
+          CLUSTER_ID_GENBASIC_HEX,
+          CLUSTER_ID_TEMPERATURE_SENSOR_HEX,
+	  CLUSTER_ID_HUMIDITY_SENSOR_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      temperature: {
+        descr: {
+          '@type': 'LevelProperty',
+          label: 'Temperature',
+          type: 'number',
+          description: 'Temperature in Celsius',
+          minimum: -40,
+          maximum: 80,
+          unit: 'celsius',
+        },
+        profileId: ZHA_PROFILE_ID,
+        endpoint: 1,
+        clusterId: CLUSTER_ID_TEMPERATURE_SENSOR,
+        attr: 'measuredValue',
+        parseValueFromAttr: 'parseNumericHundredthsAttr',
+      }
+    }
+  },
   'lumi.sensor_magnet': {
     name: 'magent',
     type: Constants.THING_TYPE_BINARY_SENSOR,
