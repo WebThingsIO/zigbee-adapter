@@ -384,6 +384,13 @@ class ZigbeeAdapter extends Adapter {
     });
   }
 
+  handleIEEEAddressResponse(frame) {
+    // The IEEE Address Response and Netork Address Response have
+    // the same format, and it turns out we do the same processing.
+
+    this.handleNetworkAddressResponse(frame);
+  }
+
   handleNetworkAddressResponse(frame) {
     if (frame.status != STATUS_SUCCESS) {
       if (this.debugFlow) {
@@ -871,14 +878,32 @@ class ZigbeeAdapter extends Adapter {
   findNodeFromFrame(frame) {
     const addr64 = frame.remote64;
     const addr16 = frame.remote16;
+    let node;
 
     // Some devices (like xiaomi) switch from using a proper 64-bit address to
     // using broadcast but still provide the a 16-bit address.
     if (addr64 == 'ffffffffffffffff') {
-      return this.findNodeByAddr16(addr16);
+      node = this.findNodeByAddr16(addr16);
+      if (!node) {
+        // We got a frame with a braodcast address and a 16-bit address
+        // and we don't know the 16-bit address. Send out a request to
+        // determine the 64-bit address. At least we'll be able to deal
+        // with the next frame.
+
+        const addrFrame = this.zdo.makeFrame({
+          destination64: 'ffffffffffffffff',
+          destination16: addr16,
+          clusterId: zdo.CLUSTER_ID.IEEE_ADDRESS_REQUEST,
+          addr64: 'ffffffffffffffff',
+          requestType: 0, // 0 = Single Device Response
+          startIndex: 0,
+        });
+        this.sendFrameNow(addrFrame);
+      }
+      return node;
     }
 
-    let node = this.nodes[addr64];
+    node = this.nodes[addr64];
     if (!node) {
       // We have both the addr64 and addr16 - go ahead and create a new node.
       node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
@@ -2148,7 +2173,8 @@ class ZigbeeAdapter extends Adapter {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.zcl.seqNum,
-          callback: () => {
+          callback: (frame) => {
+            node.handleGenericZclReadRsp(frame);
             this.populateClassifierAttributes(node, endpointNum);
           },
         });
@@ -2631,6 +2657,8 @@ fh[C.FRAME_TYPE.ROUTE_RECORD] =
 const zch = ZigbeeAdapter.zdoClusterHandler = {};
 zch[zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE] =
   ZigbeeAdapter.prototype.handleActiveEndpointsResponse;
+zch[zdo.CLUSTER_ID.IEEE_ADDRESS_RESPONSE] =
+  ZigbeeAdapter.prototype.handleIEEEAddressResponse;
 zch[zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE] =
   ZigbeeAdapter.prototype.handleNetworkAddressResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_BIND_RESPONSE] =
