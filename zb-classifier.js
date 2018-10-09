@@ -82,28 +82,14 @@ const DEVICE_ID_SMART_PLUG_HEX = utils.hexStr(DEVICE_ID_SMART_PLUG, 4);
 
 const DEBUG = false;
 
+const ZONE_TYPE_MOTION = 0x000d;
+const ZONE_TYPE_SWITCH = 0x0015;
+
 // From the ZigBee Cluster Library Specification, document 07-5123-06,
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
-  // Note: the Smart Things mulitpurpose sensor reports a zoneType of 0.
-  // so we use 0 to inidcate that its a smart switch. If we find other
-  // non-switch sensors which also report a zoneType of 0, we may need
-  // to use further refinements, like the presence of the binaryInput
-  // cluster.
-  0x0000: {
-    name: 'switch',
-    '@type': ['DoorSensor'],
-    propertyName: 'open',
-    propertyDescr: {
-      '@type': 'OpenProperty',
-      type: 'boolean',
-      label: 'Open',
-      description: 'Contact Switch',
-      readOnly: true,
-    },
-  },
-  0x000d: {
+  [ZONE_TYPE_MOTION]: {   // 0x000d
     name: 'motion',
     '@type': ['MotionSensor'],
     propertyName: 'motion',
@@ -115,7 +101,7 @@ const ZONE_TYPE_NAME = {
       readOnly: true,
     },
   },
-  0x0015: {
+  [ZONE_TYPE_SWITCH]: {   // 0x0015
     name: 'switch',
     '@type': ['DoorSensor'],
     propertyName: 'open',
@@ -235,6 +221,13 @@ const ZONE_TYPE_NAME = {
       readOnly: true,
     },
   },
+};
+
+// The newer SmartThings sensors report a zoneType of zero, so we
+// use the modelId to further classify them
+const ZONE_TYPE_ZERO = {
+  multiv4: ZONE_TYPE_SWITCH,
+  motionv5: ZONE_TYPE_MOTION,
 };
 
 // One way to do a deepEqual that turns out to be fairly performant.
@@ -1202,21 +1195,25 @@ class ZigbeeClassifier {
     let propertyName;
     let propertyDescr;
     let name;
-    if (ZONE_TYPE_NAME.hasOwnProperty(node.zoneType)) {
-      name = ZONE_TYPE_NAME[node.zoneType].name;
-      node['@type'] = ZONE_TYPE_NAME[node.zoneType]['@type'];
-      propertyName = ZONE_TYPE_NAME[node.zoneType].propertyName;
-      propertyDescr = ZONE_TYPE_NAME[node.zoneType].propertyDescr;
+    let zoneType = node.zoneType;
+    if (zoneType == 0 && ZONE_TYPE_ZERO.hasOwnProperty(node.modelId)) {
+      zoneType = ZONE_TYPE_ZERO[node.modelId];
+    }
+    if (ZONE_TYPE_NAME.hasOwnProperty(zoneType)) {
+      name = ZONE_TYPE_NAME[zoneType].name;
+      node['@type'] = ZONE_TYPE_NAME[zoneType]['@type'];
+      propertyName = ZONE_TYPE_NAME[zoneType].propertyName;
+      propertyDescr = ZONE_TYPE_NAME[zoneType].propertyDescr;
     } else {
-      // This is basically 'just in case'
+      // This is basically 'just in case' (or unknown zoneType=0)
       name = 'thing';
       node['@type'] = ['BinarySensor'];
       propertyName = 'on';
       propertyDescr = {
         '@type': 'BooleanProperty',
         type: 'boolean',
-        label: `ZoneType${node.zoneType}`,
-        descr: `ZoneType${node.zoneType}`,
+        label: `ZoneType${zoneType}`,
+        descr: `ZoneType${zoneType}`,
       };
     }
     node.name = `${node.id}-${name}`;
