@@ -72,13 +72,13 @@ const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
 const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
 
 const ATTR_ID_SSIASZONE_ZONESTATE =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneState').value;
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneState').value;    // 0
 const ATTR_ID_SSIASZONE_ZONETYPE =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneType').value;
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneType').value;     // 1
 const ATTR_ID_SSIASZONE_ZONESTATUS =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneStatus').value;
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneStatus').value;   // 2
 const ATTR_ID_SSIASZONE_CIEADDR =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'iasCieAddr').value;
+  zclId.attr(CLUSTER_ID_SSIASZONE, 'iasCieAddr').value;   // 16
 
 const STATUS_SUCCESS = zclId.status('success').value;
 
