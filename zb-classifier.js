@@ -980,6 +980,9 @@ class ZigbeeClassifier {
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
     ).mask = ZONE_STATUS_LOW_BATTERY_MASK;
+
+    // Remove the cieAddr so that we'll requery it from the device.
+    delete node.cieAddr;
   }
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
