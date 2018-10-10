@@ -45,12 +45,22 @@ const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
 const ZLL_PROFILE_ID = zclId.profile('LL').value;
 const ZLL_PROFILE_ID_HEX = utils.hexStr(ZLL_PROFILE_ID, 4);
 
+const CLUSTER_ID_GENBASIC = zclId.cluster('genBasic').value;
+const CLUSTER_ID_GENBASIC_HEX = utils.hexStr(CLUSTER_ID_GENBASIC, 4);
+
+const ATTR_ID_GENBASIC_MODELID =
+  zclId.attr(CLUSTER_ID_GENBASIC, 'modelId').value;
+const ATTR_ID_GENBASIC_POWERSOURCE =
+  zclId.attr(CLUSTER_ID_GENBASIC, 'powerSource').value;
+
 const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
 const CLUSTER_ID_LIGHTINGCOLORCTRL_HEX =
   utils.hexStr(CLUSTER_ID_LIGHTINGCOLORCTRL, 4);
 
 const ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES =
   zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorCapabilities').value;
+const ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorMode').value;
 
 const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
 const CLUSTER_ID_GENOTA_HEX = utils.hexStr(CLUSTER_ID_GENOTA, 4);
@@ -372,6 +382,13 @@ class ZigbeeAdapter extends Adapter {
       zdoSeq: updateFrame.zdoSeq,
       waitRetryMax: 2,
     });
+  }
+
+  handleIEEEAddressResponse(frame) {
+    // The IEEE Address Response and Netork Address Response have
+    // the same format, and it turns out we do the same processing.
+
+    this.handleNetworkAddressResponse(frame);
   }
 
   handleNetworkAddressResponse(frame) {
@@ -861,14 +878,32 @@ class ZigbeeAdapter extends Adapter {
   findNodeFromFrame(frame) {
     const addr64 = frame.remote64;
     const addr16 = frame.remote16;
+    let node;
 
     // Some devices (like xiaomi) switch from using a proper 64-bit address to
     // using broadcast but still provide the a 16-bit address.
     if (addr64 == 'ffffffffffffffff') {
-      return this.findNodeByAddr16(addr16);
+      node = this.findNodeByAddr16(addr16);
+      if (!node) {
+        // We got a frame with a braodcast address and a 16-bit address
+        // and we don't know the 16-bit address. Send out a request to
+        // determine the 64-bit address. At least we'll be able to deal
+        // with the next frame.
+
+        const addrFrame = this.zdo.makeFrame({
+          destination64: 'ffffffffffffffff',
+          destination16: addr16,
+          clusterId: zdo.CLUSTER_ID.IEEE_ADDRESS_REQUEST,
+          addr64: 'ffffffffffffffff',
+          requestType: 0, // 0 = Single Device Response
+          startIndex: 0,
+        });
+        this.sendFrameNow(addrFrame);
+      }
+      return node;
     }
 
-    let node = this.nodes[addr64];
+    node = this.nodes[addr64];
     if (!node) {
       // We have both the addr64 and addr16 - go ahead and create a new node.
       node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
@@ -1638,15 +1673,31 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleManagementLeaveResponse(frame) {
+    if (this.debugFlow) {
+      console.log('handleManagementLeaveResponse: addr64 =',
+                  frame.remote64);
+    }
     if (frame.status != STATUS_SUCCESS) {
       // This means that the device didn't unpair from the network. So
       // we're going to keep around our knowledge of the device since it
       // still thinks its part of the network.
+      if (this.debugFlow) {
+        console.log('handleManagementLeaveResponse:',
+                    'status failed - returning');
+      }
       return;
     }
     const node = this.nodes[frame.remote64];
     if (!node) {
+      if (this.debugFlow) {
+        console.log('handleManagementLeaveResponse:',
+                    'node not found - returning');
+      }
       return;
+    }
+
+    if (this.debugFlow) {
+      console.log('handleManagementLeaveResponse: Removing node:', node.addr64);
     }
 
     // Walk through all of the nodes and remove the node from the
@@ -1986,6 +2037,10 @@ class ZigbeeAdapter extends Adapter {
     }
   }
 
+  handleDeviceDescriptionUpdated(node) {
+    super.handleDeviceAdded(node);
+  }
+
   handleFrame(frame) {
     if (this.debugFrameParsing) {
       this.dumpFrame('Rcvd (before parsing):', frame);
@@ -2102,15 +2157,44 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
+    if (!node.hasOwnProperty('modelId')) {
+      if (node.endpointHasZhaInputClusterIdHex(endpoint,
+                                               CLUSTER_ID_GENBASIC_HEX)) {
+        const readFrame = node.makeReadAttributeFrame(
+          endpointNum,
+          ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
+          CLUSTER_ID_GENBASIC,
+          [
+            ATTR_ID_GENBASIC_MODELID,
+            ATTR_ID_GENBASIC_POWERSOURCE,
+          ],
+        );
+        this.sendFrameWaitFrameAtFront(readFrame, {
+          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+          zclCmdId: 'readRsp',
+          zclSeqNum: readFrame.zcl.seqNum,
+          callback: (frame) => {
+            node.handleGenericZclReadRsp(frame);
+            this.populateClassifierAttributes(node, endpointNum);
+          },
+        });
+        return;
+      }
+    }
+
     if (endpointNum == node.lightingColorCtrlEndpoint) {
-      if (node.hasOwnProperty('colorCapabilities')) {
+      if (node.hasOwnProperty('colorCapabilities') &&
+          node.hasOwnProperty('colorMode')) {
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
         const readFrame = node.makeReadAttributeFrame(
           node.lightingColorCtrlEndpoint,
           ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
           CLUSTER_ID_LIGHTINGCOLORCTRL,
-          ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES);
+          [
+            ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES,
+            ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE,
+          ]);
         this.sendFrameWaitFrameAtFront(readFrame, {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
@@ -2182,9 +2266,18 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
     for (const attrEntry of frame.zcl.payload) {
-      if (attrEntry.status == 0 &&
-          attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES) {
-        node.colorCapabilities = attrEntry.attrData;
+      if (attrEntry.status != 0) {
+        // Attribute not supported. For colorCapabilites and colorMode
+        // we use a value of 0 to cover this case.
+        attrEntry.data = 0;
+      }
+      switch (attrEntry.attrId) {
+        case ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES:
+          node.colorCapabilities = attrEntry.attrData;
+          break;
+        case ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE:
+          node.colorMode = attrEntry.attrData;
+          break;
       }
     }
     // The sourceEndpoint comes back as a hex string. Convert it to decimal
@@ -2564,6 +2657,8 @@ fh[C.FRAME_TYPE.ROUTE_RECORD] =
 const zch = ZigbeeAdapter.zdoClusterHandler = {};
 zch[zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE] =
   ZigbeeAdapter.prototype.handleActiveEndpointsResponse;
+zch[zdo.CLUSTER_ID.IEEE_ADDRESS_RESPONSE] =
+  ZigbeeAdapter.prototype.handleIEEEAddressResponse;
 zch[zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE] =
   ZigbeeAdapter.prototype.handleNetworkAddressResponse;
 zch[zdo.CLUSTER_ID.MANAGEMENT_BIND_RESPONSE] =

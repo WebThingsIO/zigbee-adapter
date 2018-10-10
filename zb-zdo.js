@@ -45,6 +45,11 @@ String.prototype.swapHex = function() {
   return this.match(/.{2}/g).reverse().join('');
 };
 
+zci.IEEE_ADDRESS_REQUEST = 0x0001;
+zci[zci.IEEE_ADDRESS_REQUEST] = 'IEEE Address Req (0x0001)';
+zci.IEEE_ADDRESS_RESPONSE = 0x8001;
+zci[zci.IEEE_ADDRESS_RESPONSE] = 'IEEE Address Resp (0x8001)';
+
 zci.NETWORK_ADDRESS_REQUEST = 0x0000;
 zci[zci.NETWORK_ADDRESS_REQUEST] = 'Network Address Req (0x0002)';
 zci.NETWORK_ADDRESS_RESPONSE = 0x8000;
@@ -262,6 +267,12 @@ zdoBuilder[zci.BIND_REQUEST] = function(frame, builder) {
   }
 };
 
+zdoBuilder[zci.IEEE_ADDRESS_REQUEST] = function(frame, builder) {
+  builder.appendString(frame.addr64.swapHex(), 'hex');
+  builder.appendUInt8(frame.requestType);
+  builder.appendUInt8(frame.startIndex);
+};
+
 zdoBuilder[zci.MANAGEMENT_BIND_REQUEST] = function(frame, builder) {
   builder.appendUInt8(frame.startIndex);
 };
@@ -340,6 +351,20 @@ zdoParser[zci.END_DEVICE_ANNOUNCEMENT] = function(frame, reader) {
   frame.rxOnWhenIdle = (frame.capability >> 3) & 1;
   frame.securityCapability = (frame.capability >> 6) & 1;
   frame.allocShortAddress = (frame.capability >> 7) & 1;
+};
+
+zdoParser[zci.IEEE_ADDRESS_RESPONSE] = function(frame, reader) {
+  frame.status = reader.nextUInt8();
+  frame.nwkAddr64 = reader.nextString(8, 'hex').swapHex();
+  frame.nwkAddr16 = reader.nextString(2, 'hex').swapHex();
+  if (reader.offset < reader.buf.length) {
+    frame.numAssocDev = reader.nextUInt8();
+    frame.startIndex = reader.nextUInt8();
+    frame.assocAddr16 = [];
+    for (let i = 0; i < frame.numAssocDev; i++) {
+      frame.assocAddr16[i] = reader.nextString(2, 'hex').swapHex();
+    }
+  }
 };
 
 zdoParser[zci.MANAGEMENT_BIND_RESPONSE] = function(frame, reader) {
