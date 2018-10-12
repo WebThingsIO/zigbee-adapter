@@ -35,6 +35,10 @@ const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE =
   zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentHue').value;
 const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION =
   zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentSaturation').value;
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentX').value;
+const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY =
+  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentY').value;
 
 /**
  * @function levelToPercent
@@ -187,6 +191,72 @@ class ZigbeeProperty extends Property {
     const color = new Color({h: hue, s: sat, v: level});
     const colorStr = color.rgb().hex();
     return [colorStr, colorStr];
+  }
+
+  /**
+   * @method parseColorXYAttr
+   *
+   * Converts the ZCL 'currentX' and 'currentY' attributes (uint8's)
+   * into an RGB color string.
+   */
+  parseColorXYAttr(attrEntry) {
+    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX) {
+      // We expect that we'll always get the currentX in one call, and
+      // the currentY in a later call. For currentX, we just record it.
+      this.currentX = attrEntry.attrData;
+      return [];
+    }
+    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY) {
+      return [];
+    }
+    const currentX = this.currentX;
+    const currentY = attrEntry.attrData;
+    let level = 0;
+
+    const levelProperty = this.device.findProperty('_level');
+    if (levelProperty) {
+      level = levelProperty.value;
+    }
+
+    // We get x, y, and level from the bulb. The x and y values come
+    // from the xyY color space. So we do an initial conversion assuming
+    // Y = 1, and come up with an RGB color. We then scale the RGB value
+    // so that at least one of the rgb values is 255 and then scale the
+    // the whole thing by the brightness.
+
+    // Convert xyY values into XYZ and then RGB using the math presented here:
+    // https://www.easyrgb.com/en/math.php
+
+    const x = currentX / 65536;
+    const y = currentY / 65536;
+
+    let X = 0;
+    let Z = 0;
+    if (currentY > 0) {
+      X = x / y;
+      Z = (1 - x - y) / y;
+    }
+
+    const rgb1 = [
+      X * 3.2406 + -1.5372 + Z * -0.4986,
+      X * -0.9689 + 1.8758 + Z * 0.0415,
+      X * 0.0557 + -0.2040 + Z * 1.0570,
+    ];
+    const rgb = rgb1.map((x) => {
+      if (x > 0.0031308) {
+        x = 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+      } else {
+        x = x * 12.92;
+      }
+      return Math.max(0, Math.min(255, Math.round(x * 255)));
+    });
+    // level is 0-100
+    const scale = (255 * level / 100) / Math.max(...rgb);
+    const rgbColor = new Color(rgb.map((x) => {
+      return x * scale;
+    }));
+    const rgbHexStr = rgbColor.hex();
+    return [rgbHexStr, rgbHexStr];
   }
 
   parseColorTemperatureAttr(attrEntry) {
@@ -558,6 +628,57 @@ class ZigbeeProperty extends Property {
                   10],  // 10ths of a second
       },
       `hsv: [${hue}, ${sat}, ${level}]`,
+    ];
+  }
+
+  /**
+   * @method setColorXYValue
+   *
+   * Convert the 'color' property value (an RGB hex string) into XY values.
+   */
+  setColorXYValue(propertyValue) {
+    const color = new Color(propertyValue);
+
+    // Convert RGB to XYZ and then to xyY. This uses the math presented
+    // here: https://www.easyrgb.com/en/math.php
+
+    const [r, g, b] = color.color.map((x) => {
+      x = x / 255;
+      if (x > 0.04045) {
+        return Math.pow(((x + 0.055) / 1.055), 2.4) * 100;
+      }
+      return x / 0.1292;
+    });
+
+    const X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+    const Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    const Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+
+    const x = X / (X + Y + Z);
+    const y = Y / (X + Y + Z);
+
+    // xy are 0-1 and need to be scaled for Zigbee
+    const currentX = Math.max(0, Math.min(65279, Math.round(x * 65536)));
+    const currentY = Math.max(0, Math.min(65279, Math.round(y * 65536)));
+
+    // Compute the level the same way that the RGB -> HSV conversion does.
+    const level = Math.max(...color.color) * 100 / 255;
+    const levelProperty = this.device.findProperty('_level');
+    if (levelProperty) {
+      this.device.sendZclFrameWaitExplicitRx(
+        levelProperty,
+        levelProperty.valueToZclData(level));
+    }
+
+    // Return the zigbee currentX and currentY
+    return [
+      {
+        frameCntl: {frameType: 1},
+        cmd: 'moveToColor',
+        payload: [currentX, currentY],
+      },
+      `xyV: [${x.toFixed(3)}(${currentX}), ${y.toFixed(3)}(${currentY}),` +
+      `${level}]`,
     ];
   }
 
