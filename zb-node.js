@@ -741,6 +741,7 @@ class ZigbeeNode extends Device {
             case STATUS_SUCCESS:
               break;
             case STATUS_UNSUPPORTED_ATTRIB:
+              property.fireAndForget = true;
               if (property.hasOwnProperty('defaultValue')) {
                 attrEntry.dataType =
                   zclId.attrType(clusterId, attrEntry.attrId).value;
@@ -1756,7 +1757,7 @@ class ZigbeeNode extends Device {
         if (!cluster) {
           cluster = {key: 'unknown', value: frame.clusterId};
         }
-        let attr = zclId.attr(frame.clusterId, attrEntry.attrId);
+        let attr = zclId.attr(clusterId, attrEntry.attrId);
         if (!attr) {
           attr = {key: 'unknown', value: attrEntry.attrId};
         }

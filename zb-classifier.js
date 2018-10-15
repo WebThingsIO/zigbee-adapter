@@ -63,6 +63,7 @@ const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
 
 const COLOR_CAPABILITY_HUE_SAT = (1 << 0);
 // const COLOR_CAPABILITY_ENHANCED_HUE_SAT = (1 << 1);
+const COLOR_CAPABILITY_XY = (1 << 3);
 const COLOR_CAPABILITY_TEMPERATURE = (1 << 4);
 
 // const COLOR_MODE_HUE_SAT  = 0;
@@ -305,6 +306,9 @@ class ZigbeeClassifier {
       '_level',                       // name
       {                               // property description
         type: 'number',
+        unit: 'percent',
+        minimum: 0,
+        maximum: 100,
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
@@ -327,6 +331,41 @@ class ZigbeeClassifier {
       'currentHue,currentSaturation', // attr
       'setColorValue',                // setAttrFromValue
       'parseColorAttr'                // parseValueFromAttr
+    );
+  }
+
+  addColorXYProperty(node, lightingColorCtrlEndpoint) {
+    const endpoint = node.activeEndpoints[lightingColorCtrlEndpoint];
+    this.addProperty(
+      node,                           // device
+      '_level',                       // name
+      {                               // property description
+        type: 'number',
+        unit: 'percent',
+        minimum: 0,
+        maximum: 100,
+      },
+      endpoint.profileId,             // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      'currentLevel',                 // attr
+      'setLevelValue',                // setAttrFromValue
+      'parseLevelAttr'                // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      'color',                        // name
+      {                               // property description
+        '@type': 'ColorProperty',
+        label: 'Color',
+        type: 'string',
+      },
+      endpoint.profileId,             // profileId
+      lightingColorCtrlEndpoint,      // endpoint
+      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      'currentX,currentY',            // attr
+      'setColorXYValue',              // setAttrFromValue
+      'parseColorXYAttr'              // parseValueFromAttr
     );
   }
 
@@ -375,8 +414,14 @@ class ZigbeeClassifier {
       CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
       'colorTemperature',             // attr
       'setColorTemperatureValue',     // setAttrFromValue
-      'parseColorTemperatureAttr'     // parseValueFromAttr
+      'parseColorTemperatureAttr',    // parseValueFromAttr
+      null,                           // configReport
+      370                             // defaultValue
     );
+    // IKEA color temperature bulbs return an unsupportedAttribute error
+    // when trying to read the current color temperature. We set the
+    // defaultValue to 370 so that it's numeric, and then
+    // parseColorTemperatureAttr will clamp it to fall between the min/max
   }
 
   addBrightnessProperty(node, genLevelCtrlEndpoint) {
@@ -1246,8 +1291,9 @@ class ZigbeeClassifier {
                         node.colorMode) || 0;
     if (lightLinkEndpoint || node.lightingColorCtrlEndpoint) {
       // It looks like a
-      if ((colorCapabilities & COLOR_CAPABILITY_HUE_SAT) != 0) {
-        // Hue and Saturation are supported
+      if ((colorCapabilities &
+           (COLOR_CAPABILITY_HUE_SAT | COLOR_CAPABILITY_XY)) != 0) {
+        // Hue and Saturation (or XY) are supported
         colorSupported = true;
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
         node['@type'] = ['OnOffSwitch', 'Light', 'ColorControl'];
@@ -1261,7 +1307,11 @@ class ZigbeeClassifier {
     }
     this.addOnProperty(node, genLevelCtrlEndpoint);
     if (colorSupported) {
-      this.addColorProperty(node, node.lightingColorCtrlEndpoint);
+      if ((colorCapabilities & COLOR_CAPABILITY_HUE_SAT) != 0) {
+        this.addColorProperty(node, node.lightingColorCtrlEndpoint);
+      } else if ((colorCapabilities & COLOR_CAPABILITY_XY) != 0) {
+        this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
+      }
     } else {
       if ((colorCapabilities & COLOR_CAPABILITY_TEMPERATURE) != 0 ||
           (colorMode & COLOR_MODE_TEMPERATURE) != 0) {
