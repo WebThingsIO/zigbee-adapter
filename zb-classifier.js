@@ -980,34 +980,36 @@ class ZigbeeClassifier {
   }
 
   addZoneTypeProperty(node, propertyName, propertyDescr) {
-    this.addProperty(
-      node,                           // device
-      propertyName,                   // name
-      propertyDescr,                  // property description
-      ZHA_PROFILE_ID,                 // profileId
-      node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID_SSIASZONE,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
-    ).mask = ZONE_STATUS_ALARM_MASK;
+    if (propertyName && propertyDescr) {
+      this.addProperty(
+        node,                           // device
+        propertyName,                   // name
+        propertyDescr,                  // property description
+        ZHA_PROFILE_ID,                 // profileId
+        node.ssIasZoneEndpoint,         // endpoint
+        CLUSTER_ID_SSIASZONE,           // clusterId
+        '',                             // attr
+        '',                             // setAttrFromValue
+        ''                              // parseValueFromAttr
+      ).mask = ZONE_STATUS_ALARM_MASK;
 
-    this.addProperty(
-      node,                           // device
-      'tamper',                       // name
-      {                               // property description
-        '@type': 'TamperProperty',
-        type: 'boolean',
-        label: 'Tamper',
-        readOnly: true,
-      },
-      ZHA_PROFILE_ID,                 // profileId
-      node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID_SSIASZONE,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
-    ).mask = ZONE_STATUS_TAMPER_MASK;
+      this.addProperty(
+        node,                           // device
+        'tamper',                       // name
+        {                               // property description
+          '@type': 'TamperProperty',
+          type: 'boolean',
+          label: 'Tamper',
+          readOnly: true,
+        },
+        ZHA_PROFILE_ID,                 // profileId
+        node.ssIasZoneEndpoint,         // endpoint
+        CLUSTER_ID_SSIASZONE,           // clusterId
+        '',                             // attr
+        '',                             // setAttrFromValue
+        ''                              // parseValueFromAttr
+      ).mask = ZONE_STATUS_TAMPER_MASK;
+    }
 
     this.addProperty(
       node,                           // device
@@ -1028,6 +1030,12 @@ class ZigbeeClassifier {
 
     // Remove the cieAddr so that we'll requery it from the device.
     delete node.cieAddr;
+  }
+
+  addEvents(node, events) {
+    for (const eventName in events) {
+      node.addEvent(eventName, events[eventName]);
+    }
   }
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
@@ -1252,6 +1260,19 @@ class ZigbeeClassifier {
       node['@type'] = ZONE_TYPE_NAME[zoneType]['@type'];
       propertyName = ZONE_TYPE_NAME[zoneType].propertyName;
       propertyDescr = ZONE_TYPE_NAME[zoneType].propertyDescr;
+    } else if (zoneType == 0x8000) {
+      // The SmartThings button has a zoneType of 0x8000
+      node.type = 'thing';
+      this.addEvents(node, {
+        pressed: {description: 'Button pressed and released quickly'},
+        doublePressed: {
+          description: 'Button pressed and released twice quickly',
+        },
+        held: {description: 'Button pressed and held'},
+      });
+      name = 'button';
+      propertyName = null;
+      propertyDescr = null;
     } else {
       // This is basically 'just in case' (or unknown zoneType=0)
       name = 'thing';
@@ -1334,6 +1355,14 @@ class ZigbeeClassifier {
     node['@type'] = ['MultiLevelButton'];
     this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
     this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
+    this.addEvents(node, {
+      '1-pressed': {description: 'Top button pressed and released'},
+      '2-pressed': {description: 'Bottom button pressed and released'},
+      '1-held': {description: 'Top button pressed and held'},
+      '2-held': {description: 'Bottom button pressed and held'},
+      '1-released': {description: 'Top button released (after being held)'},
+      '2-released': {description: 'Bottom button released (after being held)'},
+    });
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {

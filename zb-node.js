@@ -19,9 +19,10 @@ const zdo = require('./zb-zdo');
 const zigbeeClassifier = require('./zb-classifier');
 const ZigbeeFamily = require('./zb-family');
 
-let Device, utils;
+let Device, Event, utils;
 try {
   Device = require('../device');
+  Event = require('../event');
   utils = require('../utils');
 } catch (e) {
   if (e.code !== 'MODULE_NOT_FOUND') {
@@ -30,6 +31,7 @@ try {
 
   const gwa = require('gateway-addon');
   Device = gwa.Device;
+  Event = gwa.Event;
   utils = gwa.Utils;
 }
 
@@ -881,23 +883,41 @@ class ZigbeeNode extends Device {
         switch (frame.zcl.cmdId) {
           case 'on':   // on property
             this.handleButtonOnOffCommand(property, true);
+            this.notifyEvent('1-pressed');
             break;
           case 'off': // on property
             this.handleButtonOnOffCommand(property, false);
+            this.notifyEvent('2-pressed');
             break;
-          case 'moveWithOnOff': // level property
+          case 'moveWithOnOff': { // level property
             this.handleButtonMoveWithOnOffCommand(property,
                                                   frame.zcl.payload.movemode,
                                                   frame.zcl.payload.rate);
+            // movemode 0 = up, 1 = down. So we just add 1 to the movemode
+            // to get a button number.
+            const button = frame.zcl.payload.movemode + 1;
+            this.heldButton = button;
+            this.notifyEvent(`${button}-held`);
             return;
-          case 'move':  // level property
+          }
+          case 'move': { // level property
             this.handleButtonMoveCommand(property,
                                          frame.zcl.payload.movemode,
                                          frame.zcl.payload.rate,
                                          false);
+            // movemode 0 = up, 1 = down. So we just add 1 to the movemode
+            // to get a button number.
+            const button = frame.zcl.payload.movemode + 1;
+            this.heldButton = button;
+            this.notifyEvent(`${button}-held`);
             return;
+          }
           case 'stop':  // level property
             this.handleButtonStopCommand(property);
+            if (this.heldButton) {
+              this.notifyEvent(`${this.heldButton}-released`);
+              this.heldButton = null;
+            }
             return;
         }
       }
@@ -1012,6 +1032,23 @@ class ZigbeeNode extends Device {
     const profileId = parseInt(frame.profileId, 16);
     const clusterId = parseInt(frame.clusterId, 16);
     const endpoint = parseInt(frame.sourceEndpoint, 16);
+
+    if (this.zoneType == 0x8000) {
+      // Samsung button - this is event based and doesn't have any
+      // properties.
+
+      // Note: It would make sense for a zoneStatus of 0 to correspond
+      // to 'released', but so far, I've not seen the button generate
+      // such a zone status.
+      const events = ['released', 'pressed', 'doublePressed', 'held'];
+      this.notifyEvent(events[zoneStatus & 3]);
+
+      // Even though the notification doesn't disable the defaultRsp,
+      // I've always seen a transmit status error if we try send one,
+      // so we don't bother.
+      frame.zcl.frameCntl.disDefaultRsp = 1;
+      return;
+    }
 
     for (const property of this.properties.values()) {
       if (profileId == property.profileId &&
@@ -1713,6 +1750,11 @@ class ZigbeeNode extends Device {
                              property.profileId,
                              property.clusterId,
                              zclData);
+  }
+
+  notifyEvent(eventName) {
+    console.log(this.name, 'event:', eventName);
+    this.eventNotify(new Event(this, eventName));
   }
 
   notifyPropertyChanged(property) {
