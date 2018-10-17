@@ -29,16 +29,9 @@ try {
   utils = gwa.Utils;
 }
 
-const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
-
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentHue').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentSaturation').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentX').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentY').value;
+const {
+  ATTR_ID,
+} = require('./zb-constants');
 
 /**
  * @function levelToPercent
@@ -172,13 +165,13 @@ class ZigbeeProperty extends Property {
    * into an RGB color string.
    */
   parseColorAttr(attrEntry) {
-    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE) {
+    if (attrEntry.attrId == ATTR_ID.LIGHTINGCOLORCTRL.CURRENTHUE) {
       // We expect that we'll always get the hue in one call, and
       // the saturation in a later call. For hue, we just record it.
       this.hue = attrEntry.attrData;
       return [];
     }
-    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION) {
+    if (attrEntry.attrId != ATTR_ID.LIGHTINGCOLORCTRL.CURRENTSATURATION) {
       return [];
     }
     const hue = this.hue;
@@ -200,13 +193,13 @@ class ZigbeeProperty extends Property {
    * into an RGB color string.
    */
   parseColorXYAttr(attrEntry) {
-    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX) {
+    if (attrEntry.attrId == ATTR_ID.LIGHTINGCOLORCTRL.CURRENTX) {
       // We expect that we'll always get the currentX in one call, and
       // the currentY in a later call. For currentX, we just record it.
       this.currentX = attrEntry.attrData;
       return [];
     }
-    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY) {
+    if (attrEntry.attrId != ATTR_ID.LIGHTINGCOLORCTRL.CURRENTY) {
       return [];
     }
     const currentX = this.currentX;

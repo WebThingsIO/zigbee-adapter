@@ -10,14 +10,12 @@
 'use strict';
 
 const cloneDeep = require('clone-deep');
-const zclId = require('zcl-id');
 const ZigbeeFamily = require('./zb-family');
 const ZigbeeProperty = require('./zb-property');
 
-let Constants, utils;
+let Constants;
 try {
   Constants = require('../addon-constants');
-  utils = require('../utils');
 } catch (e) {
   if (e.code !== 'MODULE_NOT_FOUND') {
     throw e;
@@ -25,25 +23,15 @@ try {
 
   const gwa = require('gateway-addon');
   Constants = gwa.Constants;
-  utils = gwa.Utils;
 }
 
 const DEBUG = false;
 
-const ZHA_PROFILE_ID = zclId.profile('HA').value;
-const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
-
-const CLUSTER_ID_GENBASIC = zclId.cluster('genBasic').value;
-const CLUSTER_ID_GENBASIC_HEX = utils.hexStr(CLUSTER_ID_GENBASIC, 4);
-
-const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
-const CLUSTER_ID_GENONOFF_HEX = utils.hexStr(CLUSTER_ID_GENONOFF, 4);
-
-const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
-const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
-  utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
-
-const POWERSOURCE_BATTERY = 3;
+const {
+  CLUSTER_ID,
+  PROFILE_ID,
+  POWERSOURCE,
+} = require('./zb-constants');
 
 // The following github repository has a bunch of useful information
 // for each of the xiaomi sensors.
@@ -54,13 +42,13 @@ const MODEL_IDS = {
     name: 'magent',
     type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
-    powerSource: POWERSOURCE_BATTERY,
+    powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
-        profileId: ZHA_PROFILE_ID_HEX,
+        profileId: PROFILE_ID.ZHA_HEX,
         inputClusters: [
-          CLUSTER_ID_GENBASIC_HEX,
-          CLUSTER_ID_GENONOFF_HEX,
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENONOFF_HEX,
         ],
         outputClusters: [],
       },
@@ -73,9 +61,9 @@ const MODEL_IDS = {
           type: 'boolean',
           description: 'Magnet Sensor',
         },
-        profileId: ZHA_PROFILE_ID,
+        profileId: PROFILE_ID.ZHA,
         endpoint: 1,
-        clusterId: CLUSTER_ID_GENONOFF,
+        clusterId: CLUSTER_ID.GENONOFF,
         attr: 'onOff',
         value: false,
         parseValueFromAttr: 'parseOnOffAttr',
@@ -86,13 +74,13 @@ const MODEL_IDS = {
     name: 'switch',
     type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
-    powerSource: POWERSOURCE_BATTERY,
+    powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
-        profileId: ZHA_PROFILE_ID_HEX,
+        profileId: PROFILE_ID.ZHA_HEX,
         inputClusters: [
-          CLUSTER_ID_GENBASIC_HEX,
-          CLUSTER_ID_GENONOFF_HEX,
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENONOFF_HEX,
         ],
         outputClusters: [],
       },
@@ -105,9 +93,9 @@ const MODEL_IDS = {
           type: 'boolean',
           description: 'Magnet Sensor',
         },
-        profileId: ZHA_PROFILE_ID,
+        profileId: PROFILE_ID.ZHA,
         endpoint: 1,
-        clusterId: CLUSTER_ID_GENONOFF,
+        clusterId: CLUSTER_ID.GENONOFF,
         attr: 'onOff',
         value: false,
         parseValueFromAttr: 'parseOffOnAttr',
@@ -119,9 +107,9 @@ const MODEL_IDS = {
           type: 'number',
           description: 'Switch Sensor',
         },
-        profileId: ZHA_PROFILE_ID,
+        profileId: PROFILE_ID.ZHA,
         endpoint: 1,
-        clusterId: CLUSTER_ID_GENONOFF,
+        clusterId: CLUSTER_ID.GENONOFF,
         attr: '',
         attrId: 0x8000,
         value: 0,
@@ -133,14 +121,14 @@ const MODEL_IDS = {
     name: 'occupancy',
     type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
-    powerSource: POWERSOURCE_BATTERY,
+    powerSource: POWERSOURCE.BATTERY,
     occupancyTimeout: 10, // seconds
     activeEndpoints: {
       1: {
-        profileId: ZHA_PROFILE_ID_HEX,
+        profileId: PROFILE_ID.ZHA_HEX,
         inputClusters: [
-          CLUSTER_ID_GENBASIC_HEX,
-          CLUSTER_ID_OCCUPANCY_SENSOR_HEX,
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.OCCUPANCY_SENSOR_HEX,
         ],
         outputClusters: [],
       },
@@ -153,9 +141,9 @@ const MODEL_IDS = {
           label: 'Occupied',
           description: 'Occupancy Sensor',
         },
-        profileId: ZHA_PROFILE_ID,
+        profileId: PROFILE_ID.ZHA,
         endpoint: 1,
-        clusterId: CLUSTER_ID_OCCUPANCY_SENSOR,
+        clusterId: CLUSTER_ID.OCCUPANCY_SENSOR,
         attr: 'occupancy',
         value: false,
         parseValueFromAttr: 'parseOccupiedAttr',
