@@ -13,17 +13,7 @@ const cloneDeep = require('clone-deep');
 const ZigbeeFamily = require('./zb-family');
 const ZigbeeProperty = require('./zb-property');
 
-let Constants;
-try {
-  Constants = require('../addon-constants');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Constants = gwa.Constants;
-}
+const {Constants} = require('gateway-addon');
 
 const DEBUG = false;
 

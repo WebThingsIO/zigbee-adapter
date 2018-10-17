@@ -19,22 +19,7 @@ const zdo = require('./zb-zdo');
 const zigbeeClassifier = require('./zb-classifier');
 const ZigbeeFamily = require('./zb-family');
 
-let Device, Event, utils;
-try {
-  Device = require('../device');
-  Event = require('../event');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Device = gwa.Device;
-  Event = gwa.Event;
-  utils = gwa.Utils;
-}
-
+const {Device, Event, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
   CLUSTER_ID,
@@ -714,9 +699,9 @@ class ZigbeeNode extends Device {
         }
         console.log(this.name,
                     'property:', property.name,
-                    'profileId:', utils.hexStr(property.profileId, 4),
+                    'profileId:', Utils.hexStr(property.profileId, 4),
                     'endpoint:', property.endpoint,
-                    'clusterId:', utils.hexStr(property.clusterId, 4),
+                    'clusterId:', Utils.hexStr(property.clusterId, 4),
                     frame.zcl.cmdId,
                     'value:', logValue);
         const deferredSet = property.deferredSet;
@@ -1009,9 +994,9 @@ class ZigbeeNode extends Device {
         if (property.value != prevValue) {
           console.log(this.name,
                       'property:', property.name,
-                      'profileId:', utils.hexStr(property.profileId, 4),
+                      'profileId:', Utils.hexStr(property.profileId, 4),
                       'endpoint:', property.endpoint,
-                      'clusterId:', utils.hexStr(property.clusterId, 4),
+                      'clusterId:', Utils.hexStr(property.clusterId, 4),
                       'value:', value,
                       `zoneStatus: 0x${zoneStatus.toString(16)}`);
           this.notifyPropertyChanged(property);
@@ -1100,7 +1085,7 @@ class ZigbeeNode extends Device {
           DEBUG && console.log('rebind:   bind response for property:',
                                property.name,
                                `EP:${property.endpoint}`,
-                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+                               `CL:${Utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;
           property.bindNeeded = false;
           // We only need to bind per endpoint/cluster. Since we've
@@ -1128,7 +1113,7 @@ class ZigbeeNode extends Device {
           DEBUG && console.log('rebind:   configReportRsp for property:',
                                property.name,
                                `EP:${property.endpoint}`,
-                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+                               `CL:${Utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;
           property.configReportNeeded = false;
           this.rebind();
@@ -1147,7 +1132,7 @@ class ZigbeeNode extends Device {
           DEBUG && console.log('rebind:   readRsp for property:',
                                property.name,
                                `EP:${property.endpoint}`,
-                               `CL:${utils.hexStr(property.clusterId, 4)}`);
+                               `CL:${Utils.hexStr(property.clusterId, 4)}`);
           this.rebinding = false;
           property.initialReadNeeded = false;
           this.rebind();
@@ -1408,7 +1393,7 @@ class ZigbeeNode extends Device {
       bindDstEndpoint: 1, // Endpoint on the coordinator
     });
     if (this.adapter.debugFrames) {
-      frame.shortDescr = `EP:${endpoint} CL:${utils.hexStr(clusterId, 4)}`;
+      frame.shortDescr = `EP:${endpoint} CL:${Utils.hexStr(clusterId, 4)}`;
     }
     if (configReportFrames) {
       frame.sendOnSuccess = configReportFrames;
@@ -1674,7 +1659,7 @@ class ZigbeeNode extends Device {
 
       destinationEndpoint: endpoint,
       profileId: profileId,
-      clusterId: utils.hexStr(clusterId, 4),
+      clusterId: Utils.hexStr(clusterId, 4),
 
       broadcastRadius: 0,
       options: 0,

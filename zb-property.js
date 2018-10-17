@@ -13,22 +13,7 @@
 const Color = require('color');
 const zclId = require('zcl-id');
 
-let Deferred, Property, utils;
-try {
-  Deferred = require('../deferred');
-  Property = require('../property');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Deferred = gwa.Deferred;
-  Property = gwa.Property;
-  utils = gwa.Utils;
-}
-
+const {Deferred, Property, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
 } = require('./zb-constants');
@@ -794,9 +779,9 @@ class ZigbeeProperty extends Property {
 
     console.log('setProperty property:', this.name,
                 'for:', this.device.name,
-                'profileId:', utils.hexStr(this.profileId, 4),
+                'profileId:', Utils.hexStr(this.profileId, 4),
                 'endpoint:', this.endpoint,
-                'clusterId:', utils.hexStr(this.clusterId, 4),
+                'clusterId:', Utils.hexStr(this.clusterId, 4),
                 'zcl:', logData,
                 'value:', value);
 

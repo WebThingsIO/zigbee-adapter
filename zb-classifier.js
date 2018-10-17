@@ -21,19 +21,7 @@ const {
 
 const ZigbeeProperty = require('./zb-property');
 
-let Constants, utils;
-try {
-  Constants = require('../addon-constants');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Constants = gwa.Constants;
-  utils = gwa.Utils;
-}
+const {Constants, Utils} = require('gateway-addon');
 
 const DEBUG = false;
 
@@ -1012,7 +1000,7 @@ class ZigbeeClassifier {
 
     DEBUG && console.log('addProperty:', node.addr64, name,
                          `EP:${property.endpoint}`,
-                         `CL:${utils.hexStr(property.clusterId, 4)}`);
+                         `CL:${Utils.hexStr(property.clusterId, 4)}`);
 
     if (node.hasOwnProperty('devInfoProperties') &&
         node.devInfoProperties.hasOwnProperty(name)) {

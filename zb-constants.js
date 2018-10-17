@@ -11,21 +11,11 @@
 
 const zclId = require('zcl-id');
 
-let utils;
-try {
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  utils = gwa.Utils;
-}
+const {Utils} = require('gateway-addon');
 
 function addHexValues(dict) {
   for (const key in dict) {
-    dict[`${key}_HEX`] = utils.hexStr(dict[key], 4);
+    dict[`${key}_HEX`] = Utils.hexStr(dict[key], 4);
   }
 }
 
@@ -127,6 +117,7 @@ const POWERSOURCE = {
 };
 
 const PROFILE_ID = {
+  ZDO: 0,
   ZHA: zclId.profile('HA').value,
   ZLL: zclId.profile('LL').value,
 };

@@ -22,21 +22,7 @@ const zcl = require('zcl-packet');
 const zclId = require('zcl-id');
 const registerFamilies = require('./zb-families');
 
-let Adapter, Database, utils;
-try {
-  Adapter = require('../adapter');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Adapter = gwa.Adapter;
-  Database = gwa.Database;
-  utils = gwa.Utils;
-}
-
+const {Adapter, Database, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
   CLUSTER_ID,
@@ -683,7 +669,7 @@ class ZigbeeAdapter extends Adapter {
     console.log('----- Nodes -----');
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
-      const name = utils.padRight(node.name, 32);
+      const name = Utils.padRight(node.name, 32);
       console.log('Node:', node.addr64, node.addr16,
                   'Name:', name,
                   'rebindRequired:', node.rebindRequired,
