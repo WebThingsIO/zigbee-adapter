@@ -842,7 +842,7 @@ class ZigbeeNode extends Device {
             // to get a button number.
             const button = frame.zcl.payload.movemode + 1;
             this.heldButton = button;
-            this.notifyEvent(`${button}-held`);
+            this.notifyEvent(`${button}-longPressed`);
             return;
           }
           case 'move': { // level property
@@ -854,7 +854,7 @@ class ZigbeeNode extends Device {
             // to get a button number.
             const button = frame.zcl.payload.movemode + 1;
             this.heldButton = button;
-            this.notifyEvent(`${button}-held`);
+            this.notifyEvent(`${button}-longPressed`);
             return;
           }
           case 'stop':  // level property
@@ -985,7 +985,7 @@ class ZigbeeNode extends Device {
       // Note: It would make sense for a zoneStatus of 0 to correspond
       // to 'released', but so far, I've not seen the button generate
       // such a zone status.
-      const events = ['released', 'pressed', 'doublePressed', 'held'];
+      const events = ['released', 'pressed', 'doublePressed', 'longPressed'];
       this.notifyEvent(events[zoneStatus & 3]);
 
       // Even though the notification doesn't disable the defaultRsp,

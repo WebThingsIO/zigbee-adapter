@@ -1217,12 +1217,20 @@ class ZigbeeClassifier {
     } else if (zoneType == 0x8000) {
       // The SmartThings button has a zoneType of 0x8000
       node.type = 'thing';
+      node['@type'] = ['PushButton'];
       this.addEvents(node, {
-        pressed: {description: 'Button pressed and released quickly'},
+        pressed: {
+          '@type': 'PressedEvent',
+          description: 'Button pressed and released quickly',
+        },
         doublePressed: {
+          '@type': 'DoublePressedEvent',
           description: 'Button pressed and released twice quickly',
         },
-        held: {description: 'Button pressed and held'},
+        longPressed: {
+          '@type': 'LongPressedEvent',
+          description: 'Button pressed and held',
+        },
       });
       name = 'button';
       propertyName = null;
@@ -1305,17 +1313,35 @@ class ZigbeeClassifier {
 
   initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
     node.name = `${node.id}-button`;
-    node.type = 'multiLevelButton';
-    node['@type'] = ['MultiLevelButton'];
+    node.type = 'multiLevelSwitch';
+    node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
     this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
     this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
     this.addEvents(node, {
-      '1-pressed': {description: 'Top button pressed and released'},
-      '2-pressed': {description: 'Bottom button pressed and released'},
-      '1-held': {description: 'Top button pressed and held'},
-      '2-held': {description: 'Bottom button pressed and held'},
-      '1-released': {description: 'Top button released (after being held)'},
-      '2-released': {description: 'Bottom button released (after being held)'},
+      '1-pressed': {
+        '@type': 'PressedEvent',
+        description: 'Top button pressed and released',
+      },
+      '2-pressed': {
+        '@type': 'PressedEvent',
+        description: 'Bottom button pressed and released',
+      },
+      '1-longPressed': {
+        '@type': 'LongPressedEvent',
+        description: 'Top button pressed and held',
+      },
+      '2-longPressed': {
+        '@type': 'LongPressedEvent',
+        description: 'Bottom button pressed and held',
+      },
+      '1-released': {
+        '@type': 'ReleasedEvent',
+        description: 'Top button released (after being held)',
+      },
+      '2-released': {
+        '@type': 'ReleasedEvent',
+        description: 'Bottom button released (after being held)',
+      },
     });
   }
 
