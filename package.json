@@ -19,7 +19,6 @@
     "bl": "^2.0.1",
     "clone-deep": "^4.0.0",
     "color": "^3.0.0",
-    "gateway-addon": "https://github.com/mozilla-iot/gateway-addon-node",
     "serialport": "^6.1.1",
     "xbee-api": "^0.5.6",
     "zcl-id": "^0.3.2",
