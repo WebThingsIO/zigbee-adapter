@@ -22,65 +22,16 @@ const zcl = require('zcl-packet');
 const zclId = require('zcl-id');
 const registerFamilies = require('./zb-families');
 
-let Adapter, Database, utils;
-try {
-  Adapter = require('../adapter');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Adapter = gwa.Adapter;
-  Database = gwa.Database;
-  utils = gwa.Utils;
-}
+const {Adapter, Database, Utils} = require('gateway-addon');
+const {
+  ATTR_ID,
+  CLUSTER_ID,
+  PROFILE_ID,
+  STATUS,
+} = require('./zb-constants');
 
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
-
-const ZHA_PROFILE_ID = zclId.profile('HA').value;
-const ZHA_PROFILE_ID_HEX = utils.hexStr(ZHA_PROFILE_ID, 4);
-const ZLL_PROFILE_ID = zclId.profile('LL').value;
-const ZLL_PROFILE_ID_HEX = utils.hexStr(ZLL_PROFILE_ID, 4);
-
-const CLUSTER_ID_GENBASIC = zclId.cluster('genBasic').value;
-const CLUSTER_ID_GENBASIC_HEX = utils.hexStr(CLUSTER_ID_GENBASIC, 4);
-
-const ATTR_ID_GENBASIC_MODELID =
-  zclId.attr(CLUSTER_ID_GENBASIC, 'modelId').value;
-const ATTR_ID_GENBASIC_POWERSOURCE =
-  zclId.attr(CLUSTER_ID_GENBASIC, 'powerSource').value;
-
-const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
-const CLUSTER_ID_LIGHTINGCOLORCTRL_HEX =
-  utils.hexStr(CLUSTER_ID_LIGHTINGCOLORCTRL, 4);
-
-const ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorCapabilities').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'colorMode').value;
-
-const CLUSTER_ID_GENOTA = zclId.cluster('genOta').value;
-const CLUSTER_ID_GENOTA_HEX = utils.hexStr(CLUSTER_ID_GENOTA, 4);
-
-const CLUSTER_ID_GENPOLLCTRL = zclId.cluster('genPollCtrl').value;
-const CLUSTER_ID_GENPOLLCTRL_HEX = utils.hexStr(CLUSTER_ID_GENPOLLCTRL, 4);
-
-const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
-const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
-
-const ATTR_ID_SSIASZONE_ZONESTATE =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneState').value;    // 0
-const ATTR_ID_SSIASZONE_ZONETYPE =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneType').value;     // 1
-const ATTR_ID_SSIASZONE_ZONESTATUS =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'zoneStatus').value;   // 2
-const ATTR_ID_SSIASZONE_CIEADDR =
-  zclId.attr(CLUSTER_ID_SSIASZONE, 'iasCieAddr').value;   // 16
-
-const STATUS_SUCCESS = zclId.status('success').value;
 
 const WAIT_TIMEOUT_DELAY = 1 * 1000;
 const EXTENDED_TIMEOUT_DELAY = 10 * 1000;
@@ -262,7 +213,7 @@ class ZigbeeAdapter extends Adapter {
         } catch (e) {
           console.log('Error handling frame_object');
           console.log(e);
-          console.log(frame);
+          console.log(util.inspect(frame, {depth: null}));
         }
       });
     }
@@ -392,7 +343,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleNetworkAddressResponse(frame) {
-    if (frame.status != STATUS_SUCCESS) {
+    if (frame.status != STATUS.SUCCESS) {
       if (this.debugFlow) {
         console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
                     'due to status:', this.frameStatus(frame));
@@ -718,7 +669,7 @@ class ZigbeeAdapter extends Adapter {
     console.log('----- Nodes -----');
     for (const nodeId in this.nodes) {
       const node = this.nodes[nodeId];
-      const name = utils.padRight(node.name, 32);
+      const name = Utils.padRight(node.name, 32);
       console.log('Node:', node.addr64, node.addr16,
                   'Name:', name,
                   'rebindRequired:', node.rebindRequired,
@@ -1283,7 +1234,7 @@ class ZigbeeAdapter extends Adapter {
 
     for (const inputCluster of frame.inputClusters) {
       switch (inputCluster) {
-        case CLUSTER_ID_GENOTA_HEX:
+        case CLUSTER_ID.GENOTA_HEX:
           // Indicate that we support the OTA cluster
           this.sendMatchDescriptorResponse(node, frame, 1);
           break;
@@ -1292,13 +1243,13 @@ class ZigbeeAdapter extends Adapter {
 
     for (const outputCluster of frame.outputClusters) {
       switch (outputCluster) {
-        case CLUSTER_ID_SSIASZONE_HEX:
+        case CLUSTER_ID.SSIASZONE_HEX:
           // Sensors which are "Security sensors" will ask if we support
           // the SSIASZONE cluster, so we tell them that we do.
           this.sendMatchDescriptorResponse(node, frame, 1);
           break;
 
-        case CLUSTER_ID_GENPOLLCTRL_HEX: {
+        case CLUSTER_ID.GENPOLLCTRL_HEX: {
           this.sendMatchDescriptorResponse(node, frame, 1);
           break;
         }
@@ -1677,7 +1628,7 @@ class ZigbeeAdapter extends Adapter {
       console.log('handleManagementLeaveResponse: addr64 =',
                   frame.remote64);
     }
-    if (frame.status != STATUS_SUCCESS) {
+    if (frame.status != STATUS.SUCCESS) {
       // This means that the device didn't unpair from the network. So
       // we're going to keep around our knowledge of the device since it
       // still thinks its part of the network.
@@ -2106,16 +2057,16 @@ class ZigbeeAdapter extends Adapter {
 
   isZhaFrame(frame) {
     if (typeof frame.profileId === 'number') {
-      return frame.profileId === ZHA_PROFILE_ID;
+      return frame.profileId === PROFILE_ID.ZHA;
     }
-    return frame.profileId === ZHA_PROFILE_ID_HEX;
+    return frame.profileId === PROFILE_ID.ZHA_HEX;
   }
 
   isZllFrame(frame) {
     if (typeof frame.profileId === 'number') {
-      return frame.profileId === ZLL_PROFILE_ID;
+      return frame.profileId === PROFILE_ID.ZLL;
     }
-    return frame.profileId === ZLL_PROFILE_ID_HEX;
+    return frame.profileId === PROFILE_ID.ZLL_HEX;
   }
 
   populateNodeInfo(node) {
@@ -2159,14 +2110,14 @@ class ZigbeeAdapter extends Adapter {
 
     if (!node.hasOwnProperty('modelId')) {
       if (node.endpointHasZhaInputClusterIdHex(endpoint,
-                                               CLUSTER_ID_GENBASIC_HEX)) {
+                                               CLUSTER_ID.GENBASIC_HEX)) {
         const readFrame = node.makeReadAttributeFrame(
           endpointNum,
-          ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
-          CLUSTER_ID_GENBASIC,
+          PROFILE_ID.ZHA, // IKEA bulbs require PROFILE_ID.ZHA
+          CLUSTER_ID.GENBASIC,
           [
-            ATTR_ID_GENBASIC_MODELID,
-            ATTR_ID_GENBASIC_POWERSOURCE,
+            ATTR_ID.GENBASIC.MODELID,
+            ATTR_ID.GENBASIC.POWERSOURCE,
           ],
         );
         this.sendFrameWaitFrameAtFront(readFrame, {
@@ -2189,11 +2140,11 @@ class ZigbeeAdapter extends Adapter {
       } else {
         const readFrame = node.makeReadAttributeFrame(
           node.lightingColorCtrlEndpoint,
-          ZHA_PROFILE_ID, // IKEA bulbs require ZHA_PROFILE_ID
-          CLUSTER_ID_LIGHTINGCOLORCTRL,
+          PROFILE_ID.ZHA, // IKEA bulbs require PROFILE_ID.ZHA
+          CLUSTER_ID.LIGHTINGCOLORCTRL,
           [
-            ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES,
-            ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE,
+            ATTR_ID.LIGHTINGCOLORCTRL.COLORCAPABILITIES,
+            ATTR_ID.LIGHTINGCOLORCTRL.COLORMODE,
           ]);
         this.sendFrameWaitFrameAtFront(readFrame, {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
@@ -2228,13 +2179,13 @@ class ZigbeeAdapter extends Adapter {
         node.readingZoneType = true;
         const readFrame = node.makeReadAttributeFrame(
           node.ssIasZoneEndpoint,
-          ZHA_PROFILE_ID,
-          CLUSTER_ID_SSIASZONE,
+          PROFILE_ID.ZHA,
+          CLUSTER_ID.SSIASZONE,
           [
-            ATTR_ID_SSIASZONE_ZONESTATE,
-            ATTR_ID_SSIASZONE_ZONETYPE,
-            ATTR_ID_SSIASZONE_ZONESTATUS,
-            ATTR_ID_SSIASZONE_CIEADDR,
+            ATTR_ID.SSIASZONE.ZONESTATE,
+            ATTR_ID.SSIASZONE.ZONETYPE,
+            ATTR_ID.SSIASZONE.ZONESTATUS,
+            ATTR_ID.SSIASZONE.IASCIEADDR,
           ]);
         this.sendFrameWaitFrameAtFront(readFrame, {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
@@ -2272,10 +2223,10 @@ class ZigbeeAdapter extends Adapter {
         attrEntry.data = 0;
       }
       switch (attrEntry.attrId) {
-        case ATTR_ID_LIGHTINGCOLORCTRL_COLORCAPABILITIES:
+        case ATTR_ID.LIGHTINGCOLORCTRL.COLORCAPABILITIES:
           node.colorCapabilities = attrEntry.attrData;
           break;
-        case ATTR_ID_LIGHTINGCOLORCTRL_COLORMODE:
+        case ATTR_ID.LIGHTINGCOLORCTRL.COLORMODE:
           node.colorMode = attrEntry.attrData;
           break;
       }
@@ -2318,7 +2269,7 @@ class ZigbeeAdapter extends Adapter {
     // interval
     const genPollCtrlEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_GENPOLLCTRL_HEX);
+        CLUSTER_ID.GENPOLLCTRL_HEX);
     if (genPollCtrlEndpoint && !this.scanning) {
       node.genPollCtrlEndpoint = genPollCtrlEndpoint;
       node.writeCheckinInterval();
@@ -2352,10 +2303,10 @@ class ZigbeeAdapter extends Adapter {
     // through this function.
     node.lightingColorCtrlEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_LIGHTINGCOLORCTRL_HEX);
+        CLUSTER_ID.LIGHTINGCOLORCTRL_HEX);
     node.ssIasZoneEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_SSIASZONE_HEX);
+        CLUSTER_ID.SSIASZONE_HEX);
 
     // Since we got here, all of the simple descriptors have been populated.
     // Check to see that we have all of the classifier attributes

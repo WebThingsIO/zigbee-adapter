@@ -13,32 +13,10 @@
 const Color = require('color');
 const zclId = require('zcl-id');
 
-let Deferred, Property, utils;
-try {
-  Deferred = require('../deferred');
-  Property = require('../property');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Deferred = gwa.Deferred;
-  Property = gwa.Property;
-  utils = gwa.Utils;
-}
-
-const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
-
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentHue').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentSaturation').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentX').value;
-const ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY =
-  zclId.attr(CLUSTER_ID_LIGHTINGCOLORCTRL, 'currentY').value;
+const {Deferred, Property, Utils} = require('gateway-addon');
+const {
+  ATTR_ID,
+} = require('./zb-constants');
 
 /**
  * @function levelToPercent
@@ -172,13 +150,13 @@ class ZigbeeProperty extends Property {
    * into an RGB color string.
    */
   parseColorAttr(attrEntry) {
-    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTHUE) {
+    if (attrEntry.attrId == ATTR_ID.LIGHTINGCOLORCTRL.CURRENTHUE) {
       // We expect that we'll always get the hue in one call, and
       // the saturation in a later call. For hue, we just record it.
       this.hue = attrEntry.attrData;
       return [];
     }
-    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTSATURATION) {
+    if (attrEntry.attrId != ATTR_ID.LIGHTINGCOLORCTRL.CURRENTSATURATION) {
       return [];
     }
     const hue = this.hue;
@@ -200,13 +178,13 @@ class ZigbeeProperty extends Property {
    * into an RGB color string.
    */
   parseColorXYAttr(attrEntry) {
-    if (attrEntry.attrId == ATTR_ID_LIGHTINGCOLORCTRL_CURRENTX) {
+    if (attrEntry.attrId == ATTR_ID.LIGHTINGCOLORCTRL.CURRENTX) {
       // We expect that we'll always get the currentX in one call, and
       // the currentY in a later call. For currentX, we just record it.
       this.currentX = attrEntry.attrData;
       return [];
     }
-    if (attrEntry.attrId != ATTR_ID_LIGHTINGCOLORCTRL_CURRENTY) {
+    if (attrEntry.attrId != ATTR_ID.LIGHTINGCOLORCTRL.CURRENTY) {
       return [];
     }
     const currentX = this.currentX;
@@ -801,9 +779,9 @@ class ZigbeeProperty extends Property {
 
     console.log('setProperty property:', this.name,
                 'for:', this.device.name,
-                'profileId:', utils.hexStr(this.profileId, 4),
+                'profileId:', Utils.hexStr(this.profileId, 4),
                 'endpoint:', this.endpoint,
-                'clusterId:', utils.hexStr(this.clusterId, 4),
+                'clusterId:', Utils.hexStr(this.clusterId, 4),
                 'zcl:', logData,
                 'value:', value);
 

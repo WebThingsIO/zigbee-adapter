@@ -19,23 +19,12 @@ const BufferReader = require('buffer-reader');
 const xbeeApi = require('xbee-api');
 const zclId = require('zcl-id');
 
-let utils;
-try {
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  utils = require('gateway-addon').Utils;
-}
+const {Utils} = require('gateway-addon');
+const {PROFILE_ID} = require('./zb-constants');
 
 const C = xbeeApi.constants;
 
 exports = module.exports;
-
-const ZDO_PROFILE_ID = 0;
-const ZDO_PROFILE_ID_HEX = utils.hexStr(ZDO_PROFILE_ID, 4);
 
 const zci = exports.CLUSTER_ID = {};
 
@@ -119,7 +108,7 @@ const zdoParser = module.exports.zdoParser = {};
 
 function getClusterIdAsString(clusterId) {
   if (typeof clusterId === 'number') {
-    return utils.hexStr(clusterId, 4);
+    return Utils.hexStr(clusterId, 4);
   }
   return `${clusterId}`;
 }
@@ -178,7 +167,7 @@ class ZdoApi {
     const clusterId = getClusterIdAsInt(frame.clusterId);
     // Convert the clusterId to its hex form. This is easier to
     // use for debugging
-    frame.clusterId = utils.hexStr(clusterId, 4);
+    frame.clusterId = Utils.hexStr(clusterId, 4);
 
     if (!zdoBuilder[clusterId]) {
       throw new Error(
@@ -212,9 +201,9 @@ class ZdoApi {
 
   isZdoFrame(frame) {
     if (typeof frame.profileId === 'number') {
-      return frame.profileId === ZDO_PROFILE_ID;
+      return frame.profileId === PROFILE_ID.ZDO;
     }
-    return frame.profileId === ZDO_PROFILE_ID_HEX;
+    return frame.profileId === PROFILE_ID.ZDO_HEX;
   }
 
   parseZdoFrame(frame) {

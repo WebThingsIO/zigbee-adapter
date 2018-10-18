@@ -10,76 +10,18 @@
 
 'use strict';
 
-const zclId = require('zcl-id');
+const {
+  CLUSTER_ID,
+  COLOR_CAPABILITY,
+  COLOR_MODE,
+  DEVICE_ID,
+  PROFILE_ID,
+  ZONE_STATUS,
+} = require('./zb-constants');
+
 const ZigbeeProperty = require('./zb-property');
 
-let Constants, utils;
-try {
-  Constants = require('../addon-constants');
-  utils = require('../utils');
-} catch (e) {
-  if (e.code !== 'MODULE_NOT_FOUND') {
-    throw e;
-  }
-
-  const gwa = require('gateway-addon');
-  Constants = gwa.Constants;
-  utils = gwa.Utils;
-}
-
-const ZHA_PROFILE_ID = zclId.profile('HA').value;
-const ZLL_PROFILE_ID = zclId.profile('LL').value;
-
-const CLUSTER_ID_GENBINARYINPUT = zclId.cluster('genBinaryInput').value;
-const CLUSTER_ID_GENBINARYINPUT_HEX =
-  utils.hexStr(CLUSTER_ID_GENBINARYINPUT, 4);
-const CLUSTER_ID_GENDEVICETEMPCFG = zclId.cluster('genDeviceTempCfg').value;
-const CLUSTER_ID_GENDEVICETEMPCFG_HEX =
-  utils.hexStr(CLUSTER_ID_GENDEVICETEMPCFG, 4);
-const CLUSTER_ID_GENLEVELCTRL = zclId.cluster('genLevelCtrl').value;
-const CLUSTER_ID_GENLEVELCTRL_HEX = utils.hexStr(CLUSTER_ID_GENLEVELCTRL, 4);
-const CLUSTER_ID_GENONOFF = zclId.cluster('genOnOff').value;
-const CLUSTER_ID_GENONOFF_HEX = utils.hexStr(CLUSTER_ID_GENONOFF, 4);
-const CLUSTER_ID_GENPOWERCFG = zclId.cluster('genPowerCfg').value;
-const CLUSTER_ID_GENPOWERCFG_HEX = utils.hexStr(CLUSTER_ID_GENPOWERCFG, 4);
-const CLUSTER_ID_HAELECTRICAL = zclId.cluster('haElectricalMeasurement').value;
-const CLUSTER_ID_HAELECTRICAL_HEX = utils.hexStr(CLUSTER_ID_HAELECTRICAL, 4);
-const CLUSTER_ID_ILLUMINANCE_MEASUREMENT =
-  zclId.cluster('msIlluminanceMeasurement').value;
-const CLUSTER_ID_ILLUMINANCE_MEASUREMENT_HEX =
-  utils.hexStr(CLUSTER_ID_ILLUMINANCE_MEASUREMENT, 4);
-const CLUSTER_ID_LIGHTINGCOLORCTRL = zclId.cluster('lightingColorCtrl').value;
-const CLUSTER_ID_LIGHTLINK = zclId.cluster('lightLink').value;
-const CLUSTER_ID_LIGHTLINK_HEX = utils.hexStr(CLUSTER_ID_LIGHTLINK, 4);
-const CLUSTER_ID_OCCUPANCY_SENSOR = zclId.cluster('msOccupancySensing').value;
-const CLUSTER_ID_OCCUPANCY_SENSOR_HEX =
-  utils.hexStr(CLUSTER_ID_OCCUPANCY_SENSOR, 4);
-const CLUSTER_ID_SEMETERING = zclId.cluster('seMetering').value;
-const CLUSTER_ID_SEMETERING_HEX = utils.hexStr(CLUSTER_ID_SEMETERING, 4);
-const CLUSTER_ID_SSIASZONE = zclId.cluster('ssIasZone').value;
-const CLUSTER_ID_SSIASZONE_HEX = utils.hexStr(CLUSTER_ID_SSIASZONE, 4);
-const CLUSTER_ID_TEMPERATURE = zclId.cluster('msTemperatureMeasurement').value;
-const CLUSTER_ID_TEMPERATURE_HEX = utils.hexStr(CLUSTER_ID_TEMPERATURE, 4);
-
-const COLOR_CAPABILITY_HUE_SAT = (1 << 0);
-// const COLOR_CAPABILITY_ENHANCED_HUE_SAT = (1 << 1);
-const COLOR_CAPABILITY_XY = (1 << 3);
-const COLOR_CAPABILITY_TEMPERATURE = (1 << 4);
-
-// const COLOR_MODE_HUE_SAT  = 0;
-// const COLOR_MODE_XY = 1;
-const COLOR_MODE_TEMPERATURE = 2;
-
-const ZONE_STATUS_ALARM_MASK = 0x03;
-const ZONE_STATUS_TAMPER_MASK = 0x04;
-const ZONE_STATUS_LOW_BATTERY_MASK = 0x08;
-
-const DEVICE_ID_ONOFFSWITCH = zclId.device('HA', 'onOffSwitch').value;
-const DEVICE_ID_ONOFFSWITCH_HEX = utils.hexStr(DEVICE_ID_ONOFFSWITCH, 4);
-const DEVICE_ID_ONOFFOUTPUT = zclId.device('HA', 'onOffOutput').value;
-const DEVICE_ID_ONOFFOUTPUT_HEX = utils.hexStr(DEVICE_ID_ONOFFOUTPUT, 4);
-const DEVICE_ID_SMART_PLUG = zclId.device('HA', 'smartPlug').value;
-const DEVICE_ID_SMART_PLUG_HEX = utils.hexStr(DEVICE_ID_SMART_PLUG, 4);
+const {Constants, Utils} = require('gateway-addon');
 
 const DEBUG = false;
 
@@ -312,7 +254,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      CLUSTER_ID.GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
       'setLevelValue',                // setAttrFromValue
       'parseLevelAttr'                // parseValueFromAttr
@@ -327,7 +269,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
       'currentHue,currentSaturation', // attr
       'setColorValue',                // setAttrFromValue
       'parseColorAttr'                // parseValueFromAttr
@@ -347,7 +289,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      CLUSTER_ID.GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
       'setLevelValue',                // setAttrFromValue
       'parseLevelAttr'                // parseValueFromAttr
@@ -362,7 +304,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
       'currentX,currentY',            // attr
       'setColorXYValue',              // setAttrFromValue
       'parseColorXYAttr'              // parseValueFromAttr
@@ -376,9 +318,9 @@ class ZigbeeClassifier {
       {                               // property description
         type: 'number',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
       'colorTempPhysicalMin',         // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -391,9 +333,9 @@ class ZigbeeClassifier {
       {                               // property description
         type: 'number',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
       'colorTempPhysicalMax',         // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -409,9 +351,9 @@ class ZigbeeClassifier {
         type: 'number',
         unit: 'kelvin',
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID_LIGHTINGCOLORCTRL,   // clusterId
+      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
       'colorTemperature',             // attr
       'setColorTemperatureValue',     // setAttrFromValue
       'parseColorTemperatureAttr',    // parseValueFromAttr
@@ -439,7 +381,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
-      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      CLUSTER_ID.GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
       'setLevelValue',                // setAttrFromValue
       'parseLevelAttr',               // parseValueFromAttr
@@ -458,9 +400,9 @@ class ZigbeeClassifier {
         unit: 'celsius',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       genDeviceTempCfgEndpoint,       // endpoint
-      CLUSTER_ID_GENDEVICETEMPCFG,    // clusterId
+      CLUSTER_ID.GENDEVICETEMPCFG,    // clusterId
       'currentTemperature',           // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -483,7 +425,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
-      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      CLUSTER_ID.GENLEVELCTRL,        // clusterId
       'currentLevel',                 // attr
       'setLevelValue',                // setAttrFromValue
       'parseLevelAttr',               // parseValueFromAttr
@@ -503,7 +445,7 @@ class ZigbeeClassifier {
       },
       endpoint.profileId,             // profileId
       genOnOffEndpoint,               // endpoint
-      CLUSTER_ID_GENONOFF,            // clusterId
+      CLUSTER_ID.GENONOFF,            // clusterId
       'onOff',                        // attr
       'setOnOffValue',                // setAttrFromValue
       'parseOnOffAttr',               // parseValueFromAttr
@@ -521,9 +463,9 @@ class ZigbeeClassifier {
         type: 'boolean',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       genOnOffOutputEndpoint,         // endpoint
-      CLUSTER_ID_GENONOFF,            // clusterId
+      CLUSTER_ID.GENONOFF,            // clusterId
       '',                             // attr
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
@@ -551,9 +493,9 @@ class ZigbeeClassifier {
         maximum: 100,
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       genLevelCtrlOutputEndpoint,     // endpoint
-      CLUSTER_ID_GENLEVELCTRL,        // clusterId
+      CLUSTER_ID.GENLEVELCTRL,        // clusterId
       '',                             // attr
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
@@ -578,9 +520,9 @@ class ZigbeeClassifier {
         type: 'boolean',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       genBinaryInputEndpoint,         // endpoint
-      CLUSTER_ID_GENBINARYINPUT,      // clusterId
+      CLUSTER_ID.GENBINARYINPUT,      // clusterId
       'presentValue',                 // attr
       'setOnOffValue',                // setAttrFromValue
       'parseOnOffAttr',               // parseValueFromAttr
@@ -596,9 +538,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acCurrentMultiplier',          // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -612,9 +554,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acCurrentDivisor',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -631,9 +573,9 @@ class ZigbeeClassifier {
         unit: 'ampere',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'rmsCurrent',                   // attr
       '',                             // setAttrFromValue
       'parseHaCurrentAttr',           // parseValueFromAttr
@@ -652,9 +594,9 @@ class ZigbeeClassifier {
         unit: 'hertz',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acFrequency',                  // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -670,9 +612,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acPowerMultiplier',            // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -686,9 +628,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acPowerDivisor',               // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -705,9 +647,9 @@ class ZigbeeClassifier {
         unit: 'watt',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'activePower',                  // attr
       '',                             // setAttrFromValue
       'parseHaInstantaneousPowerAttr', // parseValueFromAttr
@@ -723,9 +665,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acVoltageMultiplier',          // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -739,9 +681,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'acVoltageDivisor',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
@@ -758,9 +700,9 @@ class ZigbeeClassifier {
         unit: 'volt',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       haElectricalEndpoint,           // endpoint
-      CLUSTER_ID_HAELECTRICAL,        // clusterId
+      CLUSTER_ID.HAELECTRICAL,        // clusterId
       'rmsVoltage',                   // attr
       '',                             // setAttrFromValue
       'parseHaVoltageAttr',           // parseValueFromAttr
@@ -776,9 +718,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       seMeteringEndpoint,             // endpoint
-      CLUSTER_ID_SEMETERING,          // clusterId
+      CLUSTER_ID.SEMETERING,          // clusterId
       'multiplier',                   // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -790,9 +732,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       seMeteringEndpoint,             // endpoint
-      CLUSTER_ID_SEMETERING,          // clusterId
+      CLUSTER_ID.SEMETERING,          // clusterId
       'divisor',                      // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -807,9 +749,9 @@ class ZigbeeClassifier {
         unit: 'watt',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       seMeteringEndpoint,             // endpoint
-      CLUSTER_ID_SEMETERING,          // clusterId
+      CLUSTER_ID.SEMETERING,          // clusterId
       'instantaneousDemand',          // attr
       '',                             // setAttrFromValue
       'parseSeInstantaneousPowerAttr', // parseValueFromAttr
@@ -828,9 +770,9 @@ class ZigbeeClassifier {
         description: 'Occupancy Sensor',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msOccupancySensingEndpoint,     // endpoint
-      CLUSTER_ID_OCCUPANCY_SENSOR,    // clusterId
+      CLUSTER_ID.OCCUPANCY_SENSOR,    // clusterId
       'occupancy',                    // attr
       '',                             // setAttrFromValue
       'parseOccupiedAttr',            // parseValueFromAttr
@@ -844,9 +786,9 @@ class ZigbeeClassifier {
         type: 'string',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msOccupancySensingEndpoint,     // endpoint
-      CLUSTER_ID_OCCUPANCY_SENSOR,    // clusterId
+      CLUSTER_ID.OCCUPANCY_SENSOR,    // clusterId
       'occupancySensorType',          // attr
       '',                             // setAttrFromValue
       'parseOccupancySensorTypeAttr'  // parseValueFromAttr
@@ -861,9 +803,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msMeasurementEndpoint,          // endpoint
-      CLUSTER_ID_ILLUMINANCE_MEASUREMENT, // clusterId
+      CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
       'minMeasuredValue',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -875,9 +817,9 @@ class ZigbeeClassifier {
         type: 'number',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msMeasurementEndpoint,          // endpoint
-      CLUSTER_ID_ILLUMINANCE_MEASUREMENT, // clusterId
+      CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
       'maxMeasuredValue',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -892,9 +834,9 @@ class ZigbeeClassifier {
         unit: 'lux',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msMeasurementEndpoint,          // endpoint
-      CLUSTER_ID_ILLUMINANCE_MEASUREMENT, // clusterId
+      CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseIlluminanceMeasurementAttr', // parseValueFromAttr
@@ -905,7 +847,7 @@ class ZigbeeClassifier {
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
     let attr = 'batteryVoltage';
     if (node.activeEndpoints[genPowerCfgEndpoint].deviceId ==
-        DEVICE_ID_SMART_PLUG_HEX) {
+        DEVICE_ID.SMART_PLUG_HEX) {
       attr = 'mainsVoltage';
     }
     this.addProperty(
@@ -918,9 +860,9 @@ class ZigbeeClassifier {
         unit: 'volt',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       genPowerCfgEndpoint,            // endpoint
-      CLUSTER_ID_GENPOWERCFG,         // clusterId
+      CLUSTER_ID.GENPOWERCFG,         // clusterId
       attr,                           // attr
       '',                             // setAttrFromValue
       'parseNumericTenthsAttr',       // parseValueFromAttr
@@ -937,9 +879,9 @@ class ZigbeeClassifier {
         unit: 'celsius',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID_TEMPERATURE,         // clusterId
+      CLUSTER_ID.TEMPERATURE,         // clusterId
       'minMeasuredValue',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -952,9 +894,9 @@ class ZigbeeClassifier {
         unit: 'celsius',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID_TEMPERATURE,         // clusterId
+      CLUSTER_ID.TEMPERATURE,         // clusterId
       'maxMeasuredValue',             // attr
       '',                             // setAttrFromValue
       'parseNumericAttr'              // parseValueFromAttr
@@ -969,9 +911,9 @@ class ZigbeeClassifier {
         unit: 'celsius',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID_TEMPERATURE,         // clusterId
+      CLUSTER_ID.TEMPERATURE,         // clusterId
       'measuredValue',                // attr
       '',                             // setAttrFromValue
       'parseTemperatureMeasurementAttr', // parseValueFromAttr
@@ -980,34 +922,36 @@ class ZigbeeClassifier {
   }
 
   addZoneTypeProperty(node, propertyName, propertyDescr) {
-    this.addProperty(
-      node,                           // device
-      propertyName,                   // name
-      propertyDescr,                  // property description
-      ZHA_PROFILE_ID,                 // profileId
-      node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID_SSIASZONE,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
-    ).mask = ZONE_STATUS_ALARM_MASK;
+    if (propertyName && propertyDescr) {
+      this.addProperty(
+        node,                           // device
+        propertyName,                   // name
+        propertyDescr,                  // property description
+        PROFILE_ID.ZHA,                 // profileId
+        node.ssIasZoneEndpoint,         // endpoint
+        CLUSTER_ID.SSIASZONE,           // clusterId
+        '',                             // attr
+        '',                             // setAttrFromValue
+        ''                              // parseValueFromAttr
+      ).mask = ZONE_STATUS.ALARM_MASK;
 
-    this.addProperty(
-      node,                           // device
-      'tamper',                       // name
-      {                               // property description
-        '@type': 'TamperProperty',
-        type: 'boolean',
-        label: 'Tamper',
-        readOnly: true,
-      },
-      ZHA_PROFILE_ID,                 // profileId
-      node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID_SSIASZONE,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
-    ).mask = ZONE_STATUS_TAMPER_MASK;
+      this.addProperty(
+        node,                           // device
+        'tamper',                       // name
+        {                               // property description
+          '@type': 'TamperProperty',
+          type: 'boolean',
+          label: 'Tamper',
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        node.ssIasZoneEndpoint,         // endpoint
+        CLUSTER_ID.SSIASZONE,           // clusterId
+        '',                             // attr
+        '',                             // setAttrFromValue
+        ''                              // parseValueFromAttr
+      ).mask = ZONE_STATUS.TAMPER_MASK;
+    }
 
     this.addProperty(
       node,                           // device
@@ -1018,16 +962,22 @@ class ZigbeeClassifier {
         label: 'Low Battery',
         readOnly: true,
       },
-      ZHA_PROFILE_ID,                 // profileId
+      PROFILE_ID.ZHA,                 // profileId
       node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID_SSIASZONE,           // clusterId
+      CLUSTER_ID.SSIASZONE,           // clusterId
       '',                             // attr
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
-    ).mask = ZONE_STATUS_LOW_BATTERY_MASK;
+    ).mask = ZONE_STATUS.LOW_BATTERY_MASK;
 
     // Remove the cieAddr so that we'll requery it from the device.
     delete node.cieAddr;
+  }
+
+  addEvents(node, events) {
+    for (const eventName in events) {
+      node.addEvent(eventName, events[eventName]);
+    }
   }
 
   addProperty(node, name, descr, profileId, endpoint, clusterId,
@@ -1039,9 +989,9 @@ class ZigbeeClassifier {
     // Some lights, like the IKEA ones, don't seem to respond to read requests
     // when the profileId is set to ZLL.
     let isZll = false;
-    if (profileId == ZLL_PROFILE_ID) {
+    if (profileId == PROFILE_ID.ZLL) {
       isZll = true;
-      profileId = ZHA_PROFILE_ID;
+      profileId = PROFILE_ID.ZHA;
     }
     const property = new ZigbeeProperty(node, name, descr, profileId,
                                         endpoint, clusterId, attr,
@@ -1050,7 +1000,7 @@ class ZigbeeClassifier {
 
     DEBUG && console.log('addProperty:', node.addr64, name,
                          `EP:${property.endpoint}`,
-                         `CL:${utils.hexStr(property.clusterId, 4)}`);
+                         `CL:${Utils.hexStr(property.clusterId, 4)}`);
 
     if (node.hasOwnProperty('devInfoProperties') &&
         node.devInfoProperties.hasOwnProperty(name)) {
@@ -1103,37 +1053,37 @@ class ZigbeeClassifier {
   // internal function allows us to use early returns.
   classifyInternal(node) {
     const seMeteringEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SEMETERING_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SEMETERING_HEX);
     const haElectricalEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_HAELECTRICAL_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HAELECTRICAL_HEX);
 
     const genBinaryInputEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENBINARYINPUT_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
     const genLevelCtrlEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genLevelCtrlOutputEndpoint =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENLEVELCTRL_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genOnOffEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const genOnOffOutputEndpoint =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID_GENONOFF_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const msOccupancySensingEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_OCCUPANCY_SENSOR_HEX);
+        CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
     const msTemperatureEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_TEMPERATURE_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.TEMPERATURE_HEX);
     const illuminanceEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_ILLUMINANCE_MEASUREMENT_HEX);
+        CLUSTER_ID.ILLUMINANCE_MEASUREMENT_HEX);
     const genPowerCfgEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_GENPOWERCFG_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENPOWERCFG_HEX);
     const genDeviceTempCfgEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID_GENDEVICETEMPCFG_HEX);
+        CLUSTER_ID.GENDEVICETEMPCFG_HEX);
     const lightLinkEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_LIGHTLINK_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.LIGHTLINK_HEX);
     const ssIasZoneEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID_SSIASZONE_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SSIASZONE_HEX);
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
@@ -1252,6 +1202,27 @@ class ZigbeeClassifier {
       node['@type'] = ZONE_TYPE_NAME[zoneType]['@type'];
       propertyName = ZONE_TYPE_NAME[zoneType].propertyName;
       propertyDescr = ZONE_TYPE_NAME[zoneType].propertyDescr;
+    } else if (zoneType == 0x8000) {
+      // The SmartThings button has a zoneType of 0x8000
+      node.type = 'thing';
+      node['@type'] = ['PushButton'];
+      this.addEvents(node, {
+        pressed: {
+          '@type': 'PressedEvent',
+          description: 'Button pressed and released quickly',
+        },
+        doublePressed: {
+          '@type': 'DoublePressedEvent',
+          description: 'Button pressed and released twice quickly',
+        },
+        longPressed: {
+          '@type': 'LongPressedEvent',
+          description: 'Button pressed and held',
+        },
+      });
+      name = 'button';
+      propertyName = null;
+      propertyDescr = null;
     } else {
       // This is basically 'just in case' (or unknown zoneType=0)
       name = 'thing';
@@ -1292,7 +1263,7 @@ class ZigbeeClassifier {
     if (lightLinkEndpoint || node.lightingColorCtrlEndpoint) {
       // It looks like a
       if ((colorCapabilities &
-           (COLOR_CAPABILITY_HUE_SAT | COLOR_CAPABILITY_XY)) != 0) {
+           (COLOR_CAPABILITY.HUE_SAT | COLOR_CAPABILITY.XY)) != 0) {
         // Hue and Saturation (or XY) are supported
         colorSupported = true;
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
@@ -1307,14 +1278,14 @@ class ZigbeeClassifier {
     }
     this.addOnProperty(node, genLevelCtrlEndpoint);
     if (colorSupported) {
-      if ((colorCapabilities & COLOR_CAPABILITY_HUE_SAT) != 0) {
+      if ((colorCapabilities & COLOR_CAPABILITY.HUE_SAT) != 0) {
         this.addColorProperty(node, node.lightingColorCtrlEndpoint);
-      } else if ((colorCapabilities & COLOR_CAPABILITY_XY) != 0) {
+      } else if ((colorCapabilities & COLOR_CAPABILITY.XY) != 0) {
         this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
       }
     } else {
-      if ((colorCapabilities & COLOR_CAPABILITY_TEMPERATURE) != 0 ||
-          (colorMode & COLOR_MODE_TEMPERATURE) != 0) {
+      if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0 ||
+          (colorMode & COLOR_MODE.TEMPERATURE) != 0) {
         // Color temperature is basically a specialized way of selecting
         // a color, so we don't include this property with full-color
         // bulbs.
@@ -1330,10 +1301,36 @@ class ZigbeeClassifier {
 
   initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
     node.name = `${node.id}-button`;
-    node.type = 'multiLevelButton';
-    node['@type'] = ['MultiLevelButton'];
+    node.type = 'multiLevelSwitch';
+    node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
     this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
     this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
+    this.addEvents(node, {
+      '1-pressed': {
+        '@type': 'PressedEvent',
+        description: 'Top button pressed and released',
+      },
+      '2-pressed': {
+        '@type': 'PressedEvent',
+        description: 'Bottom button pressed and released',
+      },
+      '1-longPressed': {
+        '@type': 'LongPressedEvent',
+        description: 'Top button pressed and held',
+      },
+      '2-longPressed': {
+        '@type': 'LongPressedEvent',
+        description: 'Bottom button pressed and held',
+      },
+      '1-released': {
+        '@type': 'ReleasedEvent',
+        description: 'Top button released (after being held)',
+      },
+      '2-released': {
+        '@type': 'ReleasedEvent',
+        description: 'Bottom button released (after being held)',
+      },
+    });
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
@@ -1342,8 +1339,8 @@ class ZigbeeClassifier {
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
       const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-      if (endpoint.deviceId != DEVICE_ID_ONOFFSWITCH_HEX &&
-          endpoint.deviceId != DEVICE_ID_ONOFFOUTPUT_HEX) {
+      if (endpoint.deviceId != DEVICE_ID.ONOFFSWITCH_HEX &&
+          endpoint.deviceId != DEVICE_ID.ONOFFOUTPUT_HEX) {
         // The Samsung SmartSwitch advertises the genLevelCtrl cluster,
         // but it doesn't do anything. It also advertises itself as an
         // onOffOutput, so we use that to filter out the level control.
