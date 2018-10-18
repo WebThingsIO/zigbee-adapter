@@ -44,6 +44,7 @@
     "zb-adapter.js",
     "zb-at.js",
     "zb-classifier.js",
+    "zb-constants.js",
     "zb-families.js",
     "zb-family.js",
     "zb-node.js",
