@@ -413,6 +413,24 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseDoorLockedAttr
+   *
+   * Converts the ZCL 'lockState' attribute into the 'locked' property.
+   */
+  parseDoorLockedAttr(attrEntry) {
+    // The lockstate actually has 3 values.
+    // 0 - not fully locked
+    // 1 - Locked
+    // 2 - Unlocked
+    // We're currently usiong a boolean.
+    const propertyValue = attrEntry.attrData != 2;
+    return [
+      propertyValue,
+      `${(propertyValue ? 'locked' : 'unlocked')} (${attrEntry.attrData})`,
+    ];
+  }
+
+  /**
    * @method parseIlluminanceMeasurementAttr
    *
    * Parses the temperature attribute as a property.
@@ -707,6 +725,25 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method setDoorLockedAttr
+   *
+   * Converts the 'locked' property value (a boolean) into the ZCL lock or
+   * unlock commands.
+   */
+  setDoorLockedValue(propertyValue) {
+    // propertyValue is a boolean
+    const attr = propertyValue ? 'lockDoor' : 'unlockDoor';
+    return [
+      {
+        frameCntl: {frameType: 1},
+        cmd: attr,
+        payload: [''],
+      },
+      attr,
+    ];
+  }
+
+  /**
    * @method setLevelValue
    *
    * Convert the 'level' property value (a percentage) into the ZCL
@@ -784,6 +821,7 @@ class ZigbeeProperty extends Property {
                 'clusterId:', Utils.hexStr(this.clusterId, 4),
                 'zcl:', logData,
                 'value:', value);
+    console.log('setProperty: zclData =', zclData);
 
     return zclData;
   }

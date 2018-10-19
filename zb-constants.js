@@ -20,6 +20,7 @@ function addHexValues(dict) {
 }
 
 const CLUSTER_ID = {
+  DOORLOCK: zclId.cluster('closuresDoorLock').value,
   GENBASIC: zclId.cluster('genBasic').value,
   GENBINARYINPUT: zclId.cluster('genBinaryInput').value,
   GENDEVICETEMPCFG: zclId.cluster('genDeviceTempCfg').value,
@@ -109,6 +110,25 @@ const DIR = {
   SERVER_TO_CLIENT: 1,
 };
 
+const DOORLOCK_EVENT_CODES = [
+  'Unknown',                      // 0
+  'Lock',                         // 1
+  'Unlock',                       // 2
+  'LockFailInvalidPinOrID',       // 3
+  'LockFailInvalidSchedule',      // 4
+  'UnlockFailInvalidPinOrID',     // 5
+  'UnlockFailInvalidSchedule',    // 6
+  'OneTouchLock',                 // 7
+  'KeyLock',                      // 8
+  'KeyUnlock',                    // 9
+  'AutoLock',                     // 10 (0x0A)
+  'ScheduleLock',                 // 11 (0x0B)
+  'ScheduleUnlock',               // 12 (0x0C)
+  'ManualLock',                   // 13 (0x0D)
+  'ManualUnlock',                 // 14 (0x0E)
+  'NonAccessUserEvent',           // 15 (0X0F)
+];
+
 // POWERSOURCE describes the values for the powerSource attribute from
 // the genBasic cluster
 const POWERSOURCE = {
@@ -143,6 +163,7 @@ module.exports = {
   COLOR_MODE,
   DEVICE_ID,
   DIR,
+  DOORLOCK_EVENT_CODES,
   POWERSOURCE,
   PROFILE_ID,
   STATUS,

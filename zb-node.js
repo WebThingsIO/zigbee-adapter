@@ -24,6 +24,7 @@ const {
   ATTR_ID,
   CLUSTER_ID,
   DIR,
+  DOORLOCK_EVENT_CODES,
   POWERSOURCE,
   PROFILE_ID,
   STATUS,
@@ -33,8 +34,8 @@ const DEBUG = false;
 
 const C = xbeeApi.constants;
 
-const FAST_CHECKIN_INTERVAL = 1 * 60 * 4;   // 1 minute (quarter seconds)
-const SLOW_CHECKIN_INTERVAL = 60 * 60 * 4;  // 1 hour (quarter seconds)
+const FAST_CHECKIN_INTERVAL = 20 * 4;       // 20 seconds (quarter seconds)
+const SLOW_CHECKIN_INTERVAL = 10 * 60 * 4;  // 10 min (quarter seconds)
 
 const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
 
@@ -52,6 +53,8 @@ const DEVICE_INFO_FIELDS = [
   'longPollInterval',
   'shortPollInterval',
   'fastPollTimeout',
+  'slowCheckinInterval',
+  'pollCtrlBindingNeeded',
   'rxOnWhenIdle',
 ];
 
@@ -209,6 +212,9 @@ class ZigbeeNode extends Device {
       zigbeeClassifier.classify(this);
     }
     this.classified = true;
+    if (this.genPollCtrlEndpoint) {
+      this.pollCtrlBindingNeeded = true;
+    }
   }
 
   debugCmd(cmd, params) {
@@ -735,6 +741,9 @@ class ZigbeeNode extends Device {
         frame.clusterId != CLUSTER_ID.GENPOLLCTRL_HEX) {
       console.log('handleReadRsp: ##### No property found for frame #####');
     }
+    if (frame.zcl.cmdId === 'report') {
+      this.rebindIfRequired();
+    }
   }
 
   handleGenericZclReadRsp(frame) {
@@ -784,6 +793,9 @@ class ZigbeeNode extends Device {
 
         case CLUSTER_ID.SSIASZONE_HEX:
           switch (attrEntry.attrId) {
+            case ATTR_ID.SSIASZONE.ZONESTATE:
+              this.zoneState = attrEntry.attrData;
+              break;
             case ATTR_ID.SSIASZONE.ZONETYPE:
               this.zoneType = attrEntry.attrData;
               break;
@@ -792,6 +804,9 @@ class ZigbeeNode extends Device {
               break;
             case ATTR_ID.SSIASZONE.IASCIEADDR:
               this.cieAddr = attrEntry.attrData;
+              break;
+            case ATTR_ID.SSIASZONE.ZONEID:
+              this.zoneId = attrEntry.attrData;
               break;
           }
           break;
@@ -957,6 +972,27 @@ class ZigbeeNode extends Device {
     }
   }
 
+  handleDoorLockEvent(frame) {
+    const payload = frame.zcl.payload;
+
+    const eventSrcStrs = ['Keypad', 'RF', 'Manual', 'RFID', 'Unknown'];
+    const eventSrc = Math.min(eventSrcStrs.length - 1, payload.opereventsrc);
+    const eventSrcStr = eventSrcStrs[eventSrc];
+
+    let eventCode = payload.opereventcode;
+    if (eventCode >= DOORLOCK_EVENT_CODES.length) {
+      eventCode = 0;
+    }
+    const eventCodeStr = DOORLOCK_EVENT_CODES[eventCode];
+
+    this.notifyEvent(eventCodeStr, {
+      code: payload.opereventcode,
+      source: payload.opereventsrc,
+      sourceStr: eventSrcStr,
+      userId: payload.userid,
+    });
+  }
+
   handleStatusChangeNotification(frame) {
     const zoneStatus = frame.zcl.payload.zonestatus;
     const profileId = parseInt(frame.profileId, 16);
@@ -1025,6 +1061,9 @@ class ZigbeeNode extends Device {
         case 'report':
           this.handleReadRsp(frame);
           break;
+        case 'operationEventNotification':  // door lock event
+          this.handleDoorLockEvent(frame);
+          break;
         case 'discoverRsp':
           this.handleDiscoverRsp(frame);
           break;
@@ -1069,8 +1108,41 @@ class ZigbeeNode extends Device {
   }
 
   rebind() {
+    if (this.rebinding) {
+      DEBUG && console.log('rebind:', this.addr64,
+                           'exiting due to rebind already in progress');
+      return;
+    }
+
     DEBUG && console.log('rebind called for node:', this.addr64,
-                         'rebindRequired =', this.rebindRequired);
+                         'rebindRequired =', this.rebindRequired,
+                         'pollCtrlBindingNeeded =', this.pollCtrlBindingNeeded);
+
+    if (this.genPollCtrlEndpoint && this.pollCtrlBindingNeeded) {
+      if (this.writingCheckinInterval) {
+        DEBUG && console.log(
+          'rebind: exiting - writeCheckinInterval already in progress');
+        return;
+      }
+
+      // We need to bind the poll control endpoint in order to receive
+      // checkin reports.
+      this.rebinding = true;
+      const bindFrame = this.makeBindFrame(this.genPollCtrlEndpoint,
+                                           CLUSTER_ID.GENPOLLCTRL_HEX);
+      bindFrame.callback = () => {
+        this.rebinding = false;
+        this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
+      };
+      bindFrame.timeoutFunc = () => {
+        this.rebinding = false;
+      };
+      this.sendFrames([bindFrame]);
+      return;
+    }
+
+    // Do configurations necessary for security sensors.
+    this.rebindIasZone();
 
     for (const property of this.properties.values()) {
       DEBUG && console.log('rebind:   property:', property.name,
@@ -1144,23 +1216,22 @@ class ZigbeeNode extends Device {
         return;
       }
     }
-
-    // Since we got this far, all of the binding, configReporting, and
-    // initial reads have been performed.
-
-    this.rebindIasZone();
   }
 
   rebindIasZone() {
-    DEBUG && console.log('rebindIasZone: addr64 =', this.addr64);
-
     // ssIasZoneEndpoint is set by the classifier
     if (!this.ssIasZoneEndpoint) {
-      this.rebinding = false;
+      DEBUG && console.log('rebindIasZone: addr64:', this.addr64,
+                           'not a security sensor - exiting');
+      // no ssIasZoneEndpoint, so this isn't a security sensor. Nothing
+      // else to do in this function.
       return;
     }
+    DEBUG && console.log('rebindIasZone: addr64:', this.addr64);
 
-    if (!this.hasOwnProperty('cieAddr')) {
+    if (!this.hasOwnProperty('cieAddr') ||
+        !this.hasOwnProperty('zoneState')) {
+      DEBUG && console.log('rebindIasZone: querying attributes');
       this.rebinding = true;
       const readFrame = this.makeReadAttributeFrame(
         this.ssIasZoneEndpoint,
@@ -1177,7 +1248,10 @@ class ZigbeeNode extends Device {
         type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
-        callback: this.handleIasReadResponse.bind(this),
+        callback: () => {
+          this.rebinding = false;
+          this.rebindIasZone();
+        },
         timeoutFunc: () => {
           this.rebinding = false;
         },
@@ -1185,27 +1259,75 @@ class ZigbeeNode extends Device {
       return;
     }
 
-    if (this.genPollCtrlEndpoint) {
-      // We need to bind the poll control endpoint in order to receive
-      // checkin reports.
+    if (this.hasOwnProperty('zoneType')) {
+      this.rebinding = true; // prevent recursion
+      this.adapter.setClassifierAttributesPopulated(this,
+                                                    this.ssIasZoneEndpoint);
+      this.rebinding = false;
+    }
+    const ourCieAddr = `0x${this.adapter.serialNumber}`;
+
+    DEBUG && console.log('rebindIasZone: this.cieAddr =', this.cieAddr,
+                         'ourCieAddr =', ourCieAddr);
+    if (this.cieAddr != ourCieAddr) {
+      // Tell the sensor to send statusChangeNotifications to us.
+      DEBUG && console.log('rebindIasZone: setting iasCieAddr');
       this.rebinding = true;
-      const bindFrame = this.makeBindFrame(this.genPollCtrlEndpoint,
-                                           CLUSTER_ID.GENPOLLCTRL_HEX);
-      bindFrame.callback = () => {
-        this.rebinding = false;
-        this.writeCheckinInterval(FAST_CHECKIN_INTERVAL);
-      };
-      bindFrame.timeoutFunc = () => {
-        this.rebinding = false;
-      };
-      this.sendFrames([bindFrame]);
+      const writeFrame = this.makeWriteAttributeFrame(
+        this.ssIasZoneEndpoint,
+        PROFILE_ID.ZHA,
+        CLUSTER_ID.SSIASZONE,
+        [[ATTR_ID.SSIASZONE.IASCIEADDR, ourCieAddr]]
+      );
+      this.adapter.sendFrameWaitFrameAtFront(writeFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'writeRsp',
+        zclSeqNum: writeFrame.zcl.seqNum,
+        callback: () => {
+          this.rebinding = false;
+          this.cieAddr = ourCieAddr;
+          this.rebindIasZone();
+        },
+        timeoutFunc: () => {
+          this.rebinding = false;
+        },
+      });
+      return;
+    }
+
+    if (this.zoneState == 0) {
+      DEBUG && console.log('rebindIasZone: enrolling sensor');
+      // We're not enrolled - enroll so that we get notification statuses
+      this.rebinding = true;
+      const reqFrame = null;
+      const rspStatus = 0;
+      const zoneId = 1;
+      const enrollRspFrame =
+        this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
+      this.adapter.sendFrameWaitFrameAtFront(enrollRspFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+        id: enrollRspFrame.id,
+        callback: () => {
+          this.rebinding = false;
+          // Remove zoneState so that we'll be forced to re-read it
+          delete this.zoneState;
+          this.rebindIasZone();
+        },
+        timeoutFunc: () => {
+          this.rebinding = false;
+        },
+      });
+      // eslint-disable-next-line
+      return;
     }
   }
 
   writeCheckinInterval(interval) {
     if (!interval) {
+      const slowCheckinInterval = this.slowCheckinInterval ||
+                                  SLOW_CHECKIN_INTERVAL;
       interval =
-        this.rebindRequired ? FAST_CHECKIN_INTERVAL : SLOW_CHECKIN_INTERVAL;
+        this.rebindRequired ? FAST_CHECKIN_INTERVAL : slowCheckinInterval;
     }
 
     DEBUG && console.log(`writeCheckinInterval(${interval})`,
@@ -1220,8 +1342,39 @@ class ZigbeeNode extends Device {
         'writeCheckinInterval: exiting - write already in progress');
       return;
     }
-    if (typeof this.checkinInterval === 'undefined') {
-      this.checkinInterval = 0;
+
+    if (!this.hasOwnProperty('checkinInterval')) {
+      const readFrame = this.makeReadAttributeFrame(
+        this.genPollCtrlEndpoint,
+        PROFILE_ID.ZHA,
+        CLUSTER_ID.GENPOLLCTRL,
+        [
+          ATTR_ID.GENPOLLCTRL.CHECKININTERVAL,
+          ATTR_ID.GENPOLLCTRL.LONGPOLLINTERVAL,
+          ATTR_ID.GENPOLLCTRL.SHORTPOLLINTERVAL,
+          ATTR_ID.GENPOLLCTRL.FASTPOLLTIMEOUT,
+        ]
+      );
+      this.writingCheckinInterval = true;
+      this.adapter.sendFrameWaitFrameAtFront(readFrame, {
+        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        zclCmdId: 'readRsp',
+        zclSeqNum: readFrame.zcl.seqNum,
+        callback: () => {
+          this.writingCheckinInterval = false;
+          // If the checkinInterval wasn't in the readRsp (perhaps because
+          // of an unsupported attribute), make sure that we set it
+          // to something so that we can advance)
+          if (!this.hasOwnProperty('checkinInterval')) {
+            this.checkinInterval = 0;
+          }
+          this.writeCheckinInterval(interval);
+        },
+        timeoutFunc: () => {
+          this.writingCheckinInterval = false;
+        },
+      });
+      return;
     }
 
     if (this.checkinInterval != interval) {
@@ -1239,6 +1392,7 @@ class ZigbeeNode extends Device {
         callback: () => {
           this.rebinding = false;
           this.writingCheckinInterval = false;
+          this.pollCtrlBindingNeeded = false;
           this.checkinInterval = interval;
           this.adapter.saveDeviceInfoDeferred();
           this.rebindIfRequired();
@@ -1251,97 +1405,29 @@ class ZigbeeNode extends Device {
     }
   }
 
-  handleIasReadResponse(frame) {
-    this.handleGenericZclReadRsp(frame);
-
-    if (this.hasOwnProperty('zoneType')) {
-      this.adapter.setClassifierAttributesPopulated(this,
-                                                    this.ssIasZoneEndpoint);
-    }
-    const ourCieAddr = `0x${this.adapter.serialNumber}`;
-    let commands = [];
-
-    DEBUG && console.log('handleIasReadResponse: this.cieAddr =', this.cieAddr,
-                         'ourCieAddr =', ourCieAddr);
-    if (this.cieAddr != ourCieAddr) {
-      // Tell the sensor to send statusChangeNotifications to us.
-      const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
-      const writeFrame = this.makeWriteAttributeFrame(
-        sourceEndpoint,
-        PROFILE_ID.ZHA,
-        CLUSTER_ID.SSIASZONE,
-        [[ATTR_ID.SSIASZONE.IASCIEADDR, ourCieAddr]]
-      );
-      this.cieAddr = ourCieAddr;
-      commands = commands.concat(this.adapter.makeFrameWaitFrame(
-        writeFrame, {
-          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-          zclCmdId: 'writeRsp',
-          zclSeqNum: writeFrame.zcl.seqNum,
-        }
-      ));
-    }
-
-    // Make sure that the sensor is "enrolled".
-    const reqFrame = null;
-    const rspStatus = 0;
-    const zoneId = 1;
-    const enrollRspFrame =
-      this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
-    commands = commands.concat(this.adapter.makeFrameWaitFrame(
-      enrollRspFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
-        id: enrollRspFrame.id,
-      }
-    ));
-
-    // Find out what the various poll intervals are.
-    const genPollCtrlEndpoint =
-      this.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENPOLLCTRL_HEX);
-    if (genPollCtrlEndpoint) {
-      this.genPollCtrlEndpoint = genPollCtrlEndpoint;
-      const readFrame = this.makeReadAttributeFrame(
-        genPollCtrlEndpoint,
-        PROFILE_ID.ZHA,
-        CLUSTER_ID.GENPOLLCTRL,
-        [
-          ATTR_ID.GENPOLLCTRL.CHECKININTERVAL,
-          ATTR_ID.GENPOLLCTRL.LONGPOLLINTERVAL,
-          ATTR_ID.GENPOLLCTRL.SHORTPOLLINTERVAL,
-          ATTR_ID.GENPOLLCTRL.FASTPOLLTIMEOUT,
-          // ATTR_ID.GENPOLLCTRL.CHECKININTERVALMIN,
-          // ATTR_ID.GENPOLLCTRL.LONGPOLLINTERVALMIN,
-          // ATTR_ID.GENPOLLCTRL.FASTPOLLTIMEOUTMAX,
-        ]);
-      commands = commands.concat(this.adapter.makeFrameWaitFrame(
-        readFrame, {
-          type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
-          zclCmdId: 'readRsp',
-          zclSeqNum: readFrame.zcl.seqNum,
-        }
-      ));
-    }
-    commands = commands.concat(
-      this.adapter.makeFuncCommand(this, () => {
-        this.rebinding = false;
-      }),
-      this.adapter.makeFuncCommand(this, this.rebindIfRequired));
-
-    this.adapter.queueCommandsAtFront(commands);
-  }
-
   rebindIfRequired() {
+    if (this.adapter.scanning) {
+      DEBUG && console.log(`rebindIfRequired: ${this.addr64}`,
+                           'ignoring while scanning');
+      return;
+    }
     this.updateRebindRequired();
     DEBUG && console.log(`rebindIfRequired: ${this.addr64} rebindRequired =`,
                          this.rebindRequired,
                          'rebinding =', this.rebinding);
-    if (this.rebindRequired && !this.rebinding) {
+    if (this.rebindRequired) {
       this.rebind();
     }
   }
 
   updateRebindRequired() {
     this.rebindRequired = true;
+
+    if (this.pollCtrlBindingNeeded) {
+      DEBUG && console.log('updateRebindRequired: node:', this.addr64,
+                           'pollCtrlBindingNeeded - rebind still required');
+      return;
+    }
 
     const ourCieAddr = `0x${this.adapter.serialNumber}`;
     if (this.ssIasEndpoint && this.cieAddr != ourCieAddr) {
@@ -1682,9 +1768,13 @@ class ZigbeeNode extends Device {
                              zclData);
   }
 
-  notifyEvent(eventName) {
-    console.log(this.name, 'event:', eventName);
-    this.eventNotify(new Event(this, eventName));
+  notifyEvent(eventName, eventData) {
+    if (eventData) {
+      console.log(this.name, 'event:', eventName, 'data:', eventData);
+    } else {
+      console.log(this.name, 'event:', eventName);
+    }
+    this.eventNotify(new Event(this, eventName, eventData));
   }
 
   notifyPropertyChanged(property) {
