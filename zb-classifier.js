@@ -15,6 +15,7 @@ const {
   COLOR_CAPABILITY,
   COLOR_MODE,
   DEVICE_ID,
+  DOORLOCK_EVENT_CODES,
   PROFILE_ID,
   ZONE_STATUS,
 } = require('./zb-constants');
@@ -508,6 +509,33 @@ class ZigbeeClassifier {
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
+  }
+
+  addDoorLockedProperty(node, doorLockEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'locked',                       // name
+      {                               // property description
+        '@type': 'BooleanProperty',
+        label: 'Locked',
+        type: 'boolean',
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      doorLockEndpoint,               // endpoint
+      CLUSTER_ID.DOORLOCK,            // clusterId
+      'lockState',                    // attr
+      'setDoorLockedValue',           // setAttrFromValue
+      'parseDoorLockedAttr',          // parseValueFromAttr
+      CONFIG_REPORT_INTEGER
+    );
+    const doorLockEvents = {};
+    for (const eventCode of DOORLOCK_EVENT_CODES) {
+      doorLockEvents[eventCode] = {'@type': 'DoorLockEvent'};
+    }
+    this.addEvents(node, doorLockEvents);
+    // Set the checkin interval for door locks to be faster since we
+    // may need to talk to them.
+    node.slowCheckinInterval = 1 * 60 * 4;  // 1 minute (quarterseconds)
   }
 
   addPresentValueProperty(node, genBinaryInputEndpoint) {
@@ -1067,6 +1095,8 @@ class ZigbeeClassifier {
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const genOnOffOutputEndpoint =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+    const doorLockEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
     const msOccupancySensingEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
@@ -1096,6 +1126,7 @@ class ZigbeeClassifier {
       console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
       console.log('          genOnOffEndpoint =', genOnOffEndpoint);
       console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('          doorLockEndpoint =', doorLockEndpoint);
       console.log('    lightingContolEndpoint =',
                   node.lightingColorCtrlEndpoint);
       console.log('         colorCapabilities =', node.colorCapabilities);
@@ -1152,6 +1183,10 @@ class ZigbeeClassifier {
     }
     if (genLevelCtrlOutputEndpoint) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+      return;
+    }
+    if (doorLockEndpoint) {
+      this.initDoorLock(node, doorLockEndpoint);
       return;
     }
     if (genBinaryInputEndpoint) {
@@ -1238,6 +1273,14 @@ class ZigbeeClassifier {
     node.name = `${node.id}-${name}`;
 
     this.addZoneTypeProperty(node, propertyName, propertyDescr);
+  }
+
+  initDoorLock(node, doorLockEndpoint) {
+    // TODO: Replace with DoorLock type
+    node.type = Constants.THING_TYPE_ON_OFF_SWITCH;
+    node['@type'] = ['BinarySensor']; // TODO: Replace woth DoorLock type
+    node.name = `${node.id}-doorlock`;
+    this.addDoorLockedProperty(node, doorLockEndpoint);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {

@@ -1182,9 +1182,7 @@ class ZigbeeAdapter extends Adapter {
         // For regular Zigbee nodes that we've already classified, we
         // don't need to delay.
         this.handleEndEndDeviceAnnouncementInternal(node);
-        if (!this.scanning) {
-          node.rebindIfRequired();
-        }
+        node.rebindIfRequired();
       } else {
         // Xiaomi devices send a genReport right after sending the end device
         // announcement, so we introduce a slight delay to allow this to happen
@@ -1961,12 +1959,7 @@ class ZigbeeAdapter extends Adapter {
       }
     }
     this.handleDeviceAdded(node);
-
-    // We want the initial scan to be quick, so we ignore end devices
-    // during the scan.
-    if (!this.scanning) {
-      node.rebindIfRequired();
-    }
+    node.rebindIfRequired();
   }
 
   handleDeviceAdded(node) {
@@ -2124,8 +2117,7 @@ class ZigbeeAdapter extends Adapter {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.zcl.seqNum,
-          callback: (frame) => {
-            node.handleGenericZclReadRsp(frame);
+          callback: () => {
             this.populateClassifierAttributes(node, endpointNum);
           },
         });
