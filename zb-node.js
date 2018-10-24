@@ -1402,6 +1402,9 @@ class ZigbeeNode extends Device {
           this.writingCheckinInterval = false;
         },
       });
+    } else {
+      this.pollCtrlBindingNeeded = false;
+      this.adapter.saveDeviceInfoDeferred();
     }
   }
 

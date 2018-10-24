@@ -2178,14 +2178,18 @@ class ZigbeeAdapter extends Adapter {
             ATTR_ID.SSIASZONE.ZONETYPE,
             ATTR_ID.SSIASZONE.ZONESTATUS,
             ATTR_ID.SSIASZONE.IASCIEADDR,
+            ATTR_ID.SSIASZONE.ZONEID,
           ]);
         this.sendFrameWaitFrameAtFront(readFrame, {
           type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
           zclCmdId: 'readRsp',
           zclSeqNum: readFrame.zcl.seqNum,
-          callback: (frame) => {
+          callback: () => {
             node.readingZoneType = false;
-            this.populateClassifierAttributesIasZone(frame);
+            if (this.hasOwnProperty('zoneType')) {
+              this.setClassifierAttributesPopulated(this,
+                                                    this.ssIasZoneEndpoint);
+            }
           },
           timeoutFunc: () => {
             node.readingZoneType = false;
