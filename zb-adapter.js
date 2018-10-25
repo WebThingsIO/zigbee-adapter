@@ -22,13 +22,21 @@ const zcl = require('zcl-packet');
 const zclId = require('zcl-id');
 const registerFamilies = require('./zb-families');
 
-const {Adapter, Database, Utils} = require('gateway-addon');
+const {Adapter, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
   CLUSTER_ID,
   PROFILE_ID,
   STATUS,
 } = require('./zb-constants');
+
+const {
+  DEBUG_flow,
+  DEBUG_frames,
+  DEBUG_frameDetail,
+  DEBUG_frameParsing,
+  DEBUG_rawFrames,
+} = require('./zb-debug');
 
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
@@ -135,27 +143,6 @@ class ZigbeeAdapter extends Adapter {
     this.manifest = manifest;
     this.port = port;
 
-    // debugRawFrames causes the raw serial frames to/from the dongle
-    // to be reported.
-    this.debugRawFrames = false;
-
-    // debugFrames causes a 1-line summary to be printed for each frame
-    // which is sent or received.
-    this.debugFrames = false;
-
-    // debugFrameDetail causes detailed information about each frame to be
-    // printed.
-    this.debugDumpFrameDetail = false;
-
-    // Use debugFlow if you need to debug the flow of the program. This causes
-    // prints at the beginning of many functions to print some info.
-    this.debugFlow = false;
-
-    // debugFrameParsing causes frame detail about the initial frame, before
-    // we do any parsing of the data to be printed. This is useful to enable
-    // if the frame parsing code is crashing.
-    this.debugFrameParsing = false;
-
     // debugDiscoverAttributes causes us to ask for and print out the attributes
     // available for each cluster.
     this.debugDiscoverAttributes = false;
@@ -169,7 +156,7 @@ class ZigbeeAdapter extends Adapter {
 
     this.xb = new xbeeApi.XBeeAPI({
       api_mode: 1,
-      raw_frames: this.debugRawFrames,
+      raw_frames: DEBUG_rawFrames,
     });
 
     this.atAttr = {};
@@ -186,7 +173,7 @@ class ZigbeeAdapter extends Adapter {
     this.zdo = new zdo.ZdoApi(this.xb);
     this.at = new at.AtApi();
 
-    if (this.debugRawFrames) {
+    if (DEBUG_rawFrames) {
       this.xb.on('frame_raw', (rawFrame) => {
         console.log('Rcvd:', rawFrame);
         if (this.xb.canParse(rawFrame)) {
@@ -258,7 +245,7 @@ class ZigbeeAdapter extends Adapter {
 
   // This function is called once the Xbee controller has been initialized.
   adapterInitialized() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('adapterInitialized');
     }
     this.dumpInfo();
@@ -292,7 +279,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   scanNode(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('scanNode: Calling populateNodeInfo');
     }
     this.populateNodeInfo(node);
@@ -314,7 +301,7 @@ class ZigbeeAdapter extends Adapter {
   updateNetworkAddress(node) {
     if (!node.rxOnWhenIdle) {
       // Ignore nodes which won't be listening
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('updateNetworkAddress: Skipping:', node.addr64,
                     'since rxOnWhenIdle is 0');
       }
@@ -344,7 +331,7 @@ class ZigbeeAdapter extends Adapter {
 
   handleNetworkAddressResponse(frame) {
     if (frame.status != STATUS.SUCCESS) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
                     'due to status:', this.frameStatus(frame));
       }
@@ -380,7 +367,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   configureApiModeIfNeeded() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('configureApiModeIfNeeded');
     }
     const configCommands = [];
@@ -400,7 +387,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   configureIfNeeded() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('configureIfNeeded');
     }
     const configCommands = [];
@@ -492,7 +479,7 @@ class ZigbeeAdapter extends Adapter {
 
   dumpFrame(label, frame, dumpFrameDetail) {
     if (typeof dumpFrameDetail === 'undefined') {
-      dumpFrameDetail = this.debugDumpFrameDetail;
+      dumpFrameDetail = DEBUG_frameDetail;
     }
     this.frameDumped = true;
     let frameTypeStr = C.FRAME_TYPE[frame.type];
@@ -741,7 +728,7 @@ class ZigbeeAdapter extends Adapter {
   saveDeviceInfoDeferred() {
     // In order to reduce the number of times we rewrite the device info
     // we defer writes for a time.
-    const timeoutSeconds = this.debugFrames ? 1 : 120;
+    const timeoutSeconds = DEBUG_frames ? 1 : 120;
 
     if (this.saveDeviceInfoTimeout) {
       // already a timeout setup.
@@ -788,13 +775,13 @@ class ZigbeeAdapter extends Adapter {
     fs.renameSync(tmpFilename, this.deviceInfoFilename);
 
     this.deviceInfoLastSavedTime = process.hrtime();
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Saved device information in', this.deviceInfoFilename);
     }
   }
 
   enumerateAllNodes(iterCb, doneCb) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('enumerateAllNodes');
     }
     this.enumerateIterCb = iterCb;
@@ -810,7 +797,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   enumerateNextNode() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('enumerateNextNode');
     }
     const node = this.enumerateNodes.shift();
@@ -958,7 +945,7 @@ class ZigbeeAdapter extends Adapter {
     if (this.zdo.isZdoFrame(frame)) {
       try {
         this.zdo.parseZdoFrame(frame);
-        if (this.debugFrames) {
+        if (DEBUG_frames) {
           this.dumpFrame('Rcvd:', frame);
         }
         const clusterId = parseInt(frame.clusterId, 16);
@@ -1017,7 +1004,7 @@ class ZigbeeAdapter extends Adapter {
 
   handleZclFrame(frame, zclData) {
     frame.zcl = zclData;
-    if (this.debugFrames) {
+    if (DEBUG_frames) {
       this.dumpFrame('Rcvd:', frame);
     }
     // Add some special fields to ease waitFrame processing.
@@ -1059,7 +1046,7 @@ class ZigbeeAdapter extends Adapter {
 
   // eslint-disable-next-line no-unused-vars
   handleRouteRecord(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Processing ROUTE_RECORD');
     }
     const node = this.nodes[frame.remote64];
@@ -1135,7 +1122,7 @@ class ZigbeeAdapter extends Adapter {
   // ----- END DEVICE ANNOUNCEMENT -------------------------------------------
 
   createNodeIfRequired(addr64, addr16) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('createNodeIfRequired:', addr64, addr16);
     }
 
@@ -1160,7 +1147,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleEndDeviceAnnouncement(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Processing END_DEVICE_ANNOUNCEMENT',
                   frame.zdoAddr64, frame.zdoAddr16);
     }
@@ -1168,7 +1155,7 @@ class ZigbeeAdapter extends Adapter {
       this.cancelPairing();
     }
     if (this.scanning) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('Ignoring END_DEVICE_ANNOUNCEMENT - scanning in progress');
       }
       return;
@@ -1188,7 +1175,7 @@ class ZigbeeAdapter extends Adapter {
         // announcement, so we introduce a slight delay to allow this to happen
         // before we assume that it's a regular device.
         setTimeout(() => {
-          if (this.debugFlow) {
+          if (DEBUG_flow) {
             console.log('Processing END_DEVICE_ANNOUNCEMENT (after timeout)');
           }
           this.handleEndEndDeviceAnnouncementInternal(node);
@@ -1198,7 +1185,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleEndEndDeviceAnnouncementInternal(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('handleEndEndDeviceAnnouncementInternal:', node.addr64,
                   'isMainsPowered:', node.isMainsPowered(),
                   'classified:', node.classified,
@@ -1224,7 +1211,7 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
     if (this.scanning) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('Ignoring Match Descriptor Request - scanning in progress');
       }
       return;
@@ -1276,14 +1263,14 @@ class ZigbeeAdapter extends Adapter {
   // ----- GET ACTIVE ENDPOINTS ----------------------------------------------
 
   getActiveEndpoint(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getActiveEndpoint node.addr64 =', node.addr64);
     }
     this.queueCommandsAtFront(this.getActiveEndpointCommands(node));
   }
 
   getActiveEndpointCommands(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getActiveEndpointCommands node.addr64 =', node.addr64);
     }
     this.activeEndpointResponseCount = 0;
@@ -1292,7 +1279,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   getActiveEndpointCommandsOnly(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getActiveEndpointCommandsOnly node.addr64 =', node.addr64);
     }
     const frame = this.zdo.makeFrame({
@@ -1316,7 +1303,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   retryGetActiveEndpointIfNeeded(node, frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('retryGetActiveEndpointIfNeeded node.addr64 =', node.addr64,
                   'responseCount =', this.activeEndpointResponseCount,
                   'retryCount =', this.activeEndpointRetryCount);
@@ -1340,7 +1327,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleActiveEndpointsResponse(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Processing ACTIVE_ENDPOINTS_RESPONSE');
     }
     this.activeEndpointResponseCount++;
@@ -1363,7 +1350,7 @@ class ZigbeeAdapter extends Adapter {
     if (!startIndex) {
       startIndex = 0;
     }
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getManagementLqi node.addr64 =', node.addr64,
                   'startIndex:', startIndex);
     }
@@ -1375,7 +1362,7 @@ class ZigbeeAdapter extends Adapter {
     if (!startIndex) {
       startIndex = 0;
     }
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getManagementLqiCommands node.addr64 =', node.addr64,
                   'startIndex:', startIndex);
     }
@@ -1405,7 +1392,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleManagementLqiResponse(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Processing CLUSTER_ID.MANAGEMENT_LQI_RESPONSE');
     }
     const node = this.createNodeIfRequired(frame.remote64, frame.remote16);
@@ -1414,7 +1401,7 @@ class ZigbeeAdapter extends Adapter {
       const neighborIndex = frame.startIndex + i;
       const neighbor = frame.neighbors[i];
       node.neighbors[neighborIndex] = neighbor;
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('Added neighbor', neighbor.addr64);
       }
       const neighborNode =
@@ -1440,7 +1427,7 @@ class ZigbeeAdapter extends Adapter {
     if (!startIndex) {
       startIndex = 0;
     }
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getManagementRtgCommands node.addr64 =', node.addr64,
                   'startIndex:', startIndex);
     }
@@ -1482,14 +1469,14 @@ class ZigbeeAdapter extends Adapter {
   // ----- GET NODE DESCRIPTOR -----------------------------------------------
 
   getNodeDescriptors() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getNodeDescriptors');
     }
     this.enumerateAllNodes(this.getNodeDescriptor);
   }
 
   getNodeDescriptor(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getNodeDescriptor node.addr64 =', node.addr64);
     }
     const nodeDescFrame = this.zdo.makeFrame({
@@ -1509,7 +1496,7 @@ class ZigbeeAdapter extends Adapter {
   // ----- GET SIMPLE DESCRIPTOR ---------------------------------------------
 
   getSimpleDescriptor(node, endpointNum) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getSimpleDescriptor node.addr64 =', node.addr64,
                   'endpoint =', endpointNum);
     }
@@ -1518,7 +1505,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   getSimpleDescriptorCommands(node, endpointNum) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('getSimpleDescriptorCommands: node.addr64 =', node.addr64,
                   'endpoint =', endpointNum);
     }
@@ -1554,7 +1541,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleSimpleDescriptorResponse(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('Processing SIMPLE_DESCRIPTOR_RESPONSE');
     }
     const node = this.nodes[frame.remote64];
@@ -1576,7 +1563,7 @@ class ZigbeeAdapter extends Adapter {
   // ----- MANAGEMENT LEAVE --------------------------------------------------
 
   removeThing(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log(`removeThing(${node.addr64})`);
     }
     node.removed = true;
@@ -1594,7 +1581,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   managementLeave(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('managementLeave node.addr64 =', node.addr64);
     }
 
@@ -1615,14 +1602,14 @@ class ZigbeeAdapter extends Adapter {
     node.added = false;
     this.handleDeviceRemoved(node);
     this.saveDeviceInfoDeferred();
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('----- Management Leave -----');
       this.dumpNodes();
     }
   }
 
   handleManagementLeaveResponse(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('handleManagementLeaveResponse: addr64 =',
                   frame.remote64);
     }
@@ -1630,7 +1617,7 @@ class ZigbeeAdapter extends Adapter {
       // This means that the device didn't unpair from the network. So
       // we're going to keep around our knowledge of the device since it
       // still thinks its part of the network.
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('handleManagementLeaveResponse:',
                     'status failed - returning');
       }
@@ -1638,14 +1625,14 @@ class ZigbeeAdapter extends Adapter {
     }
     const node = this.nodes[frame.remote64];
     if (!node) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('handleManagementLeaveResponse:',
                     'node not found - returning');
       }
       return;
     }
 
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('handleManagementLeaveResponse: Removing node:', node.addr64);
     }
 
@@ -1669,7 +1656,7 @@ class ZigbeeAdapter extends Adapter {
   permitJoin(seconds) {
     this.networkJoinTime = seconds;
 
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log(`----- Permit Join (${seconds}) -----`);
       this.dumpNodes();
     }
@@ -1919,14 +1906,14 @@ class ZigbeeAdapter extends Adapter {
   }
 
   sendFrameNow(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('sendFrameNow');
     }
     if (this.debugFrames) {
       this.dumpFrame('Sent:', frame);
     }
     const rawFrame = this.xb.buildFrame(frame);
-    if (this.debugRawFrames) {
+    if (DEBUG_rawFrames) {
       console.log('Sent:', rawFrame);
     }
     this.serialport.write(rawFrame, serialWriteError);
@@ -1938,7 +1925,7 @@ class ZigbeeAdapter extends Adapter {
     this.saveDeviceInfoDeferred();
 
     if (!node.activeEndpointsPopulated && !this.scanning) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('addIfReady:', node.addr64,
                     'activeEndpoints not populated yet');
       }
@@ -1949,7 +1936,7 @@ class ZigbeeAdapter extends Adapter {
       const endpoint = node.activeEndpoints[endpointNum];
       if (!endpoint.classifierAttributesPopulated) {
         if (!this.scanning) {
-          if (this.debugFlow) {
+          if (DEBUG_flow) {
             console.log('addIfReady:', node.addr64, 'endpoint', endpointNum,
                         'classifier attributes not read yet');
           }
@@ -1963,7 +1950,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleDeviceAdded(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('handleDeviceAdded: ', node.addr64,
                   'rebindRequired:', node.rebindRequired);
     }
@@ -1986,7 +1973,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   handleFrame(frame) {
-    if (this.debugFrameParsing) {
+    if (DEBUG_frameParsing) {
       this.dumpFrame('Rcvd (before parsing):', frame);
     }
     this.frameDumped = false;
@@ -2002,7 +1989,7 @@ class ZigbeeAdapter extends Adapter {
     }
 
     if (this.waitFrame) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('Waiting for', this.waitFrame);
       }
       let match = true;
@@ -2024,7 +2011,7 @@ class ZigbeeAdapter extends Adapter {
         }
       }
       if (match) {
-        if (this.debugFlow || this.debugDumpFrameDetail) {
+        if (DEBUG_flow || DEBUG_frameDetail) {
           console.log('Wait satisified');
         }
         const sendOnSuccess = this.waitFrame.sendOnSuccess;
@@ -2040,7 +2027,7 @@ class ZigbeeAdapter extends Adapter {
         if (callback) {
           callback(frame);
         }
-      } else if (this.debugFlow || this.debugDumpFrameDetail) {
+      } else if (DEBUG_flow || DEBUG_frameDetail) {
         console.log('Wait NOT satisified');
         console.log('    waitFrame =', this.waitFrame);
       }
@@ -2063,7 +2050,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   populateNodeInfo(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('populateNodeInfo node.addr64 =', node.addr64,
                   'rebindRequired:', node.rebindRequired);
     }
@@ -2089,7 +2076,7 @@ class ZigbeeAdapter extends Adapter {
   // the classifier to determine the type of thing its dealing with.
   populateClassifierAttributes(node, endpointNum) {
     const endpoint = node.activeEndpoints[endpointNum];
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('populateClassifierAttributes node.addr64 =', node.addr64,
                   'endpointNum =', endpointNum,
                   'classifierAttributesPopulated =',
@@ -2150,19 +2137,19 @@ class ZigbeeAdapter extends Adapter {
 
     if (endpointNum == node.ssIasZoneEndpoint) {
       if (node.hasOwnProperty('zoneType')) {
-        if (this.debugFlow) {
+        if (DEBUG_flow) {
           console.log('populateClassifierAttributes has zoneType - done');
         }
         this.setClassifierAttributesPopulated(node, endpointNum);
       } else {
         if (node.readingZoneType) {
-          if (this.debugFlow) {
+          if (DEBUG_flow) {
             console.log('populateClassifierAttributes: read of zoneType',
                         'already in progress');
           }
           return;
         }
-        if (this.debugFlow) {
+        if (DEBUG_flow) {
           console.log('populateClassifierAttributes has no zoneType -',
                       'querying via read');
         }
@@ -2205,7 +2192,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   populateClassifierAttributesLightingControl(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('populateClassifierAttributesLightingControl');
     }
     const node = this.nodes[frame.remote64];
@@ -2233,7 +2220,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   populateClassifierAttributesIasZone(frame) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('populateClassifierAttributesIasZone');
     }
     const node = this.nodes[frame.remote64];
@@ -2243,7 +2230,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   setClassifierAttributesPopulated(node, endpointNum) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('setClassifierAttributesPopulated: node.addr64 =',
                   node.addr64,
                   'endpointNum =', endpointNum,
@@ -2257,7 +2244,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   populateNodeInfoEndpoints(node) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('populateNodeInfoEndpoints node.addr64 =', node.addr64);
     }
 
@@ -2279,7 +2266,7 @@ class ZigbeeAdapter extends Adapter {
           // We don't have the simpleDescriptor information
           // (profileId is missing) and we don't have a command queued up to
           // retrieve it - queue one up.
-          if (this.debugFlow) {
+          if (DEBUG_flow) {
             console.log('populateNodeInfoEndpoints: queueing ',
                         'Simple Descriptor request for endpoint', endpointNum);
           }
@@ -2337,7 +2324,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   queueCommands(cmdSeq) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('queueCommands');
     }
     cmdSeq = this.flattenCommands(cmdSeq);
@@ -2357,7 +2344,7 @@ class ZigbeeAdapter extends Adapter {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       this.dumpCommands();
     }
     if (!this.running) {
@@ -2366,7 +2353,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   queueCommandsAtFront(cmdSeq) {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('queueCommandsAtFront');
     }
     cmdSeq = this.flattenCommands(cmdSeq);
@@ -2393,7 +2380,7 @@ class ZigbeeAdapter extends Adapter {
       idx = this.cmdQueue.length;
     }
     this.cmdQueue.splice(idx, 0, ...cmdSeq);
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       this.dumpCommands();
     }
     if (!this.running) {
@@ -2402,12 +2389,12 @@ class ZigbeeAdapter extends Adapter {
   }
 
   run() {
-    if (this.debugFlow) {
+    if (DEBUG_flow) {
       console.log('run queue len =', this.cmdQueue.length,
                   'running =', this.running);
     }
     if (this.waitFrame) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('Queue stalled waiting for frame.');
       }
       return;
@@ -2425,7 +2412,7 @@ class ZigbeeAdapter extends Adapter {
           if (frame.resend) {
             sentPrefix = 'Re';
           }
-          if (this.debugFlow) {
+          if (DEBUG_flow) {
             console.log(`${sentPrefix}SEND_FRAME`);
           }
           if (this.debugFrames) {
@@ -2450,7 +2437,7 @@ class ZigbeeAdapter extends Adapter {
                    'Expecting destinationEndpoint to be a number');
           }
           const rawFrame = this.xb.buildFrame(frame);
-          if (this.debugRawFrames) {
+          if (DEBUG_rawFrames) {
             console.log(`${sentPrefix}Sent:`, rawFrame);
           }
           this.serialport.write(rawFrame, serialWriteError);
@@ -2472,7 +2459,7 @@ class ZigbeeAdapter extends Adapter {
               timeoutDelay = EXTENDED_TIMEOUT_DELAY;
             }
           }
-          if (this.debugDumpFrameDetail) {
+          if (DEBUG_frameDetail) {
             console.log('WAIT_FRAME type:', this.waitFrame.type,
                         'timeoutDelay =', timeoutDelay);
           }
@@ -2484,7 +2471,7 @@ class ZigbeeAdapter extends Adapter {
           const ths = cmd.cmdData[0];
           const func = cmd.cmdData[1];
           const args = cmd.cmdData[2];
-          if (this.debugDumpFrameDetail) {
+          if (DEBUG_frameDetail) {
             console.log('EXEC_FUNC', func.name);
           }
           func.apply(ths, args);
@@ -2492,7 +2479,7 @@ class ZigbeeAdapter extends Adapter {
         }
         case RESOLVE_SET_PROPERTY: {
           const property = cmd.cmdData;
-          if (this.debugDumpFrameDetail) {
+          if (DEBUG_frameDetail) {
             console.log('RESOLVE_SET_PROPERTY', property.name);
           }
           const deferredSet = property.deferredSet;
@@ -2513,7 +2500,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   waitTimedOut() {
-    if (this.debugDumpFrameDetail) {
+    if (DEBUG_frameDetail) {
       console.log('WAIT_FRAME timed out');
     }
     // We timed out waiting for a response, resend the last command.
@@ -2527,7 +2514,7 @@ class ZigbeeAdapter extends Adapter {
     this.waitFrame = null;
 
     if (waitFrame.waitRetryCount >= waitFrame.waitRetryMax) {
-      if (this.debugFlow) {
+      if (DEBUG_flow) {
         console.log('WAIT_FRAME exceeded max retry count');
       }
       if (timeoutFunc) {
@@ -2545,7 +2532,7 @@ class ZigbeeAdapter extends Adapter {
 
     if (this.lastFrameSent && waitFrame) {
       waitFrame.waitRetryCount += 1;
-      if (this.debugFrames) {
+      if (DEBUG_frames) {
         console.log('Resending',
                     `(${waitFrame.waitRetryCount}/${waitFrame.waitRetryMax})`,
                     '...');
@@ -2625,130 +2612,6 @@ zch[zdo.CLUSTER_ID.END_DEVICE_ANNOUNCEMENT] =
 zch[zdo.CLUSTER_ID.BIND_RESPONSE] =
   ZigbeeAdapter.prototype.handleBindResponse;
 
-function isDigiPort(port) {
-  // Note that 0403:6001 is the default FTDI VID:PID, so we need to further
-  // refine the search using the manufacturer.
-  return (port.vendorId === '0403' &&
-          port.productId === '6001' &&
-          port.manufacturer === 'Digi');
-}
-
-// Devices like the UartSBee, which can have an XBee S2 programmed with
-// the Coordinator API have a generic FTDI chip.
-function isFTDIPort(port) {
-  return (port.vendorId === '0403' &&
-          port.productId === '6001' &&
-          port.manufacturer === 'FTDI');
-}
-
-// Scan the serial ports looking for an XBee adapter.
-//
-//    callback(error, port)
-//        Upon success, callback is invoked as callback(null, port) where `port`
-//        is the port object from SerialPort.list().
-//        Upon failure, callback is invoked as callback(err) instead.
-//
-function findDigiPorts(allowFTDISerial) {
-  return new Promise((resolve, reject) => {
-    SerialPort.list((error, ports) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      const digiPorts = ports.filter(isDigiPort);
-      if (digiPorts.length) {
-        resolve(digiPorts);
-        return;
-      }
-
-      if (allowFTDISerial) {
-        const ftdiPorts = ports.filter(isFTDIPort);
-        if (ftdiPorts.length) {
-          resolve(ftdiPorts);
-          return;
-        }
-        reject('No Digi/FTDI port found');
-        return;
-      }
-
-      reject('No Digi port found');
-    });
-  });
-}
-
-function extraInfo(port) {
-  let output = '';
-  if (port.manufacturer) {
-    output += ` Vendor: ${port.manufacturer}`;
-  }
-  if (port.serialNumber) {
-    output += ` Serial: ${port.serialNumber}`;
-  }
-  return output;
-}
-
-function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
-  let promise;
-  let allowFTDISerial = false;
-
-  // Attempt to move to new config format
-  if (Database) {
-    const db = new Database(manifest.name);
-    promise = db.open().then(() => {
-      return db.loadConfig();
-    }).then((config) => {
-      if (config.hasOwnProperty('discoverAttributes')) {
-        delete config.discoverAttributes;
-      }
-
-      if (config.hasOwnProperty('scanChannels') &&
-          typeof config.scanChannels === 'string') {
-        config.scanChannels = parseInt(config.scanChannels, 16);
-      }
-      allowFTDISerial = config.allowFTDISerial;
-
-      manifest.moziot.config = config;
-      return db.saveConfig(config);
-    });
-  } else {
-    promise = Promise.resolve();
-  }
-
-  promise.then(() => findDigiPorts(allowFTDISerial)).then((digiPorts) => {
-    for (const port of digiPorts) {
-      // Under OSX, SerialPort.list returns the /dev/tty.usbXXX instead
-      // /dev/cu.usbXXX. tty.usbXXX requires DCD to be asserted which
-      // isn't necessarily the case for Zigbee dongles. The cu.usbXXX
-      // doesn't care about DCD.
-      if (port.comName.startsWith('/dev/tty.usb')) {
-        port.comName = port.comName.replace('/dev/tty', '/dev/cu');
-      }
-      new ZigbeeAdapter(addonManager, manifest, port);
-    }
-  }).catch((error) => {
-    // Report the serial ports that we did find.
-    console.log('Serial ports that were found:');
-    SerialPort.list((serError, ports) => {
-      if (serError) {
-        console.log('Error:', serError);
-        errorCallback(manifest.name, error);
-        return;
-      }
-      for (const port of ports) {
-        if (port.vendorId) {
-          const vidPid = `${port.vendorId}:${port.productId}`;
-          console.log('USB Serial Device', vidPid + extraInfo(port),
-                      'found @', port.comName);
-        } else {
-          console.log('Serial Device found @', port.comName);
-        }
-      }
-      errorCallback(manifest.name, error);
-    });
-  });
-}
-
 registerFamilies();
 
-module.exports = loadZigbeeAdapters;
+module.exports = ZigbeeAdapter;

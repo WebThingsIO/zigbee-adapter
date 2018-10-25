@@ -30,7 +30,8 @@ const {
   STATUS,
 } = require('./zb-constants');
 
-const DEBUG = false;
+const {DEBUG_node} = require('./zb-debug');
+const DEBUG = DEBUG_node;
 
 const C = xbeeApi.constants;
 
