@@ -15,7 +15,8 @@ const ZigbeeProperty = require('./zb-property');
 
 const {Constants} = require('gateway-addon');
 
-const DEBUG = false;
+const {DEBUG_xiaomi} = require('./zb-debug');
+const DEBUG = DEBUG_xiaomi;
 
 const {
   CLUSTER_ID,

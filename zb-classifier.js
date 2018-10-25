@@ -24,7 +24,8 @@ const ZigbeeProperty = require('./zb-property');
 
 const {Constants, Utils} = require('gateway-addon');
 
-const DEBUG = false;
+const {DEBUG_classifier} = require('./zb-debug');
+const DEBUG = DEBUG_classifier;
 
 const ZONE_TYPE_MOTION = 0x000d;
 const ZONE_TYPE_SWITCH = 0x0015;
