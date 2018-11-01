@@ -30,6 +30,9 @@ const CLUSTER_ID = {
   GENPOLLCTRL: zclId.cluster('genPollCtrl').value,
   GENPOWERCFG: zclId.cluster('genPowerCfg').value,
   HAELECTRICAL: zclId.cluster('haElectricalMeasurement').value,
+  HVACTHERMOSTAT: zclId.cluster('hvacThermostat').value,
+  HVACFANCTRL: zclId.cluster('hvacFanCtrl').value,
+  HVACUSERINTERFACECFG: zclId.cluster('hvacUserInterfaceCfg').value,
   ILLUMINANCE_MEASUREMENT: zclId.cluster('msIlluminanceMeasurement').value,
   LIGHTINGCOLORCTRL: zclId.cluster('lightingColorCtrl').value,
   LIGHTLINK: zclId.cluster('lightLink').value,
@@ -41,14 +44,15 @@ const CLUSTER_ID = {
 addHexValues(CLUSTER_ID);
 
 const ATTR_ID = {};
-function makeAttrIds(clusterName, attrIds) {
+function makeAttrIds(clusterName, attrNames) {
   const clusterId = CLUSTER_ID[clusterName];
-  const attrDict = {};
-  for (const attrName of attrIds) {
-    attrDict[attrName.toUpperCase()] = zclId.attr(clusterId, attrName).value;
+  const attrIdDict = {};
+  for (const attrName of attrNames) {
+    attrIdDict[attrName.toUpperCase()] = zclId.attr(clusterId, attrName).value;
   }
-  ATTR_ID[clusterName] = attrDict;
+  ATTR_ID[clusterName] = attrIdDict;
 }
+
 makeAttrIds('GENBASIC', [
   'zclVersion',   // 0
   'appVersion',   // 1
@@ -146,7 +150,55 @@ addHexValues(PROFILE_ID);
 const STATUS = {
   SUCCESS: zclId.status('success').value,
   UNSUPPORTED_ATTRIB: zclId.status('unsupAttribute').value,
+  INSUFFICIENT_SPACE: zclId.status('insufficientSpace').value,
 };
+
+// THERMOSTAT_MODE is used for the systemMode and runningMode attributes
+// for the hvacThermostat cluster.
+const THERMOSTAT_MODE = [
+  'Off',    // 0
+  'Auto',   // 1
+  null,     // 2 - not used in the spec
+  'Cool',   // 3
+  'Heat',   // 4
+  // There are other values, but these are the only ones we support
+  // now.
+];
+
+// THERMOSTAT_STATE is used for the runningState attribute from the
+// hvacThermostat cluster.
+const THERMOSTAT_STATE = [
+  'Heat',     // 0  Heat 1st stage State On
+  'Cool',     // 1  Cool 1st stage State On
+  'Fan',      // 2  Fan  1st stage State On
+  'Heat2',    // 3  Heat 2nd stage State On
+  'Cool2',    // 4  Cool 2nd stage State On
+  'Fan2',     // 5  Fan  2nd stage State On
+  'Fan3',     // 6  Fan  3rd stage State On
+];
+
+// HVAC_FAN_MODE describes the fanMode attribute from the hvacFanCtrl
+// cluster
+const HVAC_FAN_MODE = [
+  'Off',    // 0
+  'Low',    // 1
+  'Medium', // 2
+  'High',   // 3
+  'On',     // 4
+  'Auto',   // 5
+  'Smart',  // 6
+];
+
+// HVAC_FAN_SEQ describes options available for the fanModeSequence
+// attribute from the hvacFanCtrl cluster. Each of the labels
+// separated by slashes must appear in the fan mode above.
+const HVAC_FAN_SEQ = [
+  'Low/Medium/High',      // 0
+  'Low/High',             // 1
+  'Low/Medium/High/Auto', // 2
+  'Low/High/Auto',        // 3
+  'On/Auto',              // 4
+];
 
 // ZONE_STATUS describes values for the zoneStatus attribute from
 // the ssIasZone cluster.
@@ -164,8 +216,12 @@ module.exports = {
   DEVICE_ID,
   DIR,
   DOORLOCK_EVENT_CODES,
+  HVAC_FAN_MODE,
+  HVAC_FAN_SEQ,
   POWERSOURCE,
   PROFILE_ID,
   STATUS,
+  THERMOSTAT_MODE,
+  THERMOSTAT_STATE,
   ZONE_STATUS,
 };

@@ -71,8 +71,7 @@
       "type": "object",
       "required": [
         "scanChannels",
-        "allowFTDISerial",
-        "debug"
+        "allowFTDISerial"
       ],
       "properties": {
         "scanChannels": {
