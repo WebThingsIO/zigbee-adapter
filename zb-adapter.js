@@ -71,7 +71,7 @@ String.prototype.swapHex = function() {
 
 function serialWriteError(error) {
   if (error) {
-    console.log('SerialPort.write error:', error);
+    console.error('SerialPort.write error:', error);
     throw error;
   }
 }

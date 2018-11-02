@@ -52,8 +52,8 @@ class ZigbeeProperty extends Property {
               setAttrFromValue, parseValueFromAttr) {
     super(device, name, propertyDescr);
 
-    if (propertyDescr.hasOwnProperty('enumArray')) {
-      this.enumArray = propertyDescr.enumArray;
+    if (propertyDescr.hasOwnProperty('enum')) {
+      this.enum = propertyDescr.enum;
     }
 
     this.profileId = profileId;
@@ -449,11 +449,7 @@ class ZigbeeProperty extends Property {
     const attrData = attrEntry.attrData;
     let propertyValue;
 
-    if (this.hasOwnProperty('enumArray') && attrData < this.enumArray.length) {
-      // We use enumArray when we want the UI to display like a string
-      // rather than like an enumeration.
-      propertyValue = this.enumArray[attrData];
-    } else if (this.hasOwnProperty('enum') && attrData < this.enum.length) {
+    if (this.hasOwnProperty('enum') && attrData < this.enum.length) {
       propertyValue = this.enum[attrData];
     } else {
       propertyValue = attrData.toString();

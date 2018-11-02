@@ -971,6 +971,8 @@ class ZigbeeClassifier {
         type: 'number',
         unit: 'celsius',
         readOnly: true,
+        minimum: 0,
+        maximum: 40,
       },
       PROFILE_ID.ZHA,                 // profileId
       hvacThermostatEndpoint,         // endpoint
@@ -1312,8 +1314,8 @@ class ZigbeeClassifier {
         {                                 // property description
           label: 'Fan Sequence',
           type: 'string',
+          enum: HVAC_FAN_SEQ,
           readOnly: true,
-          enumArray: HVAC_FAN_SEQ,
         },
         PROFILE_ID.ZHA,                   // profileId
         hvacFanControlEndpoint,           // endpoint
@@ -1329,7 +1331,6 @@ class ZigbeeClassifier {
           label: 'Fan',
           type: 'string',
           enum: [],
-          enumArray: HVAC_FAN_MODE,
         },
         PROFILE_ID.ZHA,                   // profileId
         hvacFanControlEndpoint,           // endpoint
