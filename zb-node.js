@@ -227,7 +227,7 @@ class ZigbeeNode extends Device {
         // Note: We allow attrId to be optional
         for (const p of ['srcEndpoint', 'clusterId']) {
           if (!params.hasOwnProperty(p)) {
-            console.log('Missing parameter:', p);
+            console.error('Missing parameter:', p);
             paramMissing = true;
           }
         }
@@ -235,8 +235,8 @@ class ZigbeeNode extends Device {
           if (typeof params.srcEndpoint === 'string') {
             params.srcEndpoint = parseInt(params.srcEndpoint);
           }
-          console.log('Issuing bind for endpoint:', params.srcEndpoint,
-                      'clusterId', params.clusterId);
+          console.error('Issuing bind for endpoint:', params.srcEndpoint,
+                        'clusterId', params.clusterId);
           const bindFrame = this.makeBindFrame(params.srcEndpoint,
                                                params.clusterId);
           this.sendFrames([bindFrame]);
@@ -306,7 +306,7 @@ class ZigbeeNode extends Device {
         // Note: We allow attrId to be optional
         for (const p of ['endpoint', 'profileId', 'clusterId']) {
           if (!params.hasOwnProperty(p)) {
-            console.log('Missing parameter:', p);
+            console.error('Missing parameter:', p);
             paramMissing = true;
           }
         }
@@ -336,7 +336,7 @@ class ZigbeeNode extends Device {
       }
 
       default:
-        console.log('Unrecognized debugCmd:', cmd);
+        console.error('Unrecognized debugCmd:', cmd);
     }
   }
 
@@ -454,7 +454,7 @@ class ZigbeeNode extends Device {
   handleCheckin(frame) {
     if (this.adapter.scanning) {
       if (this.adapter.debugFlow) {
-        console.log('Ignoring checking - scanning in progress');
+        console.log('Ignoring checkin - scanning in progress');
       }
       return;
     }
@@ -511,9 +511,16 @@ class ZigbeeNode extends Device {
           (frame.extraParams.length == frame.zcl.payload.length) ?
             frame.zcl.payload[attrIdx].status :
             frame.zcl.payload[0].status;
-        if (status != STATUS.SUCCESS) {
+        if (status != STATUS.SUCCESS && status != STATUS.INSUFFICIENT_SPACE) {
           // If the device doesn't support configReports, then treat it as
           // 'fire and forget'.
+          //
+          // Insufficient space means we're trying to configure reporting
+          // on too many attributes, which is more of a classifier issue
+          // so we don't set fireAndForget in that case because it gets
+          // persisted.
+          console.error(this.addr64,
+                        'configReport failed - setting fireAndForget to true');
           property.fireAndForget = true;
         }
         property.configReportNeeded = false;
@@ -699,11 +706,7 @@ class ZigbeeNode extends Device {
         }
         property.setCachedValue(value);
         property.initialReadNeeded = false;
-        if (frame.zcl.cmdId == 'report') {
-          // The fact that we received a report means that we don't need
-          // to setup binding/configReporting
-          property.configReportNeeded = false;
-        }
+
         console.log(this.name,
                     'property:', property.name,
                     'profileId:', Utils.hexStr(property.profileId, 4),
@@ -880,9 +883,6 @@ class ZigbeeNode extends Device {
       return;
     }
     property.setCachedValue(newValue);
-    console.log(this.name,
-                'property:', property.name,
-                'value:', property.value);
     this.notifyPropertyChanged(property);
   }
 
@@ -951,9 +951,6 @@ class ZigbeeNode extends Device {
     // Update the value, if it changed
     if (newValue != property.value) {
       property.setCachedValue(newValue);
-      console.log(this.name,
-                  'property:', property.name,
-                  'value:', property.value);
       this.notifyPropertyChanged(property);
     }
 
@@ -1789,6 +1786,10 @@ class ZigbeeNode extends Device {
     }
     super.notifyPropertyChanged(property);
 
+    if (property.hasOwnProperty('updated')) {
+      property.updated();
+    }
+
     this.adapter.saveDeviceInfoDeferred();
   }
 
@@ -1827,10 +1828,10 @@ class ZigbeeNode extends Device {
         if (!attr) {
           attr = {key: 'unknown', value: attrEntry.attrId};
         }
-        console.log('Response:', frame.zcl.cmdId,
-                    'got status:', status.key, `(${status.value}) node:`,
-                    this.name, 'cluster:', cluster.key,
-                    `(${cluster.value}) attr:`, attr.key, `(${attr.value})`);
+        console.error('Response:', frame.zcl.cmdId,
+                      'got status:', status.key, `(${status.value}) node:`,
+                      this.name, 'cluster:', cluster.key,
+                      `(${cluster.value}) attr:`, attr.key, `(${attr.value})`);
         errorFound = true;
       }
     }

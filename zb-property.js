@@ -16,6 +16,9 @@ const zclId = require('zcl-id');
 const {Deferred, Property, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
+  HVAC_FAN_MODE,
+  THERMOSTAT_MODE,
+  THERMOSTAT_STATE,
 } = require('./zb-constants');
 
 /**
@@ -49,6 +52,10 @@ class ZigbeeProperty extends Property {
               setAttrFromValue, parseValueFromAttr) {
     super(device, name, propertyDescr);
 
+    if (propertyDescr.hasOwnProperty('enum')) {
+      this.enum = propertyDescr.enum;
+    }
+
     this.profileId = profileId;
     if (typeof endpoint === 'string') {
       this.endpoint = parseInt(endpoint);
@@ -60,7 +67,7 @@ class ZigbeeProperty extends Property {
       this.setAttrFromValue = Object.getPrototypeOf(this)[setAttrFromValue];
       if (!this.setAttrFromValue) {
         const err = `Unknown function: ${setAttrFromValue}`;
-        console.log(err);
+        console.error(err);
         throw err;
       }
     }
@@ -68,7 +75,7 @@ class ZigbeeProperty extends Property {
       this.parseValueFromAttr = Object.getPrototypeOf(this)[parseValueFromAttr];
       if (!this.parseValueFromAttr) {
         const err = `Unknown function: ${parseValueFromAttr}`;
-        console.log(err);
+        console.error(err);
         throw err;
       }
     }
@@ -76,8 +83,10 @@ class ZigbeeProperty extends Property {
     if (attrs.length > 1) {
       this.attr = attrs;
       this.attrId = [];
+      this.attrType = [];
       for (const attr of attrs) {
         this.attrId.push(zclId.attr(clusterId, attr).value);
+        this.attrType.push(zclId.attrType(clusterId, attr).value);
       }
     } else {
       this.attr = attr;
@@ -85,6 +94,7 @@ class ZigbeeProperty extends Property {
       // so an empty string is used for attr in that case.
       if (attr) {
         this.attrId = zclId.attr(clusterId, attr).value;
+        this.attrType = zclId.attrType(clusterId, attr).value;
       }
     }
     this.fireAndForget = false;
@@ -431,6 +441,43 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseEnumAttr
+   *
+   * Converts a thermostat mode attribute into a property value (string).
+   */
+  parseEnumAttr(attrEntry) {
+    const attrData = attrEntry.attrData;
+    let propertyValue;
+
+    if (this.hasOwnProperty('enum') && attrData < this.enum.length) {
+      propertyValue = this.enum[attrData];
+    } else {
+      propertyValue = attrData.toString();
+    }
+    return [
+      propertyValue,
+      `${propertyValue} (${attrData})`,
+    ];
+  }
+
+  /**
+   * @method parseFanModeAttr
+   *
+   * Parses the fan mode attribute as a property.
+   */
+  parseFanModeAttr(attrEntry) {
+    let attrData = attrEntry.attrData;
+    if (attrData >= HVAC_FAN_MODE.length) {
+      attrData = 0;
+    }
+    const propertyValue = HVAC_FAN_MODE[attrData];
+    return [
+      propertyValue,
+      `${propertyValue} (${attrData})`,
+    ];
+  }
+
+  /**
    * @method parseIlluminanceMeasurementAttr
    *
    * Parses the temperature attribute as a property.
@@ -518,6 +565,17 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseNumericHundredthsAttr
+   *
+   * Converts generic numeric attributes in a number, and divides
+   * the number by 10.
+   */
+  parseNumericHundredthsAttr(attrEntry) {
+    const value = attrEntry.attrData / 100;
+    return [value, `${value}`];
+  }
+
+  /**
    * @method parseOccupiedAttr
    *
    * Converts the ZCL 'occupied' attribute (a bit field) into the 'occupied'
@@ -575,6 +633,50 @@ class ZigbeeProperty extends Property {
     return [
       propertyValue,
       `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
+    ];
+  }
+
+  /**
+   * @method parseThermostatModeAttr
+   *
+   * Converts a thermostat mode attribute into a property value (string).
+   */
+  parseThermostatModeAttr(attrEntry) {
+    const mode = attrEntry.attrData;
+    let modeStr;
+    if (mode >= THERMOSTAT_MODE.length) {
+      modeStr = mode.toString();
+    } else {
+      modeStr = THERMOSTAT_MODE[mode];
+    }
+    return [
+      modeStr,
+      `${modeStr} (${mode})`,
+    ];
+  }
+
+  /**
+   * @method parseThermostatStateAttr
+   *
+   * Converts a thermostat state attribute into a property value (string).
+   */
+  parseThermostatStateAttr(attrEntry) {
+    const state = attrEntry.attrData;
+    let stateStr = '';
+    for (const idx in THERMOSTAT_STATE) {
+      if (state & (1 << idx)) {
+        if (stateStr.length > 0) {
+          stateStr += ',';
+        }
+        stateStr += THERMOSTAT_STATE[idx];
+      }
+    }
+    if (stateStr.length == 0) {
+      stateStr = 'Off';
+    }
+    return [
+      stateStr,
+      `${stateStr} (${state})`,
     ];
   }
 
@@ -744,6 +846,30 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method setFanModeValue
+   *
+   * Convert the 'fanMode' property value (an enumeration) into the ZCL
+   * write command to set the fanMode sequence.
+   */
+  setFanModeValue(propertyValue) {
+    let attrData = HVAC_FAN_MODE.indexOf(propertyValue);
+    if (attrData < 0) {
+      attrData = 0; // Off
+    }
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
    * @method setLevelValue
    *
    * Convert the 'level' property value (a percentage) into the ZCL
@@ -769,7 +895,7 @@ class ZigbeeProperty extends Property {
   }
 
   /**
-   * @method setOnOffAttr
+   * @method setOnOffValue
    *
    * Converts the 'on' property value (a boolean) into the ZCL on or off
    * command.
@@ -787,6 +913,97 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method setOnOffWriteValue
+   *
+   * Converts the 'on' property value (a boolean) into the ZCL on or off
+   * command.
+   */
+  setOnOffWriteValue(propertyValue) {
+    // propertyValue is a boolean
+    const attrData = propertyValue ? 1 : 0;
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
+   * @method setWriteEnumValue
+   *
+   * Converts an enumeration into a ZCL write command to set
+   * the attribute.
+   */
+  setWriteEnumValue(propertyValue) {
+    let attrData = this.enum.indexOf(propertyValue);
+    if (attrData < 0) {
+      attrData = 0;
+    }
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
+   * @method setThermostatModeValue
+   *
+   * Converts the system mode or running mode property value (a string)
+   * into the appropriate ZCL write command to set the attribute.
+   */
+  setThermostatModeValue(propertyValue) {
+    let attrData = THERMOSTAT_MODE.indexOf(propertyValue);
+    if (attrData < 0) {
+      attrData = 0; // Off
+    }
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
+   * @method setThermostatTemperatureValue
+   *
+   * Converts a temperature (a number in celsius)
+   * into the appropriate ZCL write command to set the attribute.
+   */
+  setThermostatTemperatureValue(propertyValue) {
+    const attrData = propertyValue * 100;
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
    * @returns a promise which resolves to the updated value.
    *
    * @note it is possible that the updated value doesn't match
@@ -794,7 +1011,7 @@ class ZigbeeProperty extends Property {
    */
   setValue(value) {
     if (!this.setAttrFromValue) {
-      console.log('ZigbeeProperty:setValue: no setAttrFromValue');
+      console.error('ZigbeeProperty:setValue: no setAttrFromValue');
       return Promise.resolve();
     }
 
@@ -821,9 +1038,26 @@ class ZigbeeProperty extends Property {
                 'clusterId:', Utils.hexStr(this.clusterId, 4),
                 'zcl:', logData,
                 'value:', value);
-    console.log('setProperty: zclData =', zclData);
 
     return zclData;
+  }
+
+  setMinimum(minimum) {
+    if (this.hasOwnProperty('minimum') && this.minimum == minimum) {
+      // No change detected - ignore
+      return;
+    }
+    this.minimum = minimum;
+    this.device.handleDeviceDescriptionUpdated();
+  }
+
+  setMaximum(maximum) {
+    if (this.hasOwnProperty('maximum') && this.maximum == maximum) {
+      // No change detected - ignore
+      return;
+    }
+    this.maximum = maximum;
+    this.device.handleDeviceDescriptionUpdated();
   }
 }
 

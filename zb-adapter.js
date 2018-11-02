@@ -71,7 +71,7 @@ String.prototype.swapHex = function() {
 
 function serialWriteError(error) {
   if (error) {
-    console.log('SerialPort.write error:', error);
+    console.error('SerialPort.write error:', error);
     throw error;
   }
 }
@@ -926,6 +926,10 @@ class ZigbeeAdapter extends Adapter {
       const node = this.nodes[frame.remote64];
       if (node) {
         for (const property of node.properties.values()) {
+          if (DEBUG_flow) {
+            console.error(node.addr64,
+                          'bind failed - setting fireAndForget to true');
+          }
           property.fireAndForget = true;
         }
       }
@@ -956,9 +960,10 @@ class ZigbeeAdapter extends Adapter {
                       zdo.getClusterIdAsString(clusterId));
         }
       } catch (e) {
-        console.log('handleExplicitRx: Caught an exception parsing ZDO frame');
-        console.log(e);
-        console.log(util.inspect(frame, {depth: null}));
+        console.error('handleExplicitRx:',
+                      'Caught an exception parsing ZDO frame');
+        console.error(e);
+        console.error(util.inspect(frame, {depth: null}));
       }
     } else if (this.isZhaFrame(frame) || this.isZllFrame(frame)) {
       try {
@@ -987,17 +992,18 @@ class ZigbeeAdapter extends Adapter {
           const clusterId = parseInt(frame.clusterId, 16);
           zcl.parse(zclData, clusterId, (error, zclData) => {
             if (error) {
-              console.log('Error parsing ZHA frame:', frame);
-              console.log(error);
+              console.error('Error parsing ZHA frame:', frame);
+              console.error(error);
             } else {
               this.handleZclFrame(frame, zclData);
             }
           });
         }
       } catch (e) {
-        console.log('handleExplicitRx: Caught an exception parsing ZHA frame');
-        console.log(e);
-        console.log(util.inspect(frame, {depth: null}));
+        console.error('handleExplicitRx:',
+                      'Caught an exception parsing ZHA frame');
+        console.error(e);
+        console.error(util.inspect(frame, {depth: null}));
       }
     }
   }
@@ -1026,7 +1032,7 @@ class ZigbeeAdapter extends Adapter {
     if (frame.deliveryStatus !== 0) {
       // Note: For failed transmissions, the remote16 will always be set
       // to 0xfffd so there isn't any point in reporting it.
-      if (this.debugFrames) {
+      if (DEBUG_frames) {
         console.log('Transmit Status ERROR:',
                     this.getDeliveryStatusAsString(frame.deliveryStatus),
                     'id:', frame.id);
@@ -1668,7 +1674,7 @@ class ZigbeeAdapter extends Adapter {
       permitDuration: seconds,
       trustCenterSignificance: 0,
     });
-    if (this.debugFrames) {
+    if (DEBUG_frames) {
       permitJoinFrame.shortDescr =
         `permitDuration: ${permitJoinFrame.permitDuration}`;
     }
@@ -1909,7 +1915,7 @@ class ZigbeeAdapter extends Adapter {
     if (DEBUG_flow) {
       console.log('sendFrameNow');
     }
-    if (this.debugFrames) {
+    if (DEBUG_frames) {
       this.dumpFrame('Sent:', frame);
     }
     const rawFrame = this.xb.buildFrame(frame);
@@ -1970,6 +1976,7 @@ class ZigbeeAdapter extends Adapter {
 
   handleDeviceDescriptionUpdated(node) {
     super.handleDeviceAdded(node);
+    this.saveDeviceInfoDeferred();
   }
 
   handleFrame(frame) {
@@ -1984,7 +1991,7 @@ class ZigbeeAdapter extends Adapter {
       }
       frameHandler.call(this, frame);
     }
-    if (this.debugFrames && !this.frameDumped) {
+    if (DEBUG_frames && !this.frameDumped) {
       this.dumpFrame('Rcvd:', frame);
     }
 
@@ -2415,7 +2422,7 @@ class ZigbeeAdapter extends Adapter {
           if (DEBUG_flow) {
             console.log(`${sentPrefix}SEND_FRAME`);
           }
-          if (this.debugFrames) {
+          if (DEBUG_frames) {
             this.dumpFrame(`${sentPrefix}Sent:`, frame);
           }
           // The xbee library returns source and destination endpoints

@@ -16,7 +16,10 @@ const {
   COLOR_MODE,
   DEVICE_ID,
   DOORLOCK_EVENT_CODES,
+  HVAC_FAN_MODE,
+  HVAC_FAN_SEQ,
   PROFILE_ID,
+  THERMOSTAT_MODE,
   ZONE_STATUS,
 } = require('./zb-constants');
 
@@ -226,7 +229,13 @@ const CONFIG_REPORT_ILLUMINANCE = {
 const CONFIG_REPORT_TEMPERATURE = {
   minRepInterval: 1 * 60,   // 1 minute
   maxRepInterval: 10 * 60,  // 10 minutes
-  repChange: 10,            // 0.1 C
+  repChange: 50,            // 0.5 C
+};
+
+const CONFIG_REPORT_MODE = {
+  minRepInterval: 1,        // 1 second
+  maxRepInterval: 10 * 60,  // 10 minutes
+  repChange: 1,             // any change in value
 };
 
 class ZigbeeClassifier {
@@ -950,6 +959,402 @@ class ZigbeeClassifier {
     );
   }
 
+  addThermostatProperties(node, hvacThermostatEndpoint,
+                          hvacFanControlEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'temperature',                  // name
+      {                               // property description
+        // TODO: Replace with TemperatureProperty
+        '@type': 'LevelProperty',
+        label: 'Temperature',
+        type: 'number',
+        unit: 'celsius',
+        readOnly: true,
+        minimum: 0,
+        maximum: 40,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'localTemp',                    // attr
+      '',                             // setAttrFromValue
+      'parseNumericHundredthsAttr',   // parseValueFromAttr
+      CONFIG_REPORT_TEMPERATURE
+    );
+    this.addProperty(
+      node,                           // device
+      'mode',                         // name
+      {                               // property description
+        label: 'Mode',
+        type: 'string',
+        enum: THERMOSTAT_MODE.filter((x) => x),
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'systemMode',                   // attr
+      'setThermostatModeValue',       // setAttrFromValue
+      'parseThermostatModeAttr'       // parseValueFromAttr
+    );
+    this.addProperty(
+      node,                           // device
+      'runMode',                      // name
+      {                               // property description
+        label: 'Run Mode',
+        type: 'string',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'runningMode',                  // attr
+      '',                             // setAttrFromValue
+      'parseThermostatModeAttr',      // parseValueFromAttr
+      CONFIG_REPORT_MODE
+    );
+
+    const deadbandProperty = this.addProperty(
+      node,                           // device
+      '_deadband',                    // name
+      {                               // property description
+        label: 'DeadBand',
+        type: 'number',
+        unit: 'celsius',
+        minimum: 1,
+        maximum: 2.5,
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'minSetpointDeadBand',          // attr
+      '',                             // setAttrFromValue
+      'parseNumericTenthsAttr'        // parseValueFromAttr
+    );
+
+    const absMaxHeatTargetProperty = this.addProperty(
+      node,                           // device
+      '_absMaxHeatTarget',             // name
+      {                               // property description
+        label: 'Abs Max Heat Target',
+        type: 'number',
+        unit: 'celsius',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'absMaxHeatSetpointLimit',      // attr
+      '',                             // setAttrFromValue
+      'parseNumericHundredthsAttr'    // parseValueFromAttr
+    );
+    const absMinHeatTargetProperty = this.addProperty(
+      node,                           // device
+      '_absMinHeatTarget',             // name
+      {                               // property description
+        label: 'Abs Min Heat Target',
+        type: 'number',
+        unit: 'celsius',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'absMinHeatSetpointLimit',      // attr
+      '',                             // setAttrFromValue
+      'parseNumericHundredthsAttr'    // parseValueFromAttr
+    );
+    const maxHeatTargetProperty = this.addProperty(
+      node,                             // device
+      '_maxHeatTarget',                 // name
+      {                                 // property description
+        label: 'Max Heat Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'maxHeatSetpointLimit',           // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+    const minHeatTargetProperty = this.addProperty(
+      node,                             // device
+      '_minHeatTarget',                 // name
+      {                                 // property description
+        label: 'Min Heat Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'minHeatSetpointLimit',           // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+    const heatTargetProperty = this.addProperty(
+      node,                             // device
+      'heatTarget',                     // name
+      {                                 // property description
+        label: 'Heat Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'occupiedHeatingSetpoint',        // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+
+    const absMaxCoolTargetProperty = this.addProperty(
+      node,                           // device
+      '_absMaxCoolTarget',             // name
+      {                               // property description
+        label: 'Abs Max Cool Target',
+        type: 'number',
+        unit: 'celsius',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'absMaxCoolSetpointLimit',      // attr
+      '',                             // setAttrFromValue
+      'parseNumericHundredthsAttr'    // parseValueFromAttr
+    );
+    const absMinCoolTargetProperty = this.addProperty(
+      node,                           // device
+      '_absMinCoolTarget',             // name
+      {                               // property description
+        label: 'Abs Min Cool Target',
+        type: 'number',
+        unit: 'celsius',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      hvacThermostatEndpoint,         // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
+      'absMinCoolSetpointLimit',      // attr
+      '',                             // setAttrFromValue
+      'parseNumericHundredthsAttr'    // parseValueFromAttr
+    );
+    const maxCoolTargetProperty = this.addProperty(
+      node,                             // device
+      '_maxCoolTarget',                 // name
+      {                                 // property description
+        label: 'Max Cool Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'maxCoolSetpointLimit',           // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+    const minCoolTargetProperty = this.addProperty(
+      node,                             // device
+      '_minCoolTarget',                 // name
+      {                                 // property description
+        label: 'Min Cool Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'minCoolSetpointLimit',           // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+    const coolTargetProperty = this.addProperty(
+      node,                             // device
+      'coolTarget',                     // name
+      {                                 // property description
+        label: 'Cool Target',
+        type: 'number',
+        unit: 'celsius',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'occupiedCoolingSetpoint',        // attr
+      'setThermostatTemperatureValue',  // setAttrFromValue
+      'parseNumericHundredthsAttr'      // parseValueFromAttr
+    );
+
+    // The abs Min/Max Heat/Cool limits are the hardware defined
+    // minimums and maximums. They are readOnly and can't be changed.
+    //
+    // The min/max Heat/Cool limits are user settable.
+    //
+    // The heating target and cooling target need to be separated by the
+    // deadband amount.
+
+    absMaxHeatTargetProperty.updated = function() {
+      maxHeatTargetProperty.setMaximum(this.value);
+    };
+
+    maxHeatTargetProperty.updated = function() {
+      heatTargetProperty.setMaximum(this.value);
+    };
+
+    heatTargetProperty.updated = function() {
+      maxHeatTargetProperty.setMinimum(this.value);
+      minHeatTargetProperty.setMaximum(this.value);
+    };
+
+    heatTargetProperty.updateMinimum = function() {
+      if (!minHeatTargetProperty.hasOwnProperty('value') ||
+          !deadbandProperty.hasOwnProperty('value') ||
+          !coolTargetProperty.hasOwnProperty('value')) {
+        // We don't have enough information yet
+        return;
+      }
+      const min1 = minHeatTargetProperty.value;
+      const min2 = coolTargetProperty.value + deadbandProperty.value;
+      heatTargetProperty.setMinimum(Math.max(min1, min2));
+    };
+
+    minHeatTargetProperty.updated = function() {
+      heatTargetProperty.updateMinimum();
+    };
+
+    absMinHeatTargetProperty.updated = function() {
+      minHeatTargetProperty.setMinimum(this.value);
+    };
+
+    absMaxCoolTargetProperty.updated = function() {
+      maxCoolTargetProperty.setMaximum(this.value);
+    };
+
+    maxCoolTargetProperty.updated = function() {
+      coolTargetProperty.updateMaximum();
+    };
+
+    coolTargetProperty.updated = function() {
+      maxCoolTargetProperty.setMinimum(this.value);
+      minCoolTargetProperty.setMaximum(this.value);
+    };
+
+    coolTargetProperty.updateMaximum = function() {
+      if (!maxCoolTargetProperty.hasOwnProperty('value') ||
+          !deadbandProperty.hasOwnProperty('value') ||
+          !heatTargetProperty.hasOwnProperty('value')) {
+        // We don't have enough information yet
+        return;
+      }
+      const max1 = maxCoolTargetProperty.value;
+      const max2 = heatTargetProperty.value - deadbandProperty.value;
+      coolTargetProperty.setMaximum(Math.max(max1, max2));
+    };
+
+    minCoolTargetProperty.updated = function() {
+      coolTargetProperty.setMinimum(this.value);
+    };
+
+    absMinCoolTargetProperty.updated = function() {
+      minCoolTargetProperty.setMinimum(this.value);
+    };
+
+    deadbandProperty.updated = function() {
+      heatTargetProperty.updateMinimum();
+      coolTargetProperty.updateMaximum();
+    };
+
+    this.addProperty(
+      node,                             // device
+      'hold',                           // name
+      {                                 // property description
+        '@type': 'BooleanProperty',
+        label: 'Hold',
+        type: 'boolean',
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      hvacThermostatEndpoint,           // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
+      'tempSetpointHold',               // attr
+      'setOnOffWriteValue',             // setAttrFromValue
+      'parseOnOffAttr',                 // parseValueFromAttr
+      CONFIG_REPORT_MODE
+    );
+
+    const uiCfgEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(
+        CLUSTER_ID.HVACUSERINTERFACECFG_HEX);
+
+    if (uiCfgEndpoint) {
+      this.addProperty(
+        node,                             // device
+        'units',                          // name
+        {                                 // property description
+          label: 'Units',
+          type: 'string',
+          enum: ['C', 'F'],
+        },
+        PROFILE_ID.ZHA,                   // profileId
+        uiCfgEndpoint,                    // endpoint
+        CLUSTER_ID.HVACUSERINTERFACECFG,  // clusterId
+        'tempDisplayMode',                // attr
+        'setWriteEnumValue',              // setAttrFromValue
+        'parseEnumAttr'                   // parseValueFromAttr
+      );
+    }
+
+    if (hvacFanControlEndpoint) {
+      const fanModeSeqProperty = this.addProperty(
+        node,                             // device
+        '_fanModeSeq',                    // name
+        {                                 // property description
+          label: 'Fan Sequence',
+          type: 'string',
+          enum: HVAC_FAN_SEQ,
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                   // profileId
+        hvacFanControlEndpoint,           // endpoint
+        CLUSTER_ID.HVACFANCTRL,           // clusterId
+        'fanModeSequence',                // attr
+        '',                               // setAttrFromValue
+        'parseEnumAttr'                   // parseValueFromAttr
+      );
+      const fanModeProperty = this.addProperty(
+        node,                             // device
+        'fanMode',                        // name
+        {                                 // property description
+          label: 'Fan',
+          type: 'string',
+          enum: [],
+        },
+        PROFILE_ID.ZHA,                   // profileId
+        hvacFanControlEndpoint,           // endpoint
+        CLUSTER_ID.HVACFANCTRL,           // clusterId
+        'fanMode',                        // attr
+        'setFanModeValue',                // setAttrFromValue
+        'parseFanModeAttr',               // parseValueFromAttr
+        CONFIG_REPORT_MODE,
+      );
+
+      fanModeSeqProperty.updated = function() {
+        // Now that we know the allowed sequence, update the fan mode
+        // enumeration.
+        if (!this.hasOwnProperty('prevValue') || this.value != this.prevValue) {
+          fanModeProperty.enum = this.value.split('/');
+          console.log('fanModeSeqProperty.updated: set fanModeProperty.enum to',
+                      fanModeProperty.enum);
+          this.device.handleDeviceDescriptionUpdated();
+          this.prevValue = this.value;
+        }
+      };
+    }
+  }
+
   addZoneTypeProperty(node, propertyName, propertyDescr) {
     if (propertyName && propertyDescr) {
       this.addProperty(
@@ -1049,6 +1454,11 @@ class ZigbeeClassifier {
         if (devInfo.hasOwnProperty('level')) {
           property.level = devInfo.level;
         }
+        if (devInfo.hasOwnProperty('enum') &&
+            property.hasOwnProperty('enum') &&
+            property.enum.length == 0) {
+          property.enum = devInfo.enum;
+        }
       }
     }
     if (isZll) {
@@ -1103,6 +1513,10 @@ class ZigbeeClassifier {
         CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
     const msTemperatureEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.TEMPERATURE_HEX);
+    const hvacThermostatEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HVACTHERMOSTAT_HEX);
+    const hvacFanControlEndpoint =
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HVACFANCTRL_HEX);
     const illuminanceEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID.ILLUMINANCE_MEASUREMENT_HEX);
@@ -1127,6 +1541,8 @@ class ZigbeeClassifier {
       console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
       console.log('          genOnOffEndpoint =', genOnOffEndpoint);
       console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('    hvacFanControlEndpoint =', hvacFanControlEndpoint);
+      console.log('    hvacThermostatEndpoint =', hvacThermostatEndpoint);
       console.log('          doorLockEndpoint =', doorLockEndpoint);
       console.log('    lightingContolEndpoint =',
                   node.lightingColorCtrlEndpoint);
@@ -1184,6 +1600,10 @@ class ZigbeeClassifier {
     }
     if (genLevelCtrlOutputEndpoint) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+      return;
+    }
+    if (hvacThermostatEndpoint) {
+      this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
       return;
     }
     if (doorLockEndpoint) {
@@ -1407,6 +1827,14 @@ class ZigbeeClassifier {
       node['@type'].push('MultiLevelSwitch');
     }
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
+  }
+
+  initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
+    node.name = `${node.id}-thermostat`;
+    // TODO: Replace with Thermostat Capability
+    node['@type'] = ['MultiLevelSensor'];
+    this.addThermostatProperties(node, hvacThermostatEndpoint,
+                                 hvacFanControlEndpoint);
   }
 }
 
