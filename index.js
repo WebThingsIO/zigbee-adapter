@@ -10,73 +10,88 @@
 'use strict';
 
 const {Database} = require('gateway-addon');
-const SerialPort = require('serialport');
+const SerialProber = require('serial-prober');
 
+const XBEE_FTDI_FILTER = {
+  // Devices like the UartSBee, use a generic FTDI chip and with
+  // an XBee S2 programmed with the right firmware can act like
+  // a Zigbee coordinator.
+  vendorId: '0403',
+  productId: '6001',
+  manufacturer: 'Digi',
+};
 
-function isDigiPort(port) {
-  // Note that 0403:6001 is the default FTDI VID:PID, so we need to further
-  // refine the search using the manufacturer.
-  return (port.vendorId === '0403' &&
-          port.productId === '6001' &&
-          port.manufacturer === 'Digi');
-}
+const xbeeSerialProber = new SerialProber({
+  name: 'XBee',
+  baudRate: 9600,
+  // XBee Get API Mode Command
+  probeCmd: [
+    0x7e,       // Start of frame
+    0x00, 0x04, // Payload Length
+    0x08,       // AT Command Request
+    0x01,       // Frame ID
+    0x41, 0x50, // AP - API Enable
+    0x65,       // Checksum
+  ],
+  probeRsp: [
+    0x7e,       // Start of frame
+    0x00, 0x06, // Payload length
+    0x88,       // AT Command Response
+    0x01,       // Frame ID
+    0x41, 0x50, // AP
+    // This would normally be followed by the current API mode, and a
+    // checksum, but since we don't know those will be, we only match on
+    // the first part of the response.
+  ],
+  filter: [
+    {
+      // The green Zigbee dongle from Digi has a manufacturer of 'Digi'
+      // even though it uses the FTDI vendorId.
+      vendorId: '0403',
+      productId: '6001',
+      manufacturer: 'Digi',
+    },
+  ],
+});
 
-// Devices like the UartSBee, which can have an XBee S2 programmed with
-// the Coordinator API have a generic FTDI chip.
-function isFTDIPort(port) {
-  return (port.vendorId === '0403' &&
-          port.productId === '6001' &&
-          port.manufacturer === 'FTDI');
-}
+const deconzSerialProber = new SerialProber({
+  name: 'deConz',
+  baudRate: 38400,
+  // deConz VERSION Command
+  probeCmd: [
+    0xc0,       // END - SLIP Framing
+    0x0d,       // VERSION Command
+    0x01,       // Sequence number
+    0x00,       // Reserved - set to zero
+    0x05, 0x00, // Frame length
+    0xed, 0xff, // CRC
+    0xc0,       // END - SLIP framing
+  ],
+  probeRsp: [
+    0xc0,       // END - SLIP framing
+    0x0d,       // VERSION Command
+    0x01,       // Sequence NUmber
+    0x00,       // Reserved
+    0x09, 0x00, // Frame length
+    // This would normally be followed a 4 byte version code, CRC, and END
+    // but since we don't know what those will be we only match on the first
+    // part of the response.
+  ],
+  filter: [
+    {
+      vendorId: '0403',
+      productId: '6015',
+    },
+  ],
+});
+
+const PROBERS = [
+  xbeeSerialProber,
+  deconzSerialProber,
+];
 
 // Scan the serial ports looking for an XBee adapter.
-//
-//    callback(error, port)
-//        Upon success, callback is invoked as callback(null, port) where `port`
-//        is the port object from SerialPort.list().
-//        Upon failure, callback is invoked as callback(err) instead.
-//
-function findDigiPorts(allowFTDISerial) {
-  return new Promise((resolve, reject) => {
-    SerialPort.list((error, ports) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      const digiPorts = ports.filter(isDigiPort);
-      if (digiPorts.length) {
-        resolve(digiPorts);
-        return;
-      }
-
-      if (allowFTDISerial) {
-        const ftdiPorts = ports.filter(isFTDIPort);
-        if (ftdiPorts.length) {
-          resolve(ftdiPorts);
-          return;
-        }
-        reject('No Digi/FTDI port found');
-        return;
-      }
-
-      reject('No Digi port found');
-    });
-  });
-}
-
-function extraInfo(port) {
-  let output = '';
-  if (port.manufacturer) {
-    output += ` Vendor: ${port.manufacturer}`;
-  }
-  if (port.serialNumber) {
-    output += ` Serial: ${port.serialNumber}`;
-  }
-  return output;
-}
-
-function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
+async function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
   let promise;
   let allowFTDISerial = false;
 
@@ -107,42 +122,37 @@ function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
   } else {
     promise = Promise.resolve();
   }
+  await promise;
 
-  promise.then(() => findDigiPorts(allowFTDISerial)).then((digiPorts) => {
-    // We put the ZigbeeAdapter require here rather than at the top of
-    // the file so that the debug config gets initialized before we
-    // import the adapter class.
-    const ZigbeeAdapter = require('./zb-adapter');
-    for (const port of digiPorts) {
-      // Under OSX, SerialPort.list returns the /dev/tty.usbXXX instead
-      // /dev/cu.usbXXX. tty.usbXXX requires DCD to be asserted which
-      // isn't necessarily the case for Zigbee dongles. The cu.usbXXX
-      // doesn't care about DCD.
-      if (port.comName.startsWith('/dev/tty.usb')) {
-        port.comName = port.comName.replace('/dev/tty', '/dev/cu');
-      }
-      new ZigbeeAdapter(addonManager, manifest, port);
+  const {DEBUG_serialProber} = require('./zb-debug');
+  SerialProber.debug(DEBUG_serialProber);
+  if (allowFTDISerial) {
+    xbeeSerialProber.param.filter.push(XBEE_FTDI_FILTER);
+  }
+  SerialProber.probeAll(PROBERS).then((matches) => {
+    if (matches.length == 0) {
+      SerialProber.listAll().then(() => {
+        errorCallback(manifest.name, 'No Zigbee dongle found');
+      }).catch((err) => {
+        errorCallback(manifest.name, err);
+      });
+      return;
     }
-  }).catch((error) => {
-    // Report the serial ports that we did find.
-    console.log('Serial ports that were found:');
-    SerialPort.list((serError, ports) => {
-      if (serError) {
-        console.log('Error:', serError);
-        errorCallback(manifest.name, error);
-        return;
-      }
-      for (const port of ports) {
-        if (port.vendorId) {
-          const vidPid = `${port.vendorId}:${port.productId}`;
-          console.log('USB Serial Device', vidPid + extraInfo(port),
-                      'found @', port.comName);
-        } else {
-          console.log('Serial Device found @', port.comName);
-        }
-      }
-      errorCallback(manifest.name, error);
-    });
+    // We put the driver requires here rather than at the top of
+    // the file so that the debug config gets initialized before we
+    // import the driver class.
+    const XBeeDriver = require('./xbee-driver');
+    const DeconzDriver = require('./deconz-driver');
+    const driver = {
+      [xbeeSerialProber.param.name]: XBeeDriver,
+      [deconzSerialProber.param.name]: DeconzDriver,
+    };
+    for (const match of matches) {
+      new driver[match.prober.param.name](addonManager,
+                                          manifest,
+                                          match.port.comName,
+                                          match.serialPort);
+    }
   });
 }
 

@@ -42,6 +42,14 @@ const DEBUG_FLAG = {
   // to be reported.
   DEBUG_rawFrames: false,
 
+  // DEBUG_serialProber causes information about the serial probing at
+  // module load time to be printed.
+  DEBUG_serialProber: false,
+
+  // DEBUG_slip causes SLIP encapsulated raw data (used by deConz)
+  // to be printed.
+  DEBUG_slip: false,
+
   // DEBUG_xiaomi causes additional debug information to be printed
   // from zb-xiaomi.js
   DEBUG_xiaomi: false,

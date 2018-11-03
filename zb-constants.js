@@ -19,6 +19,15 @@ function addHexValues(dict) {
   }
 }
 
+const BROADCAST_ADDR = {
+  ALL: 'ffff',
+  NON_SLEEPING: 'fffd', // i.e. rxOnWhenIdle = true
+  ROUTERS: 'fffc',
+  LOW_POWER_ROUTERS: 'fffb',
+};
+
+const UNKNOWN_ADDR_16 = 'fffe';
+
 const CLUSTER_ID = {
   DOORLOCK: zclId.cluster('closuresDoorLock').value,
   GENBASIC: zclId.cluster('genBasic').value,
@@ -210,6 +219,7 @@ const ZONE_STATUS = {
 
 module.exports = {
   ATTR_ID,
+  BROADCAST_ADDR,
   CLUSTER_ID,
   COLOR_CAPABILITY,
   COLOR_MODE,
@@ -223,5 +233,6 @@ module.exports = {
   STATUS,
   THERMOSTAT_MODE,
   THERMOSTAT_STATE,
+  UNKNOWN_ADDR_16,
   ZONE_STATUS,
 };

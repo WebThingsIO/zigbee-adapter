@@ -179,6 +179,7 @@ class ZigbeeProperty extends Property {
     if (levelProperty) {
       level = levelProperty.value;
     }
+    console.log(`parseColorAttr: hue:${hue} sat:${sat}, level:${level}`);
     const color = new Color({h: hue, s: sat, v: level});
     const colorStr = color.rgb().hex();
     return [colorStr, colorStr];
@@ -720,12 +721,15 @@ class ZigbeeProperty extends Property {
         levelProperty.valueToZclData(level));
     }
 
+    const attrHue = Math.round(hue / 360 * 254);
+    const attrSat = Math.round(sat / 100 * 254);
+    console.log(`setColorValue: hue:${attrHue}, sat:${attrSat}`);
     return [
       {
         frameCntl: {frameType: 1},
         cmd: 'moveToHueAndSaturation',
-        payload: [Math.round(hue / 360 * 254),
-                  Math.round(sat / 100 * 254),
+        payload: [attrHue,
+                  attrSat,
                   10],  // 10ths of a second
       },
       `hsv: [${hue}, ${sat}, ${level}]`,

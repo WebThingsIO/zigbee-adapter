@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -17,12 +17,18 @@
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
     "bl": "^2.0.1",
+    "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.0",
     "color": "^3.0.0",
-    "serialport": "^6.1.1",
+    "command-line-args": "^5.0.2",
+    "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
+    "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git",
+    "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
+    "serialport": "^6.2.2",
     "xbee-api": "^0.5.6",
-    "zcl-id": "^0.3.2",
-    "zcl-packet": "dhylands/zcl-packet#add-genOta-meta"
+    "zcl-id": "^0.4.0",
+    "zcl-packet": "dhylands/zcl-packet#add-genOta-meta",
+    "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.3",
@@ -41,17 +47,19 @@
     "LICENSE",
     "SHA256SUMS",
     "index.js",
+    "deconz-driver.js",
+    "xbee-driver.js",
     "zb-adapter.js",
     "zb-at.js",
     "zb-classifier.js",
     "zb-constants.js",
     "zb-debug.js",
+    "zb-driver.js",
     "zb-families.js",
     "zb-family.js",
     "zb-node.js",
     "zb-property.js",
     "zb-xiaomi.js",
-    "zb-zdo.js",
     "node_modules"
   ],
   "moziot": {

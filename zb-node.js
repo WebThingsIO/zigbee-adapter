@@ -12,10 +12,9 @@
 const assert = require('assert');
 const cloneDeep = require('clone-deep');
 const util = require('util');
-const xbeeApi = require('xbee-api');
 const zclId = require('zcl-id');
 const zcl = require('zcl-packet');
-const zdo = require('./zb-zdo');
+const zdo = require('zigbee-zdo');
 const zigbeeClassifier = require('./zb-classifier');
 const ZigbeeFamily = require('./zb-family');
 
@@ -32,8 +31,6 @@ const {
 
 const {DEBUG_node} = require('./zb-debug');
 const DEBUG = DEBUG_node;
-
-const C = xbeeApi.constants;
 
 const FAST_CHECKIN_INTERVAL = 20 * 4;       // 20 seconds (quarter seconds)
 const SLOW_CHECKIN_INTERVAL = 10 * 60 * 4;  // 10 min (quarter seconds)
@@ -68,15 +65,21 @@ class ZigbeeNode extends Device {
     const deviceId = `zb-${id64}`;
     super(adapter, deviceId);
 
+    this.driver = adapter.driver;
+
     this.addr64 = id64;
     this.addr16 = id16;
+
+    console.log('ZigbeeNode created: addr64:', this.addr64,
+                'addr16:', this.addr16);
+
     this.neighbors = [];
     this.activeEndpoints = {};
     this.activeEndpointsPopulated = false;
     this.queryingActiveEndpoints = false;
     this.nodeInfoEndpointsPopulated = false;
 
-    this.isCoordinator = (id64 == adapter.serialNumber);
+    this.isCoordinator = (id64 == adapter.networkAddr64);
 
     if (this.isCoordinator) {
       this.defaultName = `${deviceId}-Dongle`;
@@ -335,6 +338,39 @@ class ZigbeeNode extends Device {
         break;
       }
 
+      case 'moveToHueAndSaturation': {
+        let paramMissing = false;
+        // Note: We allow attrId to be optional
+        for (const p of ['endpoint', 'hue', 'saturation']) {
+          if (!params.hasOwnProperty(p)) {
+            console.error('Missing parameter:', p);
+            paramMissing = true;
+          }
+        }
+        if (!paramMissing) {
+          if (typeof params.endpoint === 'string') {
+            params.endpoint = parseInt(params.endpoint);
+          }
+          console.log('Issuing moveToHueAndSaturation for endpoint:',
+                      params.endpoint,
+                      'hue', params.hue,
+                      'saturation:', params.saturation);
+          if (params.hue < 0 || params.hue > 254) {
+            console.error('Expecting hue to be 0-254');
+            break;
+          }
+          if (params.saturation < 0 || params.saturation > 254) {
+            console.error('Expecting saturation to be 0-254');
+            break;
+          }
+          this.adapter.moveToHueAndSaturation(this,
+                                              params.endpoint,
+                                              params.hue,
+                                              params.saturation);
+        }
+        break;
+      }
+
       default:
         console.error('Unrecognized debugCmd:', cmd);
     }
@@ -544,7 +580,7 @@ class ZigbeeNode extends Device {
           payload.attrInfos.slice(-1)[0].attrId + 1
         );
       this.adapter.sendFrameWaitFrameAtFront(discoverFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'discoverRsp',
         zclSeqNum: discoverFrame.zcl.seqNum,
       });
@@ -579,7 +615,7 @@ class ZigbeeNode extends Device {
         attrInfo.attrId
       );
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.drivergetExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
       });
@@ -627,6 +663,8 @@ class ZigbeeNode extends Device {
       }
     );
     rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint, 16);
+    console.log('handleQueryNextImageReq: rspFrame =');
+    console.log(util.inspect(frame, {depth: null}));
     this.adapter.sendFrameNow(rspFrame);
   }
 
@@ -1272,7 +1310,7 @@ class ZigbeeNode extends Device {
           ATTR_ID.SSIASZONE.ZONEID,
         ]);
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.drivergetExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
         callback: () => {
@@ -1292,7 +1330,7 @@ class ZigbeeNode extends Device {
                                                     this.ssIasZoneEndpoint);
       this.rebinding = false;
     }
-    const ourCieAddr = `0x${this.adapter.serialNumber}`;
+    const ourCieAddr = `0x${this.adapter.networkAddr64}`;
 
     DEBUG && console.log('rebindIasZone: this.cieAddr =', this.cieAddr,
                          'ourCieAddr =', ourCieAddr);
@@ -1307,7 +1345,7 @@ class ZigbeeNode extends Device {
         [[ATTR_ID.SSIASZONE.IASCIEADDR, ourCieAddr]]
       );
       this.adapter.sendFrameWaitFrameAtFront(writeFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.drivergetExplicitRxFrameType(),
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
@@ -1332,7 +1370,7 @@ class ZigbeeNode extends Device {
       const enrollRspFrame =
         this.makeEnrollRspFrame(reqFrame, rspStatus, zoneId);
       this.adapter.sendFrameWaitFrameAtFront(enrollRspFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS,
+        type: this.driver.getTransmitStatusFrameType(),
         id: enrollRspFrame.id,
         callback: () => {
           this.rebinding = false;
@@ -1384,7 +1422,7 @@ class ZigbeeNode extends Device {
       );
       this.writingCheckinInterval = true;
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
         callback: () => {
@@ -1413,7 +1451,7 @@ class ZigbeeNode extends Device {
         CLUSTER_ID.GENPOLLCTRL,
         [[ATTR_ID.GENPOLLCTRL.CHECKININTERVAL, interval]]);
       this.adapter.sendFrameWaitFrameAtFront(writeFrame, {
-        type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {
@@ -1459,7 +1497,7 @@ class ZigbeeNode extends Device {
       return;
     }
 
-    const ourCieAddr = `0x${this.adapter.serialNumber}`;
+    const ourCieAddr = `0x${this.adapter.networkAddr64}`;
     if (this.ssIasEndpoint && this.cieAddr != ourCieAddr) {
       DEBUG && console.log('updateRebindRequired: node:', this.addr64,
                            'cieAddr not set - rebind still required');
@@ -1505,7 +1543,7 @@ class ZigbeeNode extends Device {
       bindSrcEndpoint: endpoint,  // endpoint of device that sends reports
       bindClusterId: clusterId,   // clusterId of device that sends reports
       bindDstAddrMode: 3, // 3 = 64-bit DstAddr and DstEndpoint provided
-      bindDstAddr64: this.adapter.serialNumber, // coordinator address
+      bindDstAddr64: this.adapter.networkAddr64, // coordinator address
       bindDstEndpoint: 1, // Endpoint on the coordinator
     });
     if (this.adapter.debugFrames) {
@@ -1767,10 +1805,9 @@ class ZigbeeNode extends Device {
     }
 
     const frame = {
-      id: xbeeApi._frame_builder.nextFrameId(),
-      type: C.FRAME_TYPE.EXPLICIT_ADDRESSING_ZIGBEE_COMMAND_FRAME,
+      id: this.driver.nextFrameId(),
+      type: this.driver.getExplicitTxFrameType(),
       destination64: this.addr64,
-      destination16: this.addr16,
       sourceEndpoint: 1,
 
       destinationEndpoint: endpoint,
@@ -1781,6 +1818,9 @@ class ZigbeeNode extends Device {
       options: 0,
       zcl: zclData,
     };
+    if (typeof this.addr16 !== 'undefined') {
+      frame.destination16 = this.addr16;
+    }
 
     frame.data = zcl.frame(zclData.frameCntl,
                            zclData.manufCode,
@@ -1874,7 +1914,7 @@ class ZigbeeNode extends Device {
   sendZclFrameWaitExplicitRx(property, zclData) {
     const frame = this.makeZclFrameForProperty(property, zclData);
     this.adapter.sendFrameWaitFrame(frame, {
-      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+      type: this.driver.getExplicitRxFrameType(),
       remote64: frame.destination64,
     }, property);
   }
@@ -1882,7 +1922,7 @@ class ZigbeeNode extends Device {
   sendZclFrameWaitExplicitRxResolve(property, zclData) {
     const frame = this.makeZclFrameForProperty(property, zclData);
     this.adapter.sendFrameWaitFrameResolve(frame, {
-      type: C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX,
+      type: this.driver.getExplicitRxFrameType(),
       remote64: frame.destination64,
     }, property);
   }
