@@ -30,7 +30,7 @@ const {
 
 const MODEL_IDS = {
   'lumi.sensor_magnet': {
-    name: 'magent',
+    name: 'magnet',
     type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
     powerSource: POWERSOURCE.BATTERY,
