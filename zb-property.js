@@ -21,6 +21,8 @@ const {
   THERMOSTAT_STATE,
 } = require('./zb-constants');
 
+const DEBUG = false;
+
 /**
  * @function levelToPercent
  *
@@ -1059,6 +1061,21 @@ class ZigbeeProperty extends Property {
     this.maximum = maximum;
     this.device.handleDeviceDescriptionUpdated();
   }
+}
+
+if (DEBUG) {
+  Object.getOwnPropertyNames(ZigbeeProperty.prototype).forEach((method) => {
+    const baseMethod = ZigbeeProperty.prototype[method];
+    if (method === 'constructor' || typeof baseMethod !== 'function') {
+      return;
+    }
+    ZigbeeProperty.prototype[method] = function() {
+      console.log(`ZigbeeProperty:${method} arguments: `, arguments);
+      const result = baseMethod.apply(this, arguments);
+      console.log(`ZigbeeProperty:${method} result: `, result);
+      return result;
+    };
+  });
 }
 
 module.exports = ZigbeeProperty;
