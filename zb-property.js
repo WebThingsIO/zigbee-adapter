@@ -997,7 +997,7 @@ class ZigbeeProperty extends Property {
   /**
    * @method setThermostatTemperatureValue
    *
-   * Converts a temperature (a number in celsius)
+   * Converts a temperature (a number in degrees celsius)
    * into the appropriate ZCL write command to set the attribute.
    */
   setThermostatTemperatureValue(propertyValue) {
