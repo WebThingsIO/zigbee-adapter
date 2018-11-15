@@ -835,6 +835,7 @@ class ZigbeeNode extends Device {
             this.notifyEvent('1-pressed');
             break;
           case 'off': // on property
+          case 'offWithEffect': // onProperty
             this.handleButtonOnOffCommand(property, false);
             this.notifyEvent('2-pressed');
             break;
@@ -859,6 +860,14 @@ class ZigbeeNode extends Device {
             const button = frame.zcl.payload.movemode + 1;
             this.heldButton = button;
             this.notifyEvent(`${button}-longPressed`);
+            return;
+          }
+          case 'step': { // level property
+            this.handleButtonStep(property,
+                                  frame.zcl.payload.stepmode,
+                                  frame.zcl.payload.stepsize);
+            const button = frame.zcl.payload.stepmode + 3;
+            this.notifyEvent(`${button}-pressed`);
             return;
           }
           case 'stop':  // level property
@@ -957,6 +966,24 @@ class ZigbeeNode extends Device {
     // Turn it off, if instructed and we hit zero
     if (offAtZero && property.value == 0 && this.onOffProperty) {
       this.handleButtonOnOffCommand(this.onOffProperty, false);
+    }
+  }
+
+  handleButtonStep(property, stepMode, stepSize) {
+    DEBUG && console.log('handleButtonStepCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'stepeMode:', stepMode);
+    // stepMode: 0 = up, 1 = down
+    const delta = (stepMode ? -1 : 1) * stepSize;
+    let newValue = Math.round(property.value + delta);
+    newValue = Math.max(0, newValue);
+    newValue = Math.min(100, newValue);
+
+    // Update the value, if it changed
+    if (newValue != property.value) {
+      property.setCachedValue(newValue);
+      this.notifyPropertyChanged(property);
     }
   }
 
@@ -1085,8 +1112,10 @@ class ZigbeeNode extends Device {
           break;
         case 'on':
         case 'off':
+        case 'offWithEffect':
         case 'moveWithOnOff':
         case 'move':
+        case 'step':
         case 'stop':
           this.handleButtonCommand(frame);
           break;

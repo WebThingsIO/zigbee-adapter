@@ -16,7 +16,6 @@ const {
   COLOR_MODE,
   DEVICE_ID,
   DOORLOCK_EVENT_CODES,
-  HVAC_FAN_MODE,
   HVAC_FAN_SEQ,
   PROFILE_ID,
   THERMOSTAT_MODE,
@@ -1767,34 +1766,60 @@ class ZigbeeClassifier {
     node.name = `${node.id}-button`;
     node.type = 'multiLevelSwitch';
     node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
+
     this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
     this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
     this.addEvents(node, {
       '1-pressed': {
         '@type': 'PressedEvent',
-        description: 'Top button pressed and released',
+        description: 'On button pressed and released',
       },
       '2-pressed': {
         '@type': 'PressedEvent',
-        description: 'Bottom button pressed and released',
-      },
-      '1-longPressed': {
-        '@type': 'LongPressedEvent',
-        description: 'Top button pressed and held',
-      },
-      '2-longPressed': {
-        '@type': 'LongPressedEvent',
-        description: 'Bottom button pressed and held',
-      },
-      '1-released': {
-        '@type': 'ReleasedEvent',
-        description: 'Top button released (after being held)',
-      },
-      '2-released': {
-        '@type': 'ReleasedEvent',
-        description: 'Bottom button released (after being held)',
+        description: 'Off button pressed and released',
       },
     });
+
+    console.log('initMultiLevelButton: modelId:', node.modelId);
+    switch (node.modelId) {
+      case '3130':
+        // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
+        // use long presses to do the dimming
+        this.addEvents(node, {
+          '1-longPressed': {
+            '@type': 'LongPressedEvent',
+            description: 'On button pressed and held',
+          },
+          '2-longPressed': {
+            '@type': 'LongPressedEvent',
+            description: 'Off button pressed and held',
+          },
+          '1-released': {
+            '@type': 'ReleasedEvent',
+            description: 'On button released (after being held)',
+          },
+          '2-released': {
+            '@type': 'ReleasedEvent',
+            description: 'Off button released (after being held)',
+          },
+        });
+        break;
+
+      case 'RWL020':
+        // This is the Philips Hue Dimmer. It has 4 buttons and uses
+        // 2 of the buttons to perform the dimming.
+        this.addEvents(node, {
+          '3-pressed': {
+            '@type': 'PressedEvent',
+            description: 'Increase button pressed and released',
+          },
+          '4-pressed': {
+            '@type': 'PressedEvent',
+            description: 'Decrease button pressed and released',
+          },
+        });
+        break;
+    }
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
