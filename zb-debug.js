@@ -44,6 +44,10 @@ const DEBUG_FLAG = {
 
   set: function(names) {
     for (const name of names.split(/[, ]+/)) {
+      if (name === '') {
+        // If names is empty then split returns ['']
+        continue;
+      }
       const debugName = `DEBUG_${name}`;
       if (DEBUG_FLAG.hasOwnProperty(debugName)) {
         console.log(`Enabling ${debugName}`);
