@@ -21,7 +21,8 @@ const {
   THERMOSTAT_STATE,
 } = require('./zb-constants');
 
-const DEBUG = false;
+const {DEBUG_property} = require('./zb-debug');
+const DEBUG = DEBUG_property;
 
 /**
  * @function levelToPercent
