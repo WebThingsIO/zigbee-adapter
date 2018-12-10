@@ -34,6 +34,10 @@ const DEBUG_FLAG = {
   // file to be printed.
   DEBUG_node: false,
 
+  // DEBUG_property causes additional debug information to be printed
+  // from zb-property.js
+  DEBUG_property: false,
+
   // DEBUG_rawFrames causes the raw serial frames to/from the dongle
   // to be reported.
   DEBUG_rawFrames: false,
