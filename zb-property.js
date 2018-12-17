@@ -166,14 +166,14 @@ class ZigbeeProperty extends Property {
     if (attrEntry.attrId == ATTR_ID.LIGHTINGCOLORCTRL.CURRENTHUE) {
       // We expect that we'll always get the hue in one call, and
       // the saturation in a later call. For hue, we just record it.
-      this.hue = attrEntry.attrData;
+      this.hue = (attrEntry.attrData / 254) * 360;
       return [];
     }
     if (attrEntry.attrId != ATTR_ID.LIGHTINGCOLORCTRL.CURRENTSATURATION) {
       return [];
     }
     const hue = this.hue;
-    const sat = attrEntry.attrData;
+    const sat = (attrEntry.attrData / 254) * 100;
     let level = 0;
     const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
