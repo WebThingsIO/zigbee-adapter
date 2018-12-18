@@ -245,8 +245,8 @@ class ZigbeeAdapter extends Adapter {
                     deviceType[neighbor.deviceType],
                     relationship[neighbor.relationship],
                     permitJoins[neighbor.permitJoining],
-                    `   ${neighbor.depth}`.slice(-3),
-                    `   ${neighbor.lqi}`.slice(-3));
+                    `${neighbor.depth}`.padStart(3, ' '),
+                    `${neighbor.lqi}`.padStart(3, ' '));
       }
     }
     console.log('-----------------');

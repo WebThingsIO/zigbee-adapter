@@ -615,7 +615,7 @@ class ZigbeeNode extends Device {
         attrInfo.attrId
       );
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-        type: this.drivergetExplicitRxFrameType(),
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
       });
@@ -1310,7 +1310,7 @@ class ZigbeeNode extends Device {
           ATTR_ID.SSIASZONE.ZONEID,
         ]);
       this.adapter.sendFrameWaitFrameAtFront(readFrame, {
-        type: this.drivergetExplicitRxFrameType(),
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
         callback: () => {
@@ -1345,7 +1345,7 @@ class ZigbeeNode extends Device {
         [[ATTR_ID.SSIASZONE.IASCIEADDR, ourCieAddr]]
       );
       this.adapter.sendFrameWaitFrameAtFront(writeFrame, {
-        type: this.drivergetExplicitRxFrameType(),
+        type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'writeRsp',
         zclSeqNum: writeFrame.zcl.seqNum,
         callback: () => {

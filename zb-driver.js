@@ -53,7 +53,7 @@ class Command {
       prioStr = `p:${this.priority}`;
     }
 
-    const idxStr = `| ${`    ${idx}`.slice(-4)}: ${prioStr} `;
+    const idxStr = `| ${idx.toString().pad(4, ' ')}: ${prioStr} `;
     switch (this.cmdType) {
       case SEND_FRAME: {
         driver.dumpFrame(`${idxStr}SEND:`, this.cmdData, false);
@@ -151,7 +151,7 @@ class ZigbeeDriver {
         for (const attrEntry of frame.zcl.payload) {
           const attrId = attrEntry.attrId;
           const attr = zclId.attr(clusterId, attrId);
-          const attrIdStr = `    ${attrId}`.slice(-5);
+          const attrIdStr = attrId.toString().padStart(5, ' ');
           let s = `${attrIdStr}:${attr ? attr.key : '???'}`;
           if (attrEntry.hasOwnProperty('status')) {
             const status = zclId.status(attrEntry.status);

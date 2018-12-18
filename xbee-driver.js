@@ -218,7 +218,7 @@ class XBeeDriver extends ZigbeeDriver {
                                   {zigBeeStackProfile: 2}));
       configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE));
     }
-    // API Options = 1 allows Explicit Rx frames to ve rcvd
+    // API Options = 1 allows Explicit Rx frames to be rcvd
     // API Options = 3 enables ZDO passthrough
     // i.e. Simple Descriptor Request, Active Endpoint Request
     //      and Match Descriptor Requests which come from an
@@ -491,37 +491,35 @@ class XBeeDriver extends ZigbeeDriver {
   }
 }
 
-const acm = XBeeDriver.atCommandMap = {};
-acm[AT_CMD.API_OPTIONS] = 'apiOptions';
-acm[AT_CMD.API_MODE] = 'apiMode';
-acm[AT_CMD.CONFIGURED_64_BIT_PAN_ID] = 'configuredPanId64';
-acm[AT_CMD.DEVICE_TYPE_IDENTIFIER] = 'deviceTypeIdentifier';
-acm[AT_CMD.ENCRYPTION_ENABLED] = 'encryptionEnabled';
-acm[AT_CMD.ENCRYPTION_OPTIONS] = 'encryptionOptions';
-acm[AT_CMD.NETWORK_ADDR_16_BIT] = 'networkAddr16';
-acm[AT_CMD.NODE_IDENTIFIER] = 'nodeIdentifier';
-acm[AT_CMD.NODE_JOIN_TIME] = 'networkJoinTime';
-acm[AT_CMD.NUM_REMAINING_CHILDREN] = 'numRemainingChildren';
-acm[AT_CMD.OPERATING_16_BIT_PAN_ID] = 'operatingPanId16';
-acm[AT_CMD.OPERATING_64_BIT_PAN_ID] = 'operatingPanId64';
-acm[AT_CMD.OPERATING_CHANNEL] = 'operatingChannel';
-acm[AT_CMD.SCAN_CHANNELS] = 'scanChannels';
-acm[AT_CMD.ZIGBEE_STACK_PROFILE] = 'zigBeeStackProfile';
+XBeeDriver.atCommandMap = {
+  [AT_CMD.API_OPTIONS]: 'apiOptions',
+  [AT_CMD.API_MODE]: 'apiMode',
+  [AT_CMD.CONFIGURED_64_BIT_PAN_ID]: 'configuredPanId64',
+  [AT_CMD.DEVICE_TYPE_IDENTIFIER]: 'deviceTypeIdentifier',
+  [AT_CMD.ENCRYPTION_ENABLED]: 'encryptionEnabled',
+  [AT_CMD.ENCRYPTION_OPTIONS]: 'encryptionOptions',
+  [AT_CMD.NETWORK_ADDR_16_BIT]: 'networkAddr16',
+  [AT_CMD.NODE_IDENTIFIER]: 'nodeIdentifier',
+  [AT_CMD.NODE_JOIN_TIME]: 'networkJoinTime',
+  [AT_CMD.NUM_REMAINING_CHILDREN]: 'numRemainingChildren',
+  [AT_CMD.OPERATING_16_BIT_PAN_ID]: 'operatingPanId16',
+  [AT_CMD.OPERATING_64_BIT_PAN_ID]: 'operatingPanId64',
+  [AT_CMD.OPERATING_CHANNEL]: 'operatingChannel',
+  [AT_CMD.SCAN_CHANNELS]: 'scanChannels',
+  [AT_CMD.ZIGBEE_STACK_PROFILE]: 'zigBeeStackProfile',
+};
 
-const arh = XBeeDriver.atResponseHandler = {};
-arh[AT_CMD.SERIAL_NUMBER_HIGH] =
-  XBeeDriver.prototype.handleAtSerialNumberHigh;
-arh[AT_CMD.SERIAL_NUMBER_LOW] =
-  XBeeDriver.prototype.handleAtSerialNumberLow;
+XBeeDriver.atResponseHandler = {
+  [AT_CMD.SERIAL_NUMBER_HIGH]: XBeeDriver.prototype.handleAtSerialNumberHigh,
+  [AT_CMD.SERIAL_NUMBER_LOW]: XBeeDriver.prototype.handleAtSerialNumberLow,
+};
 
-const fh = XBeeDriver.frameHandler = {};
-fh[C.FRAME_TYPE.AT_COMMAND_RESPONSE] =
-  XBeeDriver.prototype.handleAtResponse;
-fh[C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX] =
-  ZigbeeDriver.prototype.handleExplicitRx;
-fh[C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS] =
-  XBeeDriver.prototype.handleTransmitStatus;
-fh[C.FRAME_TYPE.ROUTE_RECORD] =
-  XBeeDriver.prototype.handleRouteRecord;
+XBeeDriver.frameHandler = {
+  [C.FRAME_TYPE.AT_COMMAND_RESPONSE]: XBeeDriver.prototype.handleAtResponse,
+  [C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX]: ZigbeeDriver.prototype.handleExplicitRx,
+  [C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS]:
+    XBeeDriver.prototype.handleTransmitStatus,
+  [C.FRAME_TYPE.ROUTE_RECORD]: XBeeDriver.prototype.handleRouteRecord,
+};
 
 module.exports = XBeeDriver;
