@@ -192,9 +192,7 @@ class XBeeDriver extends ZigbeeDriver {
       configCommands.push(this.AT(AT_CMD.API_MODE,
                                   {apiMode: 1}));
       configCommands.push(this.AT(AT_CMD.API_MODE));
-    }
 
-    if (configCommands.length > 0) {
       console.log('Setting API mode to 1');
       configCommands.push(this.AT(AT_CMD.WRITE_PARAMETERS));
       this.queueCommandsAtFront(configCommands);

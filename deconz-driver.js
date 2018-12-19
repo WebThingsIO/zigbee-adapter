@@ -463,16 +463,14 @@ class DeconzDriver extends ZigbeeDriver {
   }
 }
 
-const fh = DeconzDriver.frameHandler = {};
-fh[C.FRAME_TYPE.APS_DATA_CONFIRM] =
-  DeconzDriver.prototype.handleApsDataConfirm;
-fh[C.FRAME_TYPE.APS_DATA_INDICATION] =
-  DeconzDriver.prototype.handleApsDataIndication;
-fh[C.FRAME_TYPE.APS_DATA_REQUEST] =
-  DeconzDriver.prototype.handleApsDataRequest;
-fh[C.FRAME_TYPE.DEVICE_STATE] =
-  DeconzDriver.prototype.handleDeviceState;
-fh[C.FRAME_TYPE.DEVICE_STATE_CHANGED] =
-  DeconzDriver.prototype.handleDeviceStateChanged;
+const fh = DeconzDriver.frameHandler = {
+  [C.FRAME_TYPE.APS_DATA_CONFIRM]: DeconzDriver.prototype.handleApsDataConfirm,
+  [C.FRAME_TYPE.APS_DATA_INDICATION]:
+    DeconzDriver.prototype.handleApsDataIndication,
+  [C.FRAME_TYPE.APS_DATA_REQUEST]: DeconzDriver.prototype.handleApsDataRequest,
+  [C.FRAME_TYPE.DEVICE_STATE]: DeconzDriver.prototype.handleDeviceState,
+  [C.FRAME_TYPE.DEVICE_STATE_CHANGED]:
+    DeconzDriver.prototype.handleDeviceStateChanged,
+};
 
 module.exports = DeconzDriver;

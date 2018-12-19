@@ -18,7 +18,7 @@ const XBEE_FTDI_FILTER = {
   // a Zigbee coordinator.
   vendorId: '0403',
   productId: '6001',
-  manufacturer: 'Digi',
+  manufacturer: 'FTDI',
 };
 
 const xbeeSerialProber = new SerialProber({
