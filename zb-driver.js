@@ -53,7 +53,7 @@ class Command {
       prioStr = `p:${this.priority}`;
     }
 
-    const idxStr = `| ${idx.toString().pad(4, ' ')}: ${prioStr} `;
+    const idxStr = `| ${idx.toString().padStart(4, ' ')}: ${prioStr} `;
     switch (this.cmdType) {
       case SEND_FRAME: {
         driver.dumpFrame(`${idxStr}SEND:`, this.cmdData, false);
