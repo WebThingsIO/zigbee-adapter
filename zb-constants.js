@@ -102,7 +102,7 @@ const COLOR_CAPABILITY = {
   TEMPERATURE: (1 << 4),
 };
 
-// COLOR_MDOE describes values for the colorMode attribute from
+// COLOR_MODE describes values for the colorMode attribute from
 // the lightingColorCtrl cluster.
 const COLOR_MODE = {
   HUE_SAT: 0,

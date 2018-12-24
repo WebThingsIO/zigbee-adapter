@@ -1041,7 +1041,6 @@ class ZigbeeAdapter extends Adapter {
         `permitDuration: ${permitJoinFrame.permitDuration}`;
     }
 
-
     this.queueCommandsAtFront([
       this.driver.permitJoinCommands(seconds),
       new Command(SEND_FRAME, permitJoinFrame),
@@ -1451,20 +1450,11 @@ class ZigbeeAdapter extends Adapter {
     if (!node) {
       return;
     }
-    for (const attrEntry of frame.zcl.payload) {
-      if (attrEntry.status != 0) {
-        // Attribute not supported. For colorCapabilites and colorMode
-        // we use a value of 0 to cover this case.
-        attrEntry.data = 0;
-      }
-      switch (attrEntry.attrId) {
-        case ATTR_ID.LIGHTINGCOLORCTRL.COLORCAPABILITIES:
-          node.colorCapabilities = attrEntry.attrData;
-          break;
-        case ATTR_ID.LIGHTINGCOLORCTRL.COLORMODE:
-          node.colorMode = attrEntry.attrData;
-          break;
-      }
+    node.handleGenericZclReadRsp(frame);
+    if (DEBUG_flow) {
+      console.log('populateClassifierAttributesLightingControl:',
+                  'colorCapabilities =', node.colorCapabilities,
+                  'colorMode =', node.colorMode);
     }
     // The sourceEndpoint comes back as a hex string. Convert it to decimal
     const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
@@ -1631,29 +1621,30 @@ class ZigbeeAdapter extends Adapter {
   }
 }
 
-const zch = ZigbeeAdapter.zdoClusterHandler = {};
-zch[zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE] =
-  ZigbeeAdapter.prototype.handleActiveEndpointsResponse;
-zch[zdo.CLUSTER_ID.IEEE_ADDRESS_RESPONSE] =
-  ZigbeeAdapter.prototype.handleIEEEAddressResponse;
-zch[zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE] =
-  ZigbeeAdapter.prototype.handleNetworkAddressResponse;
-zch[zdo.CLUSTER_ID.MANAGEMENT_BIND_RESPONSE] =
-  ZigbeeAdapter.prototype.handleManagementBindResponse;
-zch[zdo.CLUSTER_ID.MANAGEMENT_LEAVE_RESPONSE] =
-  ZigbeeAdapter.prototype.handleManagementLeaveResponse;
-zch[zdo.CLUSTER_ID.MANAGEMENT_LQI_RESPONSE] =
-  ZigbeeAdapter.prototype.handleManagementLqiResponse;
-zch[zdo.CLUSTER_ID.MANAGEMENT_RTG_RESPONSE] =
-  ZigbeeAdapter.prototype.handleManagementRtgResponse;
-zch[zdo.CLUSTER_ID.MATCH_DESCRIPTOR_REQUEST] =
-  ZigbeeAdapter.prototype.handleMatchDescriptorRequest;
-zch[zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE] =
-  ZigbeeAdapter.prototype.handleSimpleDescriptorResponse;
-zch[zdo.CLUSTER_ID.END_DEVICE_ANNOUNCEMENT] =
-  ZigbeeAdapter.prototype.handleEndDeviceAnnouncement;
-zch[zdo.CLUSTER_ID.BIND_RESPONSE] =
-  ZigbeeAdapter.prototype.handleBindResponse;
+ZigbeeAdapter.zdoClusterHandler = {
+  [zdo.CLUSTER_ID.ACTIVE_ENDPOINTS_RESPONSE]:
+    ZigbeeAdapter.prototype.handleActiveEndpointsResponse,
+  [zdo.CLUSTER_ID.IEEE_ADDRESS_RESPONSE]:
+    ZigbeeAdapter.prototype.handleIEEEAddressResponse,
+  [zdo.CLUSTER_ID.NETWORK_ADDRESS_RESPONSE]:
+    ZigbeeAdapter.prototype.handleNetworkAddressResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_BIND_RESPONSE]:
+    ZigbeeAdapter.prototype.handleManagementBindResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_LEAVE_RESPONSE]:
+    ZigbeeAdapter.prototype.handleManagementLeaveResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_LQI_RESPONSE]:
+    ZigbeeAdapter.prototype.handleManagementLqiResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_RTG_RESPONSE]:
+    ZigbeeAdapter.prototype.handleManagementRtgResponse,
+  [zdo.CLUSTER_ID.MATCH_DESCRIPTOR_REQUEST]:
+    ZigbeeAdapter.prototype.handleMatchDescriptorRequest,
+  [zdo.CLUSTER_ID.SIMPLE_DESCRIPTOR_RESPONSE]:
+    ZigbeeAdapter.prototype.handleSimpleDescriptorResponse,
+  [zdo.CLUSTER_ID.END_DEVICE_ANNOUNCEMENT]:
+    ZigbeeAdapter.prototype.handleEndDeviceAnnouncement,
+  [zdo.CLUSTER_ID.BIND_RESPONSE]:
+    ZigbeeAdapter.prototype.handleBindResponse,
+};
 
 registerFamilies();
 

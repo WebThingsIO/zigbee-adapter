@@ -696,8 +696,9 @@ class ZigbeeDriver {
         case RESOLVE_SET_PROPERTY: {
           const property = cmd.cmdData;
           if (DEBUG_frameDetail || DEBUG_flow) {
-            console.log('RESOLVE_SET_PROPERTY', property.device.addr64,
-                        property.name);
+            console.log('RESOLVE_SET_PROPERTY',
+                        property.device.addr64, property.name,
+                        'value:', property.value);
           }
           const deferredSet = property.deferredSet;
           if (deferredSet) {

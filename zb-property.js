@@ -179,9 +179,10 @@ class ZigbeeProperty extends Property {
     if (levelProperty) {
       level = levelProperty.value;
     }
-    console.log(`parseColorAttr: hue:${hue} sat:${sat}, level:${level}`);
     const color = new Color({h: hue, s: sat, v: level});
     const colorStr = color.rgb().hex();
+    console.log(`parseColorAttr: colorStr: ${colorStr}`,
+                `hue:${hue} sat:${sat}, level:${level}`);
     return [colorStr, colorStr];
   }
 
@@ -716,14 +717,18 @@ class ZigbeeProperty extends Property {
 
     const levelProperty = this.device.findProperty('_level');
     if (levelProperty) {
-      this.device.sendZclFrameWaitExplicitRx(
-        levelProperty,
-        levelProperty.valueToZclData(level));
+      const zclData = levelProperty.valueToZclData(level);
+      this.device.sendZclFrameWaitExplicitRx(levelProperty, zclData);
     }
 
     const attrHue = Math.round(hue / 360 * 254);
     const attrSat = Math.round(sat / 100 * 254);
-    console.log(`setColorValue: hue:${attrHue}, sat:${attrSat}`);
+    console.log(`setColorValue: propertyValue: ${propertyValue}`,
+                `hue:${hue}`,
+                `sat:${sat}`,
+                `level:${level}`,
+                `attrHue:${attrHue}`,
+                `attrSat:${attrSat}`);
     return [
       {
         frameCntl: {frameType: 1},
