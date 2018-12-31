@@ -149,10 +149,13 @@ class ZigbeeDriver {
       case 'write':
       case 'writeRsp': {
         for (const attrEntry of frame.zcl.payload) {
-          const attrId = attrEntry.attrId;
-          const attr = zclId.attr(clusterId, attrId);
-          const attrIdStr = attrId.toString().padStart(5, ' ');
-          let s = `${attrIdStr}:${attr ? attr.key : '???'}`;
+          let s = '';
+          if (attrEntry.hasOwnProperty('attrId')) {
+            const attrId = attrEntry.attrId;
+            const attr = zclId.attr(clusterId, attrId);
+            const attrIdStr = attrId.toString().padStart(5, ' ');
+            s += ` ${attrIdStr}:${attr ? attr.key : '???'}`;
+          }
           if (attrEntry.hasOwnProperty('status')) {
             const status = zclId.status(attrEntry.status);
             s += ` ${attrEntry.status}:${status ? status.key : '???'}`;
@@ -169,7 +172,7 @@ class ZigbeeDriver {
               s += ` ${attrEntry.attrData}`;
             }
           }
-          console.log(label, s);
+          console.log(label, s.slice(1));
         }
         break;
       }
