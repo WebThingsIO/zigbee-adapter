@@ -796,6 +796,14 @@ class ZigbeeNode extends Device {
       // readRsp has a status but report doesn't
       if (attrEntry.hasOwnProperty('status') &&
           attrEntry.status != STATUS.SUCCESS) {
+        if (frame.clusterId == CLUSTER_ID.GENBASIC_HEX &&
+            attrEntry.attrId == ATTR_ID.GENBASIC.MODELID) {
+          // We need the modelId to be set, even if it is an unsupported
+          // attribute. The default nrf52840 zigbee devices don't
+          // support the modelId, so doing this prevents an infinite loop
+          // trying to retrieve the modelId.
+          this.modelId = '';
+        }
         continue;
       }
       switch (frame.clusterId) {
@@ -829,6 +837,19 @@ class ZigbeeNode extends Device {
               break;
             case ATTR_ID.GENPOLLCTRL.FASTPOLLTIMEOUT:
               this.fastPollTimeout = attrEntry.attrData;
+              break;
+          }
+          break;
+
+        case CLUSTER_ID.LIGHTINGCOLORCTRL_HEX:
+          switch (attrEntry.attrId) {
+            case ATTR_ID.LIGHTINGCOLORCTRL.COLORCAPABILITIES:
+              this.colorCapabilities = attrEntry.attrData;
+              console.log('Stored colorCapabilities:', this.colorCapabilities);
+              break;
+            case ATTR_ID.LIGHTINGCOLORCTRL.COLORMODE:
+              this.colorMode = attrEntry.attrData;
+              console.log('Stored colorMode:', this.colorMode);
               break;
           }
           break;

@@ -1465,14 +1465,17 @@ class ZigbeeClassifier {
       // profile", which means that we'll never get reports.
       property.fireAndForget = true;
     }
-    DEBUG && console.log('addProperty:   fireAndForget =',
-                         property.fireAndForget);
 
     property.configReportNeeded = false;
     if (configReport && attr && !property.fireAndForget) {
       property.configReportNeeded = true;
       property.configReport = configReport;
+    } else {
+      // If we don't enable config reports, then we really need to set
+      // fireAndForget, since we're not going to get notified of changes.
+      property.fireAndForget = true;
     }
+
     if (name[0] == '_') {
       property.visible = false;
     }
@@ -1481,6 +1484,7 @@ class ZigbeeClassifier {
     property.bindNeeded = property.configReportNeeded;
 
     DEBUG && console.log('addProperty:   ',
+                         'fireAndForget:', property.fireAndForget,
                          'bindNeeded:', property.bindNeeded,
                          'configReportNeeded:', property.configReportNeeded,
                          'initialReadNeeded:', property.initialReadNeeded);
@@ -1529,6 +1533,26 @@ class ZigbeeClassifier {
     const ssIasZoneEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SSIASZONE_HEX);
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
+
+    if (node.lightingColorCtrlEndpoint) {
+      // Fix up colorCapabilities, if colorMode is present.
+      if (!node.hasOwnProperty('colorCapabilities')) {
+        node.colorCapabilities = 0;
+      }
+      if (node.hasOwnProperty('colorMode')) {
+        switch (node.colorMode) {
+          case COLOR_MODE.HUE_SAT:
+            node.colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
+            break;
+          case COLOR_MODE.XY:
+            node.colorCapabilities |= COLOR_CAPABILITY.XY;
+            break;
+          case COLOR_MODE.TEMPERATURE:
+            node.colorCapabilities |= COLOR_CAPABILITY.TEMPERATURE;
+            break;
+        }
+      }
+    }
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
@@ -1590,7 +1614,7 @@ class ZigbeeClassifier {
       return;
     }
     if (genLevelCtrlEndpoint) {
-      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
+      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint);
       return;
     }
     if (genOnOffEndpoint) {
@@ -1717,49 +1741,39 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genOnOffEndpoint);
   }
 
-  initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
-    let colorSupported = false;
+  initMultiLevelSwitch(node, genLevelCtrlEndpoint) {
     const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                                 node.colorCapabilities) || 0;
-    const colorMode = (node.hasOwnProperty('colorMode') &&
-                        node.colorMode) || 0;
-    if (lightLinkEndpoint || node.lightingColorCtrlEndpoint) {
-      // It looks like a
+    if (node.lightingColorCtrlEndpoint) {
+      // It looks like a light bulb
       if ((colorCapabilities &
            (COLOR_CAPABILITY.HUE_SAT | COLOR_CAPABILITY.XY)) != 0) {
         // Hue and Saturation (or XY) are supported
-        colorSupported = true;
+        if ((colorCapabilities & COLOR_CAPABILITY.HUE_SAT) != 0) {
+          this.addColorProperty(node, node.lightingColorCtrlEndpoint);
+        } else if ((colorCapabilities & COLOR_CAPABILITY.XY) != 0) {
+          this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
+        }
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
         node['@type'] = ['OnOffSwitch', 'Light', 'ColorControl'];
       } else {
+        if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0) {
+          // Color temperature is basically a specialized way of selecting
+          // a color, so we don't include this property with full-color
+          // bulbs.
+          this.addColorTemperatureProperty(node,
+                                           node.lightingColorCtrlEndpoint);
+        }
+        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
         node.type = Constants.THING_TYPE_DIMMABLE_LIGHT;
         node['@type'] = ['OnOffSwitch', 'Light'];
       }
     } else {
+      this.addLevelProperty(node, genLevelCtrlEndpoint);
       node.type = Constants.THING_TYPE_MULTI_LEVEL_SWITCH;
       node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch'];
     }
     this.addOnProperty(node, genLevelCtrlEndpoint);
-    if (colorSupported) {
-      if ((colorCapabilities & COLOR_CAPABILITY.HUE_SAT) != 0) {
-        this.addColorProperty(node, node.lightingColorCtrlEndpoint);
-      } else if ((colorCapabilities & COLOR_CAPABILITY.XY) != 0) {
-        this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
-      }
-    } else {
-      if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0 ||
-          (colorMode & COLOR_MODE.TEMPERATURE) != 0) {
-        // Color temperature is basically a specialized way of selecting
-        // a color, so we don't include this property with full-color
-        // bulbs.
-        this.addColorTemperatureProperty(node, node.lightingColorCtrlEndpoint);
-      }
-      if (lightLinkEndpoint) {
-        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
-      } else {
-        this.addLevelProperty(node, genLevelCtrlEndpoint);
-      }
-    }
   }
 
   initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
@@ -1780,7 +1794,6 @@ class ZigbeeClassifier {
       },
     });
 
-    console.log('initMultiLevelButton: modelId:', node.modelId);
     switch (node.modelId) {
       case '3130':
         // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
