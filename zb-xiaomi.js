@@ -141,6 +141,61 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.sensor_ht': {       // WSDCGQ01LM (round)
+    name: 'temperature',
+    // TODO: Change to TemperatureSensor once it display properly
+    '@type': ['MultiLevelSensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.TEMPERATURE_HEX,
+          CLUSTER_ID.RELATIVE_HUMIDITY_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      temperature: {
+        descr: {
+          // TODO: Change to TemperatureProperty once it displays properly
+          '@type': 'LevelProperty',
+          label: 'Temperature',
+          type: 'number',
+          unit: 'celsius',
+          minimum: -20,
+          maximum: 60,
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.TEMPERATURE,
+        attr: 'measuredValue',
+        value: 0,
+        parseValueFromAttr: 'parseTemperatureMeasurementAttr',
+      },
+      humidity: {
+        descr: {
+          '@type': 'LevelProperty',
+          label: 'Humidity',
+          type: 'number',
+          unit: 'percent',
+          minimum: 0,
+          maximum: 100,
+          description: 'Relative Humidity',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.RELATIVE_HUMIDITY,
+        attr: 'measuredValue',
+        value: 0,
+        parseValueFromAttr: 'parseNumericHundredthsAttr',
+      },
+    },
+  },
 };
 
 class XiaomiFamily extends ZigbeeFamily {
