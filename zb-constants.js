@@ -46,6 +46,7 @@ const CLUSTER_ID = {
   LIGHTINGCOLORCTRL: zclId.cluster('lightingColorCtrl').value,
   LIGHTLINK: zclId.cluster('lightLink').value,
   OCCUPANCY_SENSOR: zclId.cluster('msOccupancySensing').value,
+  PRESSURE: zclId.cluster('msPressureMeasurement').value,
   RELATIVE_HUMIDITY: zclId.cluster('msRelativeHumidity').value,
   SEMETERING: zclId.cluster('seMetering').value,
   SSIASZONE: zclId.cluster('ssIasZone').value,
