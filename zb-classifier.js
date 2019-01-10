@@ -407,7 +407,7 @@ class ZigbeeClassifier {
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -913,7 +913,7 @@ class ZigbeeClassifier {
       '_minTemp',                     // name
       {                               // property description
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -928,7 +928,7 @@ class ZigbeeClassifier {
       '_maxTemp',                     // name
       {                               // property description
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -945,7 +945,7 @@ class ZigbeeClassifier {
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -968,7 +968,7 @@ class ZigbeeClassifier {
         '@type': 'LevelProperty',
         label: 'Temperature',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
         minimum: 0,
         maximum: 40,
@@ -1019,7 +1019,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'DeadBand',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         minimum: 1,
         maximum: 2.5,
         readOnly: true,
@@ -1038,7 +1038,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'Abs Max Heat Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -1054,7 +1054,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'Abs Min Heat Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -1070,7 +1070,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Max Heat Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1085,7 +1085,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Min Heat Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1100,7 +1100,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Heat Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1116,7 +1116,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'Abs Max Cool Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -1132,7 +1132,7 @@ class ZigbeeClassifier {
       {                               // property description
         label: 'Abs Min Cool Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -1148,7 +1148,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Max Cool Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1163,7 +1163,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Min Cool Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1178,7 +1178,7 @@ class ZigbeeClassifier {
       {                                 // property description
         label: 'Cool Target',
         type: 'number',
-        unit: 'celsius',
+        unit: 'degree celsius',
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
