@@ -143,8 +143,7 @@ const MODEL_IDS = {
   },
   'lumi.sensor_ht': {       // WSDCGQ01LM (round)
     name: 'temperature',
-    // TODO: Change to TemperatureSensor once it display properly
-    '@type': ['MultiLevelSensor'],
+    '@type': ['TemperatureSensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
@@ -160,8 +159,7 @@ const MODEL_IDS = {
     properties: {
       temperature: {
         descr: {
-          // TODO: Change to TemperatureProperty once it displays properly
-          '@type': 'LevelProperty',
+          '@type': 'TemperatureProperty',
           label: 'Temperature',
           type: 'number',
           unit: 'degree celsius',
@@ -198,8 +196,7 @@ const MODEL_IDS = {
   },
   'lumi.weather': {       // WSDCGQ11LM (square)
     name: 'temperature',
-    // TODO: Change to TemperatureSensor once it display properly
-    '@type': ['MultiLevelSensor'],
+    '@type': ['TemperatureSensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
@@ -216,8 +213,7 @@ const MODEL_IDS = {
     properties: {
       temperature: {
         descr: {
-          // TODO: Change to TemperatureProperty once it displays properly
-          '@type': 'LevelProperty',
+          '@type': 'TemperatureProperty',
           label: 'Temperature',
           type: 'number',
           unit: 'degree celsius',

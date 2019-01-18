@@ -463,7 +463,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 }
 
-const fh = DeconzDriver.frameHandler = {
+DeconzDriver.frameHandler = {
   [C.FRAME_TYPE.APS_DATA_CONFIRM]: DeconzDriver.prototype.handleApsDataConfirm,
   [C.FRAME_TYPE.APS_DATA_INDICATION]:
     DeconzDriver.prototype.handleApsDataIndication,
