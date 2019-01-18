@@ -418,6 +418,10 @@ class ZigbeeClassifier {
       'parseNumericAttr',             // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
+
+    if (!node['@type'].includes('TemperatureSensor')) {
+      node['@type'].push('TemperatureSensor');
+    }
   }
 
   addLevelProperty(node, genLevelCtrlEndpoint) {
@@ -956,6 +960,10 @@ class ZigbeeClassifier {
       'parseTemperatureMeasurementAttr', // parseValueFromAttr
       CONFIG_REPORT_TEMPERATURE
     );
+
+    if (!node['@type'].includes('TemperatureSensor')) {
+      node['@type'].push('TemperatureSensor');
+    }
   }
 
   addThermostatProperties(node, hvacThermostatEndpoint,
@@ -1578,6 +1586,33 @@ class ZigbeeClassifier {
       console.log('                  zoneType =', node.zoneType);
     }
 
+    if (typeof node.zoneType !== 'undefined') {
+      this.initBinarySensorFromZoneType(node);
+    } else if (msOccupancySensingEndpoint) {
+      this.initOccupancySensor(node, msOccupancySensingEndpoint);
+    } else if (haElectricalEndpoint &&
+               !lightLinkEndpoint &&
+               !node.lightingColorCtrlEndpoint) {
+      this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
+    } else if (seMeteringEndpoint &&
+               !lightLinkEndpoint &&
+               !node.lightingColorCtrlEndpoint) {
+      this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
+    } else if (genLevelCtrlEndpoint) {
+      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint);
+    } else if (genOnOffEndpoint) {
+      this.initOnOffSwitch(node, genOnOffEndpoint);
+    } else if (genLevelCtrlOutputEndpoint) {
+      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+    } else if (hvacThermostatEndpoint) {
+      this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
+    } else if (doorLockEndpoint) {
+      this.initDoorLock(node, doorLockEndpoint);
+    } else if (genBinaryInputEndpoint) {
+      this.initBinarySensor(node, genBinaryInputEndpoint);
+    }
+
+    // Add extra properties, if necessary.
     if (msTemperatureEndpoint) {
       this.addTemperatureSensorProperty(node, msTemperatureEndpoint);
     } else if (genDeviceTempCfgEndpoint) {
@@ -1589,55 +1624,6 @@ class ZigbeeClassifier {
     if (genPowerCfgEndpoint) {
       this.addPowerCfgVoltageProperty(node, genPowerCfgEndpoint);
     }
-
-    if (typeof node.zoneType !== 'undefined') {
-      this.initBinarySensorFromZoneType(node);
-      return;
-    }
-
-    if (msOccupancySensingEndpoint) {
-      this.initOccupancySensor(node, msOccupancySensingEndpoint);
-      return;
-    }
-
-    if (haElectricalEndpoint &&
-        !lightLinkEndpoint &&
-        !node.lightingColorCtrlEndpoint) {
-      this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
-      return;
-    }
-    if (seMeteringEndpoint &&
-        !lightLinkEndpoint &&
-        !node.lightingColorCtrlEndpoint) {
-      this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
-      return;
-    }
-    if (genLevelCtrlEndpoint) {
-      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint);
-      return;
-    }
-    if (genOnOffEndpoint) {
-      this.initOnOffSwitch(node, genOnOffEndpoint);
-      return;
-    }
-    if (genLevelCtrlOutputEndpoint) {
-      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
-      return;
-    }
-    if (hvacThermostatEndpoint) {
-      this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
-      return;
-    }
-    if (doorLockEndpoint) {
-      this.initDoorLock(node, doorLockEndpoint);
-      return;
-    }
-    if (genBinaryInputEndpoint) {
-      this.initBinarySensor(node, genBinaryInputEndpoint);
-      // return;
-    }
-    // The linter complains if the above return is present.
-    // Uncomment this return if you add any code here.
   }
 
   classify(node) {
@@ -1647,6 +1633,10 @@ class ZigbeeClassifier {
       return;
     }
     node.type = 'thing'; // Replace with THING_TYPE_THING once it exists
+
+    if (!node.hasOwnProperty('@type')) {
+      node['@type'] = [];
+    }
 
     this.classifyInternal(node);
 
@@ -1868,7 +1858,7 @@ class ZigbeeClassifier {
 
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     node.name = `${node.id}-thermostat`;
-    // TODO: Replace with Thermostat Capability
+    // TODO: Add Thermostat Capability
     node['@type'] = ['TemperatureSensor'];
     this.addThermostatProperties(node, hvacThermostatEndpoint,
                                  hvacFanControlEndpoint);
