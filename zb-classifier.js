@@ -74,10 +74,10 @@ const ZONE_TYPE_NAME = {
   },
   0x002a: {
     name: 'water',
-    '@type': ['BinarySensor'],
+    '@type': ['LeakSensor'],
     propertyName: 'on',
     propertyDescr: {
-      '@type': 'BooleanProperty',
+      '@type': 'LeakProperty',
       type: 'boolean',
       label: 'Water',
       description: 'Water Sensor',
@@ -964,8 +964,7 @@ class ZigbeeClassifier {
       node,                           // device
       'temperature',                  // name
       {                               // property description
-        // TODO: Replace with TemperatureProperty
-        '@type': 'LevelProperty',
+        '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
         unit: 'degree celsius',
@@ -1870,7 +1869,7 @@ class ZigbeeClassifier {
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     node.name = `${node.id}-thermostat`;
     // TODO: Replace with Thermostat Capability
-    node['@type'] = ['MultiLevelSensor'];
+    node['@type'] = ['TemperatureSensor'];
     this.addThermostatProperties(node, hvacThermostatEndpoint,
                                  hvacFanControlEndpoint);
   }
