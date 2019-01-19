@@ -384,7 +384,7 @@ class ZigbeeAdapter extends Adapter {
         node = this.findNodeByAddr16(addr16);
         if (!node) {
           // We got a frame with a broadcast address and a 16-bit address
-          // and we don't know the 16-bit address. Send out a request to
+          // and we don't know the 64-bit address. Send out a request to
           // determine the 64-bit address. At least we'll be able to deal
           // with the next frame.
 
@@ -392,7 +392,7 @@ class ZigbeeAdapter extends Adapter {
             destination64: 'ffffffffffffffff',
             destination16: addr16,
             clusterId: zdo.CLUSTER_ID.IEEE_ADDRESS_REQUEST,
-            addr64: 'ffffffffffffffff',
+            addr16: addr16,
             requestType: 0, // 0 = Single Device Response
             startIndex: 0,
           });
