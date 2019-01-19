@@ -1424,9 +1424,9 @@ class ZigbeeAdapter extends Adapter {
           zclSeqNum: readFrame.zcl.seqNum,
           callback: () => {
             node.readingZoneType = false;
-            if (this.hasOwnProperty('zoneType')) {
-              this.setClassifierAttributesPopulated(this,
-                                                    this.ssIasZoneEndpoint);
+            if (node.hasOwnProperty('zoneType')) {
+              this.setClassifierAttributesPopulated(node,
+                                                    node.ssIasZoneEndpoint);
             }
           },
           timeoutFunc: () => {
