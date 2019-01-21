@@ -2974,16 +2974,16 @@ yallist@^3.0.0, yallist@^3.0.2:
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.0.3.tgz#b4b049e314be545e3ce802236d6cd22cd91c3de9"
   integrity sha512-S+Zk8DEWE6oKpV+vI3qWkaK+jSbIK86pCwe2IF/xwIpQ8jEuxpw9NyaGjmp9+BoJv5FV2piqCDcoCtStppiq2A==
 
-zcl-id@^0.4.0, zcl-id@dhylands/zcl-id#moziot-changes:
-  version "0.4.0"
-  resolved "https://codeload.github.com/dhylands/zcl-id/tar.gz/4a81ca5170371fa183b79fea9d843917727078aa"
+zcl-id@dhylands/zcl-id#moziot-changes:
+  version "0.4.1-moziot"
+  resolved "https://codeload.github.com/dhylands/zcl-id/tar.gz/476857d37cba9866485f45a38d3313b388251415"
   dependencies:
     busyman "^0.3.0"
     enum "^2.5.0"
 
 zcl-packet@dhylands/zcl-packet#moziot-changes:
-  version "0.2.4"
-  resolved "https://codeload.github.com/dhylands/zcl-packet/tar.gz/98fb5427a3c4a80a02358be4d0f7cab82449592e"
+  version "0.2.5-moziot"
+  resolved "https://codeload.github.com/dhylands/zcl-packet/tar.gz/21fabe8a1e6ddfcb1989280f30dcc50b0f133284"
   dependencies:
     concentrate "^0.2.3"
     dissolve-chunks "^1.3.0"
@@ -2991,10 +2991,11 @@ zcl-packet@dhylands/zcl-packet#moziot-changes:
     zcl-id dhylands/zcl-id#moziot-changes
 
 "zigbee-zdo@git+https://github.com/mozilla-iot/zigbee-zdo.git":
-  version "1.0.0"
-  resolved "git+https://github.com/mozilla-iot/zigbee-zdo.git#0d5605a36add97b1ceeb6c72b1327aa6a0eef405"
+  version "1.0.1"
+  resolved "git+https://github.com/mozilla-iot/zigbee-zdo.git#85187b02aa1d253122b47015685a1a7a805ad763"
   dependencies:
     assert "^1.4.1"
     buffer-builder "^0.2.0"
     buffer-parser "^0.2.0"
-    zcl-id "^0.4.0"
+    buffer-reader "^0.1.0"
+    zcl-id dhylands/zcl-id#moziot-changes
