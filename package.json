@@ -26,8 +26,8 @@
     "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
     "serialport": "^6.2.2",
     "xbee-api": "^0.5.6",
-    "zcl-id": "^0.4.0",
-    "zcl-packet": "dhylands/zcl-packet#add-genOta-meta",
+    "zcl-id": "dhylands/zcl-id#moziot-changes",
+    "zcl-packet": "dhylands/zcl-packet#moziot-changes",
     "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {

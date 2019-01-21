@@ -181,7 +181,7 @@ class ZigbeeAdapter extends Adapter {
     }
     const node = this.nodes[frame.nwkAddr64];
     if (!node) {
-      console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
+      console.log('handleNetworkAddressResponse: Skipping:', node.nwkAddr64,
                   'due to unknown addr64');
       return;
     }
