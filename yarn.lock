@@ -2991,8 +2991,8 @@ zcl-packet@dhylands/zcl-packet#moziot-changes:
     zcl-id dhylands/zcl-id#moziot-changes
 
 "zigbee-zdo@git+https://github.com/mozilla-iot/zigbee-zdo.git":
-  version "1.0.1"
-  resolved "git+https://github.com/mozilla-iot/zigbee-zdo.git#85187b02aa1d253122b47015685a1a7a805ad763"
+  version "1.0.2"
+  resolved "git+https://github.com/mozilla-iot/zigbee-zdo.git#02258fb1280a7898358a6ce814e87e2a48f7f555"
   dependencies:
     assert "^1.4.1"
     buffer-builder "^0.2.0"
