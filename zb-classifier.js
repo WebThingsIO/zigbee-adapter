@@ -19,6 +19,7 @@ const {
   HVAC_FAN_SEQ,
   PROFILE_ID,
   THERMOSTAT_MODE,
+  ZLL_DEVICE_ID,
   ZONE_STATUS,
 } = require('./zb-constants');
 
@@ -1599,7 +1600,7 @@ class ZigbeeClassifier {
                !node.lightingColorCtrlEndpoint) {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
     } else if (genLevelCtrlEndpoint) {
-      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint);
+      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
     } else if (genOnOffEndpoint) {
       this.initOnOffSwitch(node, genOnOffEndpoint);
     } else if (genLevelCtrlOutputEndpoint) {
@@ -1730,10 +1731,32 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genOnOffEndpoint);
   }
 
-  initMultiLevelSwitch(node, genLevelCtrlEndpoint) {
+  initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
     const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                                 node.colorCapabilities) || 0;
+    let isLight = false;
     if (node.lightingColorCtrlEndpoint) {
+      // If it has a lightingColorCtrl endpoint, then we assume its a light
+      // Not all lights support ZLL. In particular, the Syvlania GardenSpot
+      // lights are ZHA only.
+      isLight = true;
+    }
+    if (lightLinkEndpoint && node.activeEndpoints[lightLinkEndpoint].deviceId) {
+      // The device supports ZLL, check the deviceId associated with the ZLL
+      // endpoint to see if its a light or not.
+      const zllDeviceId = node.activeEndpoints[lightLinkEndpoint].deviceId;
+      isLight = ZLL_DEVICE_ID.isLight(zllDeviceId);
+      if (zllDeviceId == ZLL_DEVICE_ID.ON_OFF_SWITCH) {
+        // This isn't really a multi-level switch even though it has a level
+        // control. So call the correct routine.
+        // The IKEA outlet is an example of a device which falls into this
+        // category.
+        this.initOnOffSwitch(node, genLevelCtrlEndpoint);
+        return;
+      }
+    }
+
+    if (isLight) {
       // It looks like a light bulb
       if ((colorCapabilities &
            (COLOR_CAPABILITY.HUE_SAT | COLOR_CAPABILITY.XY)) != 0) {

@@ -211,6 +211,31 @@ const HVAC_FAN_SEQ = [
   'On/Auto',              // 4
 ];
 
+// ZLL Device Id describes device IDs from the ZLL spec.
+const ZLL_DEVICE_ID = {
+  ON_OFF_LIGHT: '0000',
+  ON_OFF_SWITCH: '0010',
+  DIMMABLE_LIGHT: '0100',
+  DIMMABLE_SWITCH: '0110',
+  COLOR_LIGHT: '0200',
+  EXTENDED_COLOR_LIGHT: '0210',
+  COLOR_TEMPERATURE_LIHT: '0220',
+  COLOR_CONTROLLER: '0800',
+  COLOR_SCENE_CONTROLLER: '0810',
+  NON_COLOR_CONTROLLER: '0820',
+  NON_COLOR_SCENE_CONTROLLER: '0830',
+  CONTROL_BRIDGE: '0840',
+  ON_OFF_SENSOR: '0850',
+
+  isLight: function isLight(deviceId) {
+    return deviceId == ZLL_DEVICE_ID.ON_OFF_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.DIMMABLE_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIHT;
+  },
+};
+
 // ZONE_STATUS describes values for the zoneStatus attribute from
 // the ssIasZone cluster.
 const ZONE_STATUS = {
@@ -236,5 +261,6 @@ module.exports = {
   THERMOSTAT_MODE,
   THERMOSTAT_STATE,
   UNKNOWN_ADDR_16,
+  ZLL_DEVICE_ID,
   ZONE_STATUS,
 };

@@ -935,6 +935,11 @@ class ZigbeeAdapter extends Adapter {
       console.log(`removeThing(${node.addr64})`);
     }
     node.removed = true;
+    if (node.name == node.defaultName) {
+      // Set the name to the empty string. This will allow the classifier
+      // to assign a new default name.
+      node.name = '';
+    }
     this.managementLeave(node);
   }
 
