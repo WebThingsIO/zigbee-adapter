@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -24,7 +24,6 @@
     "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
     "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git",
     "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
-    "serialport": "^6.2.2",
     "xbee-api": "^0.5.6",
     "zcl-id": "dhylands/zcl-id#moziot-changes",
     "zcl-packet": "dhylands/zcl-packet#moziot-changes",
