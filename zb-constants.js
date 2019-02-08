@@ -113,13 +113,6 @@ const COLOR_MODE = {
   TEMPERATURE: 2,
 };
 
-const DEVICE_ID = {
-  ONOFFSWITCH: zclId.device('HA', 'onOffSwitch').value,
-  ONOFFOUTPUT: zclId.device('HA', 'onOffOutput').value,
-  SMART_PLUG: zclId.device('HA', 'smartPlug').value,
-};
-addHexValues(DEVICE_ID);
-
 // Server in this context means "server of the cluster"
 const DIR = {
   CLIENT_TO_SERVER: 0,
@@ -212,6 +205,22 @@ const HVAC_FAN_SEQ = [
   'On/Auto',              // 4
 ];
 
+const ZHA_DEVICE_ID = {
+  ON_OFF_SWITCH: '0000',
+  ON_OFF_OUTPUT: '0002',
+  SMART_PLUG: '0051',
+  ON_OFF_LIGHT: '0100',
+  DIMMABLE_LIGHT: '0101',
+  COLORED_DIMMABLE_LIGHT: '0102',
+  ON_OFF_LIGHT_SWITCH: '0103',
+
+  isLight: function isLight(deviceId) {
+    return deviceId == ZHA_DEVICE_ID.ON_OFF_LIGHT ||
+           deviceId == ZHA_DEVICE_ID.DIMMABLE_LIGHT ||
+           deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
+  },
+};
+
 // ZLL Device Id describes device IDs from the ZLL spec.
 const ZLL_DEVICE_ID = {
   ON_OFF_LIGHT: '0000',
@@ -251,7 +260,6 @@ module.exports = {
   CLUSTER_ID,
   COLOR_CAPABILITY,
   COLOR_MODE,
-  DEVICE_ID,
   DIR,
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_MODE,
@@ -262,6 +270,7 @@ module.exports = {
   THERMOSTAT_MODE,
   THERMOSTAT_STATE,
   UNKNOWN_ADDR_16,
+  ZHA_DEVICE_ID,
   ZLL_DEVICE_ID,
   ZONE_STATUS,
 };
