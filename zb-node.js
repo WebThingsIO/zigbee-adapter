@@ -183,6 +183,11 @@ class ZigbeeNode extends Device {
     dict.activeEndpoints = cloneDeep(this.activeEndpoints);
     dict.isCoordinator = this.isCoordinator;
     dict.rebindRequired = this.rebindRequired;
+    for (const field of DEVICE_INFO_FIELDS) {
+      if (this.hasOwnProperty(field)) {
+        dict[field] = this[field];
+      }
+    }
     for (const endpointNum in dict.activeEndpoints) {
       const endpoint = dict.activeEndpoints[endpointNum];
       let clusterId;
@@ -212,7 +217,8 @@ class ZigbeeNode extends Device {
                            this.family.name);
       this.family.classify();
     } else {
-      DEBUG && console.log('classify: Calling generic classifier');
+      DEBUG && console.log('classify: Calling generic classifier for:',
+                           this.addr64);
       zigbeeClassifier.classify(this);
     }
     this.classified = true;
@@ -884,19 +890,45 @@ class ZigbeeNode extends Device {
                          `cmd:${frame.zcl.cmdId}`);
     const profileId = parseInt(frame.profileId, 16);
     const clusterId = parseInt(frame.clusterId, 16);
+    let propertyFound = false;
     for (const property of this.properties.values()) {
       if (profileId == property.profileId &&
           endpoint == property.endpoint &&
           clusterId == property.clusterId) {
+        propertyFound = true;
         switch (frame.zcl.cmdId) {
           case 'on':   // on property
             this.handleButtonOnOffCommand(property, true);
-            this.notifyEvent('1-pressed');
+            this.notifyEvent(`${property.buttonIndex}-pressed`);
+            break;
+          case 'onWithTimedOff':   // on property
+            this.handleButtonOnOffCommand(property, true);
+            this.notifyEvent('motion');
+            this.occupancyTimeout = frame.zcl.payload.ontime / 10;
+            if (this.occupancyTimer) {
+              // remove any previously created timer
+              clearTimeout(this.occupancyTimer);
+            }
+            // create a new timer
+            console.log('Creating a timer for', this.occupancyTimeout, 'seconds');
+            this.occupancyTimer = setTimeout(() => {
+              this.occupancyTimer = null;
+              property.setCachedValue(false);
+              console.log(this.name,
+                          'property:', property.name,
+                          'timeout - clearing value');
+              this.notifyPropertyChanged(property);
+              this.notifyEvent('no-motion');
+            }, this.occupancyTimeout * 1000);
             break;
           case 'off': // on property
           case 'offWithEffect': // onProperty
             this.handleButtonOnOffCommand(property, false);
             this.notifyEvent('2-pressed');
+            break;
+          case 'toggle': // onproperty
+            this.handleButtonOnOffCommand(property, !property.value);
+            this.notifyEvent('1-pressed');
             break;
           case 'moveWithOnOff': { // level property
             this.handleButtonMoveWithOnOffCommand(property,
@@ -904,32 +936,41 @@ class ZigbeeNode extends Device {
                                                   frame.zcl.payload.rate);
             // movemode 0 = up, 1 = down. So we just add 1 to the movemode
             // to get a button number.
-            const button = frame.zcl.payload.movemode + 1;
+            const button = property.buttonIndex + frame.zcl.payload.movemode;
             this.heldButton = button;
             this.notifyEvent(`${button}-longPressed`);
             return;
           }
-          case 'move': { // level property
+          case 'move': { // level/scene property
             this.handleButtonMoveCommand(property,
                                          frame.zcl.payload.movemode,
                                          frame.zcl.payload.rate,
                                          false);
             // movemode 0 = up, 1 = down. So we just add 1 to the movemode
             // to get a button number.
-            const button = frame.zcl.payload.movemode + 1;
+            const button = property.buttonIndex + frame.zcl.payload.movemode;
             this.heldButton = button;
             this.notifyEvent(`${button}-longPressed`);
             return;
           }
-          case 'step': { // level property
-            this.handleButtonStep(property,
-                                  frame.zcl.payload.stepmode,
-                                  frame.zcl.payload.stepsize);
-            const button = frame.zcl.payload.stepmode + 3;
+          case 'stepWithOnOff': { // level/scene property
+            this.handleButtonStepWithOnOffCommand(property,
+                                                  frame.zcl.payload.stepmode,
+                                                  frame.zcl.payload.stepsize);
+            const button = property.buttonIndex + frame.zcl.payload.stepmode;
             this.notifyEvent(`${button}-pressed`);
             return;
           }
-          case 'stop':  // level property
+          case 'step': { // level/scene property
+            this.handleButtonStepCommand(property,
+                                         frame.zcl.payload.stepmode,
+                                         frame.zcl.payload.stepsize);
+            const button = property.buttonIndex + frame.zcl.payload.stepmode;
+            this.notifyEvent(`${button}-pressed`);
+            return;
+          }
+          case 'stop':
+          case 'stopWithOnOff':   // level/scene property
             this.handleButtonStopCommand(property);
             if (this.heldButton) {
               this.notifyEvent(`${this.heldButton}-released`);
@@ -938,6 +979,12 @@ class ZigbeeNode extends Device {
             return;
         }
       }
+    }
+    if (!propertyFound) {
+      DEBUG && console.log('handleButtonCommand: no property found for:',
+                           'profileId:', profileId,
+                           'endpoint:', endpoint,
+                           'clusterId:', clusterId);
     }
   }
 
@@ -987,8 +1034,8 @@ class ZigbeeNode extends Device {
     const delta = (moveMode ? -1 : 1) * rate / updatesPerSecond;
 
     this.moveTimerCallback(property, delta, offAtZero);
-    if ((property.value > 0 && delta < 0) ||
-        (property.value < 100 && delta > 0)) {
+    if ((property.value > property.minimum && delta < 0) ||
+        (property.value < property.maximum && delta > 0)) {
       // We haven't hit the end, setup a timer to move towards it.
       property.moveTimer = setInterval(this.moveTimerCallback.bind(this),
                                        1000 / updatesPerSecond,
@@ -998,8 +1045,8 @@ class ZigbeeNode extends Device {
 
   moveTimerCallback(property, delta, offAtZero) {
     let newValue = Math.round(property.value + delta);
-    newValue = Math.max(0, newValue);
-    newValue = Math.min(100, newValue);
+    newValue = Math.max(property.minimum, newValue);
+    newValue = Math.min(property.maximum, newValue);
 
     DEBUG && console.log('moveTimerCallback:',
                          this.addr64,
@@ -1011,8 +1058,8 @@ class ZigbeeNode extends Device {
 
     // Cancel the timer if we don't need it any more.
     if ((newValue == property.value) ||
-        (newValue == 0 && delta < 0) ||
-        (newValue == 100 && delta > 0)) {
+        (newValue == property.minimum && delta < 0) ||
+        (newValue == property.maximum && delta > 0)) {
       this.handleButtonStopCommand(property);
     }
 
@@ -1028,7 +1075,21 @@ class ZigbeeNode extends Device {
     }
   }
 
-  handleButtonStep(property, stepMode, stepSize) {
+  handleButtonStepWithOnOffCommand(property, stepMode, stepSize) {
+    DEBUG && console.log('handleButtonStepWithOnOffCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'moveMode:', stepMode,
+                         'stepSize:', stepSize);
+    if (this.onOffProperty && !this.onOffProperty.value) {
+      // onOff Property was off - turn it on
+      this.handleButtonOnOffCommand(this.onOffProperty, true);
+    }
+    this.handleButtonStepCommand(property, stepMode, stepSize);
+    // implies turn off if level reaches zero
+  }
+
+  handleButtonStepCommand(property, stepMode, stepSize) {
     DEBUG && console.log('handleButtonStepCommand:',
                          this.addr64,
                          'property:', property.name,
@@ -1036,8 +1097,8 @@ class ZigbeeNode extends Device {
     // stepMode: 0 = up, 1 = down
     const delta = (stepMode ? -1 : 1) * stepSize;
     let newValue = Math.round(property.value + delta);
-    newValue = Math.max(0, newValue);
-    newValue = Math.min(100, newValue);
+    newValue = Math.max(property.minimum, newValue);
+    newValue = Math.min(property.maximum, newValue);
 
     // Update the value, if it changed
     if (newValue != property.value) {
@@ -1170,12 +1231,16 @@ class ZigbeeNode extends Device {
           this.handleCheckin(frame);
           break;
         case 'on':
+        case 'onWithTimedOff':
         case 'off':
         case 'offWithEffect':
         case 'moveWithOnOff':
         case 'move':
+        case 'stepWithOnOff':
         case 'step':
+        case 'stopWithOnOff':
         case 'stop':
+        case 'toggle':
           this.handleButtonCommand(frame);
           break;
         case 'writeNoRsp':

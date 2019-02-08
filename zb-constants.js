@@ -38,6 +38,7 @@ const CLUSTER_ID = {
   GENOTA: zclId.cluster('genOta').value,
   GENPOLLCTRL: zclId.cluster('genPollCtrl').value,
   GENPOWERCFG: zclId.cluster('genPowerCfg').value,
+  GENSCENES: zclId.cluster('genScenes').value,
   HAELECTRICAL: zclId.cluster('haElectricalMeasurement').value,
   HVACTHERMOSTAT: zclId.cluster('hvacThermostat').value,
   HVACFANCTRL: zclId.cluster('hvacFanCtrl').value,
