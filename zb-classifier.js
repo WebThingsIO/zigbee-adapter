@@ -493,6 +493,7 @@ class ZigbeeClassifier {
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
+    return property;
   }
 
   addButtonLevelProperty(node, genLevelCtrlOutputEndpoint) {
@@ -523,6 +524,67 @@ class ZigbeeClassifier {
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
+    return property;
+  }
+
+  addButtonMotionProperty(node, genOnOffOutputEndpoint) {
+    const property = this.addProperty(
+      node,                           // device
+      'motion',                       // name
+      {                               // property description
+        '@type': 'MotionProperty',
+        type: 'boolean',
+        label: 'Motion',
+        description: 'Motion Sensor',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      genOnOffOutputEndpoint,         // endpoint
+      CLUSTER_ID.GENONOFF,            // clusterId
+      '',                             // attr
+      '',                             // setAttrFromValue
+      ''                              // parseValueFromAttr
+    );
+    property.bindNeeded = true;
+    if (typeof property.value === 'undefined') {
+      property.value = false;
+    }
+    node.onOffProperty = property;
+    DEBUG && console.log('addProperty:',
+                         '  bindNeeded:', property.bindNeeded,
+                         'value:', property.value);
+    return property;
+  }
+
+  addButtonSceneProperty(node, genScenesOutputEndpoint) {
+    const property = this.addProperty(
+      node,                           // device
+      'scene',                        // name
+      {                               // property description
+        '@type': 'LevelProperty',
+        label: 'Scene',
+        type: 'number',
+        minimum: 0,
+        maximum: 15,
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      genScenesOutputEndpoint,        // endpoint
+      CLUSTER_ID.GENSCENES,           // clusterId
+      '',                             // attr
+      '',                             // setAttrFromValue
+      ''                              // parseValueFromAttr
+    );
+    property.bindNeeded = false;
+    if (typeof property.value !== 'number') {
+      property.value = 0;
+    }
+    console.log('addButtonSceneProperty: scene value:', property.value);
+    node.levelProperty = property;
+    DEBUG && console.log('addProperty:',
+                         '  bindNeeded:', property.bindNeeded,
+                         'value:', property.value);
+    return property;
   }
 
   addDoorLockedProperty(node, doorLockEndpoint) {
@@ -1605,6 +1667,8 @@ class ZigbeeClassifier {
       this.initOnOffSwitch(node, genOnOffEndpoint);
     } else if (genLevelCtrlOutputEndpoint) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+    } else if (genOnOffOutputEndpoint) {
+      this.initOnOffButton(node, genOnOffOutputEndpoint);
     } else if (hvacThermostatEndpoint) {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
     } else if (doorLockEndpoint) {
@@ -1788,13 +1852,96 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genLevelCtrlEndpoint);
   }
 
+  initOnOffButton(node, genOnOffOutputEndpoint) {
+    if (node.modelId.includes('motion')) {
+      // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
+      node.name = `${node.id}-motion`;
+      node['@type'] = ['MotionSensor'];
+
+      this.addButtonMotionProperty(node, genOnOffOutputEndpoint);
+      this.addEvents(node, {
+        motion: {
+          '@type': 'MotionEvent',
+          description: 'Motion detected',
+        },
+        'no-motion': {
+          '@type': 'MotionEvent',
+          description: 'Motion timeout',
+        },
+      });
+    } else {
+      node.name = `${node.id}-button`;
+      node['@type'] = ['OnOffSwitch', 'PushButton'];
+
+      const onOffProperty =
+        this.addButtonOnProperty(node, genOnOffOutputEndpoint);
+
+      onOffProperty.buttonIndex = 1;
+
+      this.addEvents(node, {
+        '1-pressed': {
+          '@type': 'PressedEvent',
+          description: 'On button pressed and released',
+        },
+      });
+    }
+  }
+
   initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
     node.name = `${node.id}-button`;
     node.type = 'multiLevelSwitch';
     node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
 
-    this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
-    this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
+    const onOffProperty =
+      this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
+    const levelProperty =
+      this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
+
+    if (node.modelId === 'TRADFRI remote control') {
+      const genScenesOutputEndpoint =
+        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+      if (genScenesOutputEndpoint) {
+        const sceneProperty =
+          this.addButtonSceneProperty(node, genScenesOutputEndpoint);
+        sceneProperty.buttonIndex = 4;
+      }
+
+      // This is the IKEA remote with a center button and 4 other
+      // buttons around the edge. The center button sends a toggle
+      // rather than on/off.
+
+      onOffProperty.buttonIndex = 1;
+      this.addEvents(node, {
+        '1-pressed': {
+          '@type': 'PressedEvent',
+          description: 'On button pressed and released',
+        },
+      });
+
+      // The remaining buttons can all generate pressed,
+      // longPressed and released events.
+      levelProperty.buttonIndex = 2;
+      const label = ['Top', 'Bottom', 'Right', 'Left'];
+      for (let i = 0; i < 4; i++) {
+        this.addEvents(node, {
+          [`${i + 2}-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `${label[i]} button pressed and released`,
+          },
+          [`${i + 2}-longPressed`]: {
+            '@type': 'LongPressedEvent',
+            description: `${label[i]} button pressed and held`,
+          },
+          [`${i + 2}-released`]: {
+            '@type': 'ReleasedEvent',
+            description: `${label[i]} button released (after being held)`,
+          },
+        });
+      }
+      return;
+    }
+
+    onOffProperty.buttonIndex = 1;
     this.addEvents(node, {
       '1-pressed': {
         '@type': 'PressedEvent',
@@ -1805,11 +1952,11 @@ class ZigbeeClassifier {
         description: 'Off button pressed and released',
       },
     });
-
     switch (node.modelId) {
       case '3130':
         // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
         // use long presses to do the dimming
+        levelProperty.buttonIndex = 1;
         this.addEvents(node, {
           '1-longPressed': {
             '@type': 'LongPressedEvent',
@@ -1833,6 +1980,7 @@ class ZigbeeClassifier {
       case 'RWL020':
         // This is the Philips Hue Dimmer. It has 4 buttons and uses
         // 2 of the buttons to perform the dimming.
+        levelProperty.buttonIndex = 3;
         this.addEvents(node, {
           '3-pressed': {
             '@type': 'PressedEvent',

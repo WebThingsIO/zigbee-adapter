@@ -2210,8 +2210,8 @@ zcl-id@dhylands/zcl-id#moziot-changes:
     enum "^2.5.0"
 
 zcl-packet@dhylands/zcl-packet#moziot-changes:
-  version "0.2.5-moziot"
-  resolved "https://codeload.github.com/dhylands/zcl-packet/tar.gz/21fabe8a1e6ddfcb1989280f30dcc50b0f133284"
+  version "0.2.5-moziot-003"
+  resolved "https://codeload.github.com/dhylands/zcl-packet/tar.gz/0fc3d724d8347252132a77df7b43aa2510e5b672"
   dependencies:
     concentrate "^0.2.3"
     dissolve-chunks "^1.3.0"
