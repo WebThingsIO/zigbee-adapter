@@ -924,11 +924,11 @@ class ZigbeeNode extends Device {
           case 'off': // on property
           case 'offWithEffect': // onProperty
             this.handleButtonOnOffCommand(property, false);
-            this.notifyEvent('2-pressed');
+            this.notifyEvent(`${property.buttonIndex + 1}-pressed`);
             break;
           case 'toggle': // onproperty
             this.handleButtonOnOffCommand(property, !property.value);
-            this.notifyEvent('1-pressed');
+            this.notifyEvent(`${property.buttonIndex}-pressed`);
             break;
           case 'moveWithOnOff': { // level property
             this.handleButtonMoveWithOnOffCommand(property,
