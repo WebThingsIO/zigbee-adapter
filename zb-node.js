@@ -910,7 +910,6 @@ class ZigbeeNode extends Device {
               clearTimeout(this.occupancyTimer);
             }
             // create a new timer
-            console.log('Creating a timer for', this.occupancyTimeout, 'seconds');
             this.occupancyTimer = setTimeout(() => {
               this.occupancyTimer = null;
               property.setCachedValue(false);
