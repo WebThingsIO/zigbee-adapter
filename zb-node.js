@@ -593,7 +593,8 @@ class ZigbeeNode extends Device {
     }
 
     const clusterId = parseInt(frame.clusterId, 16);
-    const clusterIdStr = zclId.cluster(clusterId).key;
+    const cluster = zclId.cluster(clusterId);
+    const clusterIdStr = cluster ? cluster.key : 'unknown';
     let attrInfo;
     if (SKIP_DISCOVER_READ_CLUSTERS.includes(clusterIdStr)) {
       // This is a cluster which dosen't seem to respond to read requests.

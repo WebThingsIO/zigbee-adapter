@@ -1799,12 +1799,6 @@ class ZigbeeClassifier {
     const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                                 node.colorCapabilities) || 0;
     let isLight = false;
-    if (node.lightingColorCtrlEndpoint) {
-      // If it has a lightingColorCtrl endpoint, then we assume its a light
-      // Not all lights support ZLL. In particular, the Syvlania GardenSpot
-      // lights are ZHA only.
-      isLight = true;
-    }
     if (lightLinkEndpoint && node.activeEndpoints[lightLinkEndpoint].deviceId) {
       // The device supports ZLL, check the deviceId associated with the ZLL
       // endpoint to see if its a light or not.
@@ -1820,7 +1814,7 @@ class ZigbeeClassifier {
       }
     }
     const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-    if (levelEndpoint.profileId == PROFILE_ID.ZHA &&
+    if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX &&
         ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
       isLight = true;
     }
