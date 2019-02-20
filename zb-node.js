@@ -27,6 +27,7 @@ const {
   POWERSOURCE,
   PROFILE_ID,
   STATUS,
+  UNKNOWN_ADDR_16,
 } = require('./zb-constants');
 
 const {DEBUG_node} = require('./zb-debug');
@@ -94,6 +95,22 @@ class ZigbeeNode extends Device {
     this.rebindRequired = true;
     this.zclSeqNum = 1;
     this.classified = false;
+  }
+
+  updateAddr16(addr16) {
+    if (addr16 &&
+        this.addr16 != addr16 &&
+        addr16.match(/^[0-9a-f]{4}$/) &&
+        addr16 < 'fffc') {
+      console.log('updateAddr16:', this.addr64,
+                  'Updated addr16 from:', this.addr16, 'to:', addr16);
+      this.addr16 = addr16;
+      const device = this.devices[this.id];
+      if (device) {
+        device.addr16 = addr16;
+      }
+      this.adapter.saveDeviceInfoDeferred();
+    }
   }
 
   advanceZclSeqNum() {
@@ -228,7 +245,7 @@ class ZigbeeNode extends Device {
   }
 
   debugCmd(cmd, params) {
-    console.log('debugCmd:', this.addr64, cmd, params);
+    console.log('debugCmd:', this.addr64, this.addr16, cmd, params);
     switch (cmd) {
 
       case 'bind': {
@@ -1621,9 +1638,10 @@ class ZigbeeNode extends Device {
   makeBindFrame(endpoint, clusterId, configReportFrames) {
     DEBUG && console.log('makeBindFrame: endpoint =', endpoint,
                          'clusterId =', clusterId);
+    const addr16 = this.addr16 || UNKNOWN_ADDR_16;
     const frame = this.adapter.zdo.makeFrame({
       destination64: this.addr64,
-      destination16: this.addr16,
+      destination16: addr16,
       clusterId: zdo.CLUSTER_ID.BIND_REQUEST,
       bindSrcAddr64: this.addr64, // address of device that sends reports
       bindSrcEndpoint: endpoint,  // endpoint of device that sends reports

@@ -79,6 +79,11 @@ class ZigbeeAdapter extends Adapter {
     this.scanning = true;
 
     this.atAttr = {};
+
+    // Note: this structure parallels the this.devices dict in the Adapter
+    //       base class. this.devices is keyed by deviceId (which would be
+    // zb-XXX where XXX is the 64-bit address of the device). this.nodes
+    // is keyed by the 64-bit address.
     this.nodes = {};
 
     this.nextStartIndex = -1;
@@ -186,10 +191,7 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
 
-    if (node.addr16 != frame.nwkAddr16) {
-      node.addr16 = frame.nwkAddr16;
-      this.saveDeviceInfoDeferred();
-    }
+    node.updateAddr16(frame.nwkAddr16);
     if (node.rebindRequired) {
       this.populateNodeInfo(node);
     }
@@ -253,6 +255,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   readDeviceInfo() {
+    DEBUG_flow && console.log('readDeviceInfo() called');
     return new Promise((resolve) => {
       fs.readFile(this.deviceInfoFilename, 'utf8', (err, data) => {
         if (err) {
@@ -280,15 +283,16 @@ class ZigbeeAdapter extends Adapter {
           return;
         }
 
-        for (const nodeId in devInfo.nodes) {
-          const devInfoNode = devInfo.nodes[nodeId];
-          let node = this.nodes[nodeId];
+        for (const addr64 in devInfo.nodes) {
+          const devInfoNode = devInfo.nodes[addr64];
+          let node = this.nodes[addr64];
           if (!node) {
-            node = new ZigbeeNode(this, devInfoNode.addr64, devInfoNode.addr16);
-            this.nodes[nodeId] = node;
+            node = new ZigbeeNode(this, addr64, devInfoNode.addr16);
+            this.nodes[addr64] = node;
           }
           node.fromDeviceInfo(devInfoNode);
         }
+        DEBUG_flow && console.log('readDeviceInfo() done');
         resolve();
       });
     });
@@ -374,7 +378,8 @@ class ZigbeeAdapter extends Adapter {
   findNodeFromRxFrame(frame) {
     const addr64 = frame.remote64 || 'ffffffffffffffff';
     const addr16 = frame.remote16;
-    console.log('findNodeFromRxFrame: addr64:', addr64, 'addr16:', addr16);
+    DEBUG_flow &&
+      console.log('findNodeFromRxFrame: addr64:', addr64, 'addr16:', addr16);
     let node;
 
     // Some devices (like xiaomi) switch from using a proper 64-bit address to
@@ -402,17 +407,7 @@ class ZigbeeAdapter extends Adapter {
       return node;
     }
 
-    node = this.nodes[addr64];
-    if (!node) {
-      // We have both the addr64 and addr16 - go ahead and create a new node.
-      node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
-    }
-    if (frame.hasOwnProperty('remote16')) {
-      if (node && node.addr16 != frame.remote16) {
-        node.addr16 = frame.remote16;
-        this.saveDeviceInfoDeferred();
-      }
-    }
+    node = this.createNodeIfRequired(addr64, addr16);
     return node;
   }
 
@@ -507,10 +502,7 @@ class ZigbeeAdapter extends Adapter {
     let node = this.nodes[addr64];
     if (node) {
       // Update the 16-bit address, since it may have changed.
-      if (node.addr16 != addr16 && typeof addr16 !== 'undefined') {
-        node.addr16 = addr16;
-        this.saveDeviceInfoDeferred();
-      }
+      node.updateAddr16(addr16);
     } else {
       node = this.nodes[addr64] = new ZigbeeNode(this, addr64, addr16);
       this.saveDeviceInfoDeferred();
