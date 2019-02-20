@@ -219,20 +219,24 @@ class DeconzDriver extends ZigbeeDriver {
       }
 
       case C.FRAME_TYPE.APS_DATA_CONFIRM: { // Query Send State
-        if (!frame.response) {
-          console.log(label, 'Explicit Tx State (APS Data Confirm) Request');
-          break;
+        if (dumpFrameDetail) {
+          if (!frame.response) {
+            console.log(label, 'Explicit Tx State (APS Data Confirm) Request');
+            break;
+          }
+          const dstAddr = frame.destination64 || frame.destination16;
+          console.log(label, 'Explicit Tx State (APS Data Confirm) Response',
+                      dstAddr, `ID:${frame.id}`,
+                      this.deviceStateStr(frame));
         }
-        const dstAddr = frame.destination64 || frame.destination16;
-        console.log(label, 'Explicit Tx State (APS Data Confirm) Response',
-                    dstAddr, `ID:${frame.id}`,
-                    this.deviceStateStr(frame));
         break;
       }
 
       case C.FRAME_TYPE.APS_DATA_INDICATION: {  // Read Received Data
         if (!frame.response) {
-          console.log(label, 'Explicit Rx (APS Data Indication) Request');
+          if (dumpFrameDetail) {
+            console.log(label, 'Explicit Rx (APS Data Indication) Request');
+          }
           break;
         }
         this.dumpZigbeeRxFrame(label, frame);
@@ -241,8 +245,10 @@ class DeconzDriver extends ZigbeeDriver {
 
       case C.FRAME_TYPE.APS_DATA_REQUEST: {   // Enqueue Send Data
         if (frame.response) {
-          console.log(label, 'Explicit Tx (APS Data Request) Response',
-                      this.deviceStateStr(frame));
+          if (dumpFrameDetail) {
+            console.log(label, 'Explicit Tx (APS Data Request) Response',
+                        this.deviceStateStr(frame));
+          }
           break;
         }
         this.dumpZigbeeTxFrame(label, frame);
@@ -251,10 +257,12 @@ class DeconzDriver extends ZigbeeDriver {
 
       case C.FRAME_TYPE.DEVICE_STATE:
       case C.FRAME_TYPE.DEVICE_STATE_CHANGED:
-        if (frame.response) {
-          console.log(label, frameTypeStr, this.deviceStateStr(frame));
-        } else {
-          console.log(label, frameTypeStr);
+        if (dumpFrameDetail) {
+          if (frame.response) {
+            console.log(label, frameTypeStr, this.deviceStateStr(frame));
+          } else {
+            console.log(label, frameTypeStr);
+          }
         }
         break;
 
