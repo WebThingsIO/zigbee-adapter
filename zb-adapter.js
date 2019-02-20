@@ -165,7 +165,8 @@ class ZigbeeAdapter extends Adapter {
     this.sendFrameWaitFrameAtFront(updateFrame, {
       type: this.driver.getExplicitRxFrameType(),
       zdoSeq: updateFrame.zdoSeq,
-      waitRetryMax: 2,
+      waitRetryMax: 1,
+      waitRetryTimeout: 1000, // Minimize delay for powered off devices.
     });
   }
 

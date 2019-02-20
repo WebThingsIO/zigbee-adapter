@@ -642,6 +642,7 @@ class ZigbeeNode extends Device {
         type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
+        waitRetryMax: 1,
       });
     }
   }
