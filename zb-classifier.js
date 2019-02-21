@@ -14,11 +14,11 @@ const {
   CLUSTER_ID,
   COLOR_CAPABILITY,
   COLOR_MODE,
-  DEVICE_ID,
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_SEQ,
   PROFILE_ID,
   THERMOSTAT_MODE,
+  ZHA_DEVICE_ID,
   ZLL_DEVICE_ID,
   ZONE_STATUS,
 } = require('./zb-constants');
@@ -951,7 +951,7 @@ class ZigbeeClassifier {
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
     let attr = 'batteryVoltage';
     if (node.activeEndpoints[genPowerCfgEndpoint].deviceId ==
-        DEVICE_ID.SMART_PLUG_HEX) {
+        ZHA_DEVICE_ID.SMART_PLUG) {
       attr = 'mainsVoltage';
     }
     this.addProperty(
@@ -1799,12 +1799,6 @@ class ZigbeeClassifier {
     const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                                 node.colorCapabilities) || 0;
     let isLight = false;
-    if (node.lightingColorCtrlEndpoint) {
-      // If it has a lightingColorCtrl endpoint, then we assume its a light
-      // Not all lights support ZLL. In particular, the Syvlania GardenSpot
-      // lights are ZHA only.
-      isLight = true;
-    }
     if (lightLinkEndpoint && node.activeEndpoints[lightLinkEndpoint].deviceId) {
       // The device supports ZLL, check the deviceId associated with the ZLL
       // endpoint to see if its a light or not.
@@ -1819,6 +1813,11 @@ class ZigbeeClassifier {
         return;
       }
     }
+    const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoint];
+    if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX &&
+        ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
+      isLight = true;
+    }
 
     if (isLight) {
       // It looks like a light bulb
@@ -1831,7 +1830,7 @@ class ZigbeeClassifier {
           this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
         }
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
-        node['@type'] = ['OnOffSwitch', 'Light', 'ColorControl'];
+        node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
         if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0) {
           // Color temperature is basically a specialized way of selecting
@@ -1842,7 +1841,7 @@ class ZigbeeClassifier {
         }
         this.addBrightnessProperty(node, genLevelCtrlEndpoint);
         node.type = Constants.THING_TYPE_DIMMABLE_LIGHT;
-        node['@type'] = ['OnOffSwitch', 'Light'];
+        node['@type'] = ['Light', 'OnOffSwitch'];
       }
     } else {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
@@ -2001,8 +2000,8 @@ class ZigbeeClassifier {
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
       const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-      if (endpoint.deviceId != DEVICE_ID.ONOFFSWITCH_HEX &&
-          endpoint.deviceId != DEVICE_ID.ONOFFOUTPUT_HEX) {
+      if (endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_SWITCH &&
+          endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_OUTPUT) {
         // The Samsung SmartSwitch advertises the genLevelCtrl cluster,
         // but it doesn't do anything. It also advertises itself as an
         // onOffOutput, so we use that to filter out the level control.
