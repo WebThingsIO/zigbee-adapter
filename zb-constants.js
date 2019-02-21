@@ -219,6 +219,10 @@ const ZHA_DEVICE_ID = {
            deviceId == ZHA_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
   },
+
+  isColorLight: function isColorLight(deviceId) {
+    return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
+  },
 };
 
 // ZLL Device Id describes device IDs from the ZLL spec.
@@ -229,7 +233,7 @@ const ZLL_DEVICE_ID = {
   DIMMABLE_SWITCH: '0110',
   COLOR_LIGHT: '0200',
   EXTENDED_COLOR_LIGHT: '0210',
-  COLOR_TEMPERATURE_LIHT: '0220',
+  COLOR_TEMPERATURE_LIGHT: '0220',
   COLOR_CONTROLLER: '0800',
   COLOR_SCENE_CONTROLLER: '0810',
   NON_COLOR_CONTROLLER: '0820',
@@ -242,7 +246,16 @@ const ZLL_DEVICE_ID = {
            deviceId == ZLL_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
            deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT ||
-           deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIHT;
+           deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
+  },
+
+  isColorLight: function isColorLight(deviceId) {
+    return deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT;
+  },
+
+  isColorTemperatureLight: function isColorTemperatureLight(deviceId) {
+    return deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
   },
 };
 
