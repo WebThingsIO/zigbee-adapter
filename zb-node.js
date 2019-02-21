@@ -36,7 +36,7 @@ const DEBUG = DEBUG_node;
 const FAST_CHECKIN_INTERVAL = 20 * 4;       // 20 seconds (quarter seconds)
 const SLOW_CHECKIN_INTERVAL = 10 * 60 * 4;  // 10 min (quarter seconds)
 
-const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
+const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic', 'genGreenPowerProxy'];
 
 const DEVICE_INFO_FIELDS = [
   'name', 'type', '@type', 'defaultName', 'extendedTimeout',
@@ -929,6 +929,9 @@ class ZigbeeNode extends Device {
               clearTimeout(this.occupancyTimer);
             }
             // create a new timer
+            DEBUG &&
+              console.log('Creating a timer for',
+                          this.occupancyTimeout, 'seconds');
             this.occupancyTimer = setTimeout(() => {
               this.occupancyTimer = null;
               property.setCachedValue(false);

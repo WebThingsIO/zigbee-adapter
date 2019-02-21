@@ -1075,6 +1075,7 @@ class ZigbeeAdapter extends Adapter {
     console.log('discover: **** Starting discovery for node:', node.id,
                 'endpointNum:', discoverEndpointNum,
                 'clusterId:', discoverCluster, '*****');
+    console.log('discover:   ModelId:', node.modelId);
     let commands = [];
     for (const endpointNum in node.activeEndpoints) {
       if (discoverEndpointNum && endpointNum != discoverEndpointNum) {
@@ -1082,10 +1083,19 @@ class ZigbeeAdapter extends Adapter {
       }
       const endpoint = node.activeEndpoints[endpointNum];
 
-      commands = commands.concat(
+      commands = commands.concat([
         FUNC(this, this.print,
-             [`discover:   Input clusters for endpoint ${endpointNum}`])
-      );
+             [`discover:   Endpoint ${endpointNum} ` +
+              `ProfileID: ${endpoint.profileId}`]),
+        FUNC(this, this.print,
+             [`discover:   Endpoint ${endpointNum} ` +
+              `DeviceID: ${endpoint.deviceId}`]),
+        FUNC(this, this.print,
+             [`discover:   Endpoint ${endpointNum} ` +
+              `DeviceVersion: ${endpoint.deviceVersion}`]),
+        FUNC(this, this.print,
+             [`discover:   Input clusters for endpoint ${endpointNum}`]),
+      ]);
       if (endpoint.inputClusters && endpoint.inputClusters.length) {
         for (const inputCluster of endpoint.inputClusters) {
           if (discoverCluster && discoverCluster != inputCluster) {
