@@ -1286,9 +1286,35 @@ class ZigbeeNode extends Device {
       return;
     }
 
-    DEBUG && console.log('rebind called for node:', this.addr64,
+    DEBUG && console.log('rebind called for node:', this.addr64, this.addr16,
                          'rebindRequired =', this.rebindRequired,
                          'pollCtrlBindingNeeded =', this.pollCtrlBindingNeeded);
+
+    if (typeof this.addr16 === 'undefined') {
+      DEBUG && console.log('rebind: Requesting 16-bit address for',
+                           this.addr64);
+      this.rebinding = true;
+      const updateFrame = this.zdo.makeFrame({
+        destination64: this.addr64,
+        clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
+        addr64: this.addr64,
+        requestType: 0, // 0 = Single Device Response
+        startIndex: 0,
+        callback: (_frame) => {
+          this.rebinding = false;
+          this.rebind();
+        },
+        timeoutFunc: () => {
+          this.rebinding = false;
+        },
+      });
+      this.sendFrameWaitFrameAtFront(updateFrame, {
+        type: this.driver.getExplicitRxFrameType(),
+        zdoSeq: updateFrame.zdoSeq,
+        waitRetryMax: 1,
+      });
+      return;
+    }
 
     if (this.genPollCtrlEndpoint && this.pollCtrlBindingNeeded) {
       if (this.writingCheckinInterval) {
