@@ -401,6 +401,9 @@ class ZigbeeDriver {
         frame.extraParams = this.waitFrame.extraParams;
       }
       frameHandler.call(this, frame);
+    } else {
+      console.error('No frame handler for frame');
+      console.error(frame);
     }
 
     if (this.waitFrame) {
