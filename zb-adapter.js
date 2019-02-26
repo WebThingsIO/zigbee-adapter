@@ -415,7 +415,8 @@ class ZigbeeAdapter extends Adapter {
   findNodeFromTxFrame(frame) {
     const addr64 = frame.destination64 || 'ffffffffffffffff';
     const addr16 = frame.destination16;
-    console.log('findNodeFromTxFrame: addr64:', addr64, 'addr16:', addr16);
+    DEBUG_flow &&
+      console.log('findNodeFromTxFrame: addr64:', addr64, 'addr16:', addr16);
     let node;
     if (addr64 == 'ffffffffffffffff') {
       if (addr16) {
@@ -1028,8 +1029,11 @@ class ZigbeeAdapter extends Adapter {
     }
 
     const permitJoinFrame = this.zdo.makeFrame({
-      destination64: 'ffffffffffffffff',
-      destination16: BROADCAST_ADDR.ROUTERS,
+      // I tried broadcasting a variety of ways, but they with the ConBee
+      // dongle they all get an INVALID_PARAMETER confirmStatus, with exception
+      // of sending it to '0000'
+      destination64: this.networkAddr64,
+      destination16: '0000',
       clusterId: zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_REQUEST,
       permitDuration: seconds,
       trustCenterSignificance: 1,
@@ -1047,6 +1051,10 @@ class ZigbeeAdapter extends Adapter {
         id: permitJoinFrame.id,
       }),
     ]);
+  }
+
+  handlePermitJoinResponse(_frame) {
+    // Nothing to do.
   }
 
   startPairing(timeoutSeconds) {
@@ -1112,15 +1120,18 @@ class ZigbeeAdapter extends Adapter {
           );
 
           const discoverFrame =
-            node.makeDiscoverAttributesFrame(parseInt(endpointNum),
-                                             endpoint.profileId,
-                                             inputCluster, 0);
+            node.makeDiscoverAttributesFrame(
+              parseInt(endpointNum),
+              PROFILE_ID.ZHA,  // IKEA bulbs require ZHA profile
+              inputCluster, 0);
           commands = commands.concat([
             new Command(SEND_FRAME, discoverFrame),
             new Command(WAIT_FRAME, {
               type: this.driver.getExplicitRxFrameType(),
               zclCmdId: 'discoverRsp',
               zclSeqNum: discoverFrame.zcl.seqNum,
+              waitRetryMax: 1,
+              waitRetryTimeout: 1000,
             }),
           ]);
         }
@@ -1147,15 +1158,18 @@ class ZigbeeAdapter extends Adapter {
             FUNC(this, this.print, [`discover:     ${outputClusterStr}`])
           );
           const discoverFrame =
-            node.makeDiscoverAttributesFrame(parseInt(endpointNum),
-                                             endpoint.profileId,
-                                             outputCluster, 0);
+            node.makeDiscoverAttributesFrame(
+              parseInt(endpointNum),
+              PROFILE_ID.ZHA, // IKEA bulbs require ZHA profile
+              outputCluster, 0);
           commands = commands.concat([
             new Command(SEND_FRAME, discoverFrame),
             new Command(WAIT_FRAME, {
               type: this.driver.getExplicitRxFrameType(),
               zclCmdId: 'discoverRsp',
               zclSeqNum: discoverFrame.zcl.seqNum,
+              waitRetryMax: 1,
+              waitRetryTimeout: 1000,
             }),
           ]);
         }
@@ -1652,6 +1666,8 @@ ZigbeeAdapter.zdoClusterHandler = {
     ZigbeeAdapter.prototype.handleEndDeviceAnnouncement,
   [zdo.CLUSTER_ID.BIND_RESPONSE]:
     ZigbeeAdapter.prototype.handleBindResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_RESPONSE]:
+    ZigbeeAdapter.prototype.handlePermitJoinResponse,
 };
 
 registerFamilies();

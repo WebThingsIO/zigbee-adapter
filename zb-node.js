@@ -105,7 +105,7 @@ class ZigbeeNode extends Device {
       console.log('updateAddr16:', this.addr64,
                   'Updated addr16 from:', this.addr16, 'to:', addr16);
       this.addr16 = addr16;
-      const device = this.devices[this.id];
+      const device = this.adapter.devices[this.id];
       if (device) {
         device.addr16 = addr16;
       }
@@ -606,6 +606,8 @@ class ZigbeeNode extends Device {
         type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'discoverRsp',
         zclSeqNum: discoverFrame.zcl.seqNum,
+        waitRetryMax: 1,
+        waitRetryTimeout: 1000,
       });
     }
 
@@ -643,6 +645,7 @@ class ZigbeeNode extends Device {
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
         waitRetryMax: 1,
+        waitRetryTimeout: 1000,
       });
     }
   }
@@ -1294,7 +1297,7 @@ class ZigbeeNode extends Device {
       DEBUG && console.log('rebind: Requesting 16-bit address for',
                            this.addr64);
       this.rebinding = true;
-      const updateFrame = this.zdo.makeFrame({
+      const updateFrame = this.adapter.zdo.makeFrame({
         destination64: this.addr64,
         clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
         addr64: this.addr64,
@@ -1308,7 +1311,7 @@ class ZigbeeNode extends Device {
           this.rebinding = false;
         },
       });
-      this.sendFrameWaitFrameAtFront(updateFrame, {
+      this.adapter.sendFrameWaitFrameAtFront(updateFrame, {
         type: this.driver.getExplicitRxFrameType(),
         zdoSeq: updateFrame.zdoSeq,
         waitRetryMax: 1,
