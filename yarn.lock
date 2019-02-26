@@ -582,8 +582,8 @@ decompress-response@^3.3.0:
     mimic-response "^1.0.0"
 
 "deconz-api@git+https://github.com/mozilla-iot/deconz-api.git":
-  version "1.0.1"
-  resolved "git+https://github.com/mozilla-iot/deconz-api.git#f8b5dd8fe39d7289c634dbfb9b5951daca884092"
+  version "1.0.2"
+  resolved "git+https://github.com/mozilla-iot/deconz-api.git#cfd0422d0ecb15de0844ddc19ecc5ad3cff2041d"
   dependencies:
     buffer-builder "^0.2.0"
     buffer-events "0.0.2"

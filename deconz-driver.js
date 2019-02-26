@@ -15,6 +15,10 @@ const util = require('util');
 const C = deconzApi.constants;
 
 const {
+  APS_STATUS,
+} = require('./zb-constants');
+
+const {
   Command,
   FUNC,
   PERMIT_JOIN_PRIORITY,
@@ -30,6 +34,8 @@ const {
   DEBUG_rawFrames,
   DEBUG_slip,
 } = require('./zb-debug');
+
+const {Utils} = require('gateway-addon');
 
 const PARAM = [
   C.PARAM_ID.MAC_ADDRESS,
@@ -64,9 +70,13 @@ class DeconzDriver extends ZigbeeDriver {
 
     this.dataConfirm = false;
     this.dataIndication = false;
-    this.dataRequest = false;
+    this.dataRequest = true;  // assume we have space to send the first frame
     this.dataIndicationInProgress = false;
     this.dataConfirmInProgress = false;
+
+    this.rawFrameQueue = [];
+    this.waitingForResponseType = 0;
+    this.waitingForSequenceNum = 0;
 
     this.dc = new deconzApi.DeconzAPI({raw_frames: DEBUG_rawFrames});
 
@@ -92,6 +102,9 @@ class DeconzDriver extends ZigbeeDriver {
             console.error(e);
             console.error(rawFrame);
           }
+        } else {
+          console.error('canParse returned false for frame - ignoring');
+          console.error(rawFrame);
         }
       });
     } else {
@@ -124,8 +137,6 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   adapterInitialized() {
-    this.adapter.networkAddr64 = this.macAddress;
-    this.adapter.networkAddr16 = '0000';
     this.adapter.adapterInitialized();
   }
 
@@ -148,17 +159,88 @@ class DeconzDriver extends ZigbeeDriver {
       frame.type = C.FRAME_TYPE.APS_DATA_REQUEST;
     }
     const sentPrefix = frame.resend ? 'Re' : '';
-    const rawFrame = this.dc.buildFrame(frame);
+    const rawFrame = this.dc.buildFrame(frame, false);
     if (DEBUG_rawFrames) {
-      console.log(`${sentPrefix}Sent:`, rawFrame);
+      console.log(`${sentPrefix}Queued:`, rawFrame);
     }
-    this.serialPort.write(rawFrame, serialWriteError);
-    if (frame.type == C.FRAME_TYPE.APS_DATA_REQUEST) {
-      // If we receive a DEVICE_STATE_CHANGED we don't
-      // want to send out the confirm until we get the
-      // APS_DATA_REQUEST response.
-      this.dataConfirmInProgress = true;
+
+    this.rawFrameQueue.push(rawFrame);
+    this.processRawFrameQueue();
+  }
+
+  // All requests to the DeConz dongle get a response using the same frame
+  // type. See deconzApi.constants.FRAME_TYPE for the valid frame types.
+  // I discovered that the comms seem to flow much more smoothly if we wait
+  // for the corresponding response before proceeding to the send the next
+  // frame. this.rawFrameQueue holds these outgoing commands. All of the
+  // responses should be sent immediately after the dongle receives the
+  // request. So the only delays should be waiting for serial bytes to be
+  // sent and received.
+  //
+  // For all of the commands sent to the dongle, the first byte of the
+  // frame is the frame type and the second byte is a sequence number.
+
+  processRawFrameQueue() {
+    if (this.waitingForResponseType != 0) {
+      // We're sent a frame to the dongle and we're waiting for a response.
+      if (DEBUG_rawFrames) {
+        console.log('processRawFrameQueue: waiting for type:',
+                    this.waitingForResponseType);
+      }
+      return;
     }
+
+    let rawFrame;
+    if (this.dataIndication) {
+      // There is an incoming frame waiting for us
+      if (DEBUG_rawFrames) {
+        console.log('Incoming Frame available -',
+                    'requesting it (via APS_DATA_INDICATION)');
+      }
+      rawFrame = this.dc.buildFrame({type: C.FRAME_TYPE.APS_DATA_INDICATION},
+                                    false);
+    } else if (this.dataConfirm) {
+      // There is an outgoing frame sent confirmation waiting for us
+      if (DEBUG_rawFrames) {
+        console.log('Outgoing Frame confirmation available -',
+                    'requesting it (via APS_DATA_CONFIRM)');
+      }
+      rawFrame = this.dc.buildFrame({type: C.FRAME_TYPE.APS_DATA_CONFIRM},
+                                    false);
+    } else if (this.dataRequest) {
+      // There is space for an outgoing frame
+      if (this.rawFrameQueue.length > 0) {
+        if (DEBUG_rawFrames) {
+          console.log('Sending queued frame');
+        }
+        rawFrame = this.rawFrameQueue.pop();
+      } else {
+        if (DEBUG_rawFrames) {
+          console.log('No raw frames to send');
+        }
+        // No frames to send.
+        return;
+      }
+    } else {
+      if (DEBUG_rawFrames) {
+        console.log('No space to send any frames - wait for space');
+      }
+      // We need to wait for conditions to change.
+      return;
+    }
+
+    // we have a raw frame to send
+    this.waitingForResponseType = rawFrame[0];
+    this.waitingForSequenceNum = rawFrame[1];
+
+    if (DEBUG_rawFrames) {
+      console.log('Sent:', rawFrame);
+    }
+    const slipFrame = this.dc.encapsulateFrame(rawFrame);
+    if (DEBUG_slip) {
+      console.log(`Sent Chunk:`, slipFrame);
+    }
+    this.serialPort.write(slipFrame, serialWriteError);
   }
 
   close() {
@@ -325,40 +407,87 @@ class DeconzDriver extends ZigbeeDriver {
     DEBUG_flow && console.log('handleApsDataConfirm: seqNum:', frame.seqNum,
                               'id', frame.id);
     this.dataConfirmInProgress = false;
+    if (frame.confirmStatus != 0) {
+      this.reportConfirmStatus(frame);
+    }
     this.updateFlags(frame);
-    this.processDeviceState();
   }
 
   // Response to APS_DATA_INDICATION request (i.e. frame received)
   handleApsDataIndication(frame) {
     DEBUG_flow && console.log('handleApsDataIndication: seqNum:', frame.seqNum);
     this.dataIndicationInProgress = false;
+    if (frame.status != 0) {
+      this.reportStatus(frame);
+    }
     this.updateFlags(frame);
     this.handleExplicitRx(frame);
-    this.processDeviceState();
   }
 
   // Reponse to APS_DATA_REQUEST (i.e. frame was queued for sending)
   handleApsDataRequest(frame) {
     DEBUG_flow && console.log('handleApsDataRequest: seqNum:', frame.seqNum);
     this.dataConfirmInProgress = false;
+    if (frame.status != 0) {
+      this.reportStatus(frame);
+    }
     this.updateFlags(frame);
-    this.processDeviceState();
   }
 
   // Response to DEVICE_STATE request
   handleDeviceState(frame) {
     DEBUG_flow && console.log('handleDeviceState: seqNum:', frame.seqNum);
     this.updateFlags(frame);
-    this.processDeviceState();
   }
 
   // Unsolicited indication of state change
   handleDeviceStateChanged(frame) {
     DEBUG_flow && console.log('handleDeviceStateChanged: seqNum:',
                               frame.seqNum);
+    if (frame.status != 0) {
+      this.reportStatus(frame);
+    }
     this.updateFlags(frame);
-    this.processDeviceState();
+  }
+
+  handleFrame(frame) {
+    if (this.waitingForResponseType == frame.type &&
+        this.waitingForSequenceNum == frame.seqNum) {
+      // We got the frame we're waiting for
+      this.waitingForResponseType = 0;
+      this.waitingForSequenceNum = 0;
+    }
+    if (frame.status == 0) {
+      super.handleFrame(frame);
+    }
+
+    // Send out any queued raw frames, if there are any.
+    this.processRawFrameQueue();
+  }
+
+  handleReadParameter(frame) {
+    if (this.status != 0) {
+      this.reportStatus(frame);
+    }
+    const paramId = frame.paramId;
+    if (C.PARAM_ID.hasOwnProperty(paramId)) {
+      const fieldName = C.PARAM_ID[paramId].fieldName;
+      this[fieldName] = frame[fieldName];
+      if (fieldName == 'macAddress') {
+        this.adapter.networkAddr64 = this.macAddress;
+        this.neworkAddr16 = '0000';
+      }
+    }
+  }
+
+  handleWriteParameter(frame) {
+    if (this.status != 0) {
+      this.reportStatus(frame);
+    }
+  }
+
+  handleVersion(frame) {
+    console.log('DeConz Firmware version:', Utils.hexStr(frame.version, 8));
   }
 
   nextFrameId() {
@@ -377,14 +506,15 @@ class DeconzDriver extends ZigbeeDriver {
                               'inProgress:', this.dataIndicationInProgress,
                               'dataConfirm', this.dataConfirm,
                               'inProgress:', this.dataConfirmInProgress);
+    if (this.dataIndication && !this.dataIndicationInProgress) {
+      // There is a frame ready to be read.
+      this.dataIndicationInProgress = true;
+      this.sendFrameNow({type: C.FRAME_TYPE.APS_DATA_INDICATION});
+    }
     if (this.dataConfirm && !this.dataConfirmInProgress) {
       // There is a data confirm ready to be read.
       this.dataConfirmInProgress = true;
       this.sendFrameNow({type: C.FRAME_TYPE.APS_DATA_CONFIRM});
-    } else if (this.dataIndication && !this.dataIndicationInProgress) {
-      // There is a frame ready to be read.
-      this.dataIndicationInProgress = true;
-      this.sendFrameNow({type: C.FRAME_TYPE.APS_DATA_INDICATION});
     }
   }
 
@@ -402,13 +532,10 @@ class DeconzDriver extends ZigbeeDriver {
       new Command(WAIT_FRAME, {
         type: C.FRAME_TYPE.READ_PARAMETER,
         paramId: paramId,
-        callback: (frame) => {
+        callback: (_frame) => {
           if (this.paramIdx < PARAM.length) {
-            const paramId = PARAM[this.paramIdx];
-            const fieldName = C.PARAM_ID[paramId].fieldName;
-            this[fieldName] = frame[fieldName];
             this.paramIdx++;
-            this.readParameter(this.paramIdx);
+            this.readParameter();
           }
         },
       }),
@@ -418,6 +545,38 @@ class DeconzDriver extends ZigbeeDriver {
   readParameters() {
     this.paramIdx = 0;
     this.readParameter();
+  }
+
+  reportStatus(frame) {
+    const status = frame.status;
+    if (status < C.STATUS_STR.length) {
+      if (status == 0) {
+        console.log(`Frame Status: ${status}: ${C.STATUS_STR[status]}`);
+      } else {
+        console.error(`Frame Status: ${status}: ${C.STATUS_STR[status]}`);
+        console.error(frame);
+      }
+    } else {
+      console.error(`Frame Status: ${status}: unknown`);
+      console.error(frame);
+    }
+  }
+
+  reportConfirmStatus(frame) {
+    // These are common statuses, so don't report them unless we're
+    // debugging.
+    const noReport = [APS_STATUS.NO_ACK, APS_STATUS.NO_SHORT_ADDRESS];
+    const status = frame.confirmStatus;
+    if (APS_STATUS.hasOwnProperty(status)) {
+      if (status == 0) {
+        console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`);
+      } else if (DEBUG_frameDetail || !noReport.includes(status)) {
+        console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`);
+      }
+    } else {
+      console.error(`Confirm Status: ${status}: unknown`);
+      console.error(frame);
+    }
   }
 
   updateFlags(frame) {
@@ -479,6 +638,9 @@ DeconzDriver.frameHandler = {
   [C.FRAME_TYPE.DEVICE_STATE]: DeconzDriver.prototype.handleDeviceState,
   [C.FRAME_TYPE.DEVICE_STATE_CHANGED]:
     DeconzDriver.prototype.handleDeviceStateChanged,
+  [C.FRAME_TYPE.VERSION]: DeconzDriver.prototype.handleVersion,
+  [C.FRAME_TYPE.READ_PARAMETER]: DeconzDriver.prototype.handleReadParameter,
+  [C.FRAME_TYPE.WRITE_PARAMETER]: DeconzDriver.prototype.handleWriteParameter,
 };
 
 module.exports = DeconzDriver;
