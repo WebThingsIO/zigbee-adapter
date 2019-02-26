@@ -1808,20 +1808,20 @@ class ZigbeeClassifier {
       if (ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
         isLight = true;
         if (ZHA_DEVICE_ID.isColorLight(levelEndpoint.deviceId)) {
-          isColorLight = true;
-          colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
+          // ZHA-only color temperature bulbs are reported as color
+          // bulbs by deviceId (The Sylvania Adjustable bulb fits this
+          // category) but the colorCapabilities tells the true story.
+          if (!node.hasOwnProperty('colorCapabilities')) {
+            // We have nothing else to go by. Assume its a color light.
+            isColorLight = true;
+            colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
+          }
         }
       }
     }
-    const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-    if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX &&
-        ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
-      isLight = true;
-    }
 
     if (isLight) {
-      if ((colorCapabilities &
-        (COLOR_CAPABILITY.HUE_SAT | COLOR_CAPABILITY.XY)) != 0) {
+      if ((colorCapabilities & COLOR_CAPABILITY.COLOR) != 0) {
         isColorLight = true;
       }
       if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0) {
