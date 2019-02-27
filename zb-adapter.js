@@ -19,7 +19,6 @@ const registerFamilies = require('./zb-families');
 const {Adapter, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
-  BROADCAST_ADDR,
   CLUSTER_ID,
   PROFILE_ID,
   STATUS,
@@ -1029,9 +1028,9 @@ class ZigbeeAdapter extends Adapter {
     }
 
     const permitJoinFrame = this.zdo.makeFrame({
-      // I tried broadcasting a variety of ways, but they with the ConBee
-      // dongle they all get an INVALID_PARAMETER confirmStatus, with exception
-      // of sending it to '0000'
+      // I tried broadcasting a variety of ways, but with the ConBee
+      // dongle they all get an INVALID_PARAMETER confirmStatus, with the
+      // exception of sending it to '0000'
       destination64: this.networkAddr64,
       destination16: '0000',
       clusterId: zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_REQUEST,

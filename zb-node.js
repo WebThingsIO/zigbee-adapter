@@ -100,8 +100,7 @@ class ZigbeeNode extends Device {
   updateAddr16(addr16) {
     if (addr16 &&
         this.addr16 != addr16 &&
-        addr16.match(/^[0-9a-f]{4}$/) &&
-        addr16 < 'fffc') {
+        parseInt(addr16, 16) < 0xfffc) {
       console.log('updateAddr16:', this.addr64,
                   'Updated addr16 from:', this.addr16, 'to:', addr16);
       this.addr16 = addr16;

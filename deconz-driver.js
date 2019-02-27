@@ -182,7 +182,7 @@ class DeconzDriver extends ZigbeeDriver {
 
   processRawFrameQueue() {
     if (this.waitingForResponseType != 0) {
-      // We're sent a frame to the dongle and we're waiting for a response.
+      // We've sent a frame to the dongle and we're waiting for a response.
       if (DEBUG_rawFrames) {
         console.log('processRawFrameQueue: waiting for type:',
                     this.waitingForResponseType);
