@@ -127,14 +127,11 @@ class XBeeDriver extends ZigbeeDriver {
       this.AT(AT_CMD.ENCRYPTION_OPTIONS),
       FUNC(this, this.configureIfNeeded, []),
       FUNC(this, this.permitJoin, [0]),
-      FUNC(this, this.dumpInfo, []),
       FUNC(this, this.adapterInitialized, []),
     ]);
   }
 
   adapterInitialized() {
-    this.adapter.networkAddr64 = this.serialNumber;
-    this.adapter.networkAddr16 = '0000';
     this.dumpInfo();
     this.adapter.adapterInitialized();
   }
@@ -469,11 +466,15 @@ class XBeeDriver extends ZigbeeDriver {
   handleAtSerialNumberHigh(frame) {
     this.serialNumber =
       frame.serialNumberHigh + this.serialNumber.slice(8, 8);
+    this.adapter.networkAddr64 = this.serialNumber;
+    this.adapter.networkAddr16 = '0000';
   }
 
   handleAtSerialNumberLow(frame) {
     this.serialNumber =
       this.serialNumber.slice(0, 8) + frame.serialNumberLow;
+    this.adapter.networkAddr64 = this.serialNumber;
+    this.adapter.networkAddr16 = '0000';
   }
 
   // -------------------------------------------------------------------------

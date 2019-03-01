@@ -401,6 +401,9 @@ class ZigbeeDriver {
         frame.extraParams = this.waitFrame.extraParams;
       }
       frameHandler.call(this, frame);
+    } else {
+      console.error('No frame handler for frame');
+      console.error(frame);
     }
 
     if (this.waitFrame) {
@@ -414,6 +417,7 @@ class ZigbeeDriver {
         'timeoutFunc',
         'waitRetryCount',
         'waitRetryMax',
+        'waitRetryTimeout',
         'extraParams',
       ];
       for (const propertyName in this.waitFrame) {
@@ -669,16 +673,18 @@ class ZigbeeDriver {
             this.waitFrame.waitRetryMax = WAIT_RETRY_MAX;
           }
           let timeoutDelay = WAIT_TIMEOUT_DELAY;
-          // Frames which don't have a profileId, aren't directed to a node
-          // (i.e. AT commands or other driver specific commands.)
-          if (this.lastFrameSent &&
-              this.lastFrameSent.hasOwnProperty('profileId')) {
+          if (this.waitFrame.hasOwnProperty('waitRetryTimeout')) {
+            timeoutDelay = this.waitFrame.waitRetryTimeout;
+          } else if (this.lastFrameSent &&
+                     this.lastFrameSent.hasOwnProperty('profileId')) {
+            // Frames which don't have a profileId, aren't directed to a node
+            // (i.e. AT commands or other driver specific commands.)
             const node = this.adapter.findNodeFromTxFrame(this.lastFrameSent);
             if (node && node.extendedTimeout) {
               timeoutDelay = EXTENDED_TIMEOUT_DELAY;
             }
           }
-          if (DEBUG_frameDetail) {
+          if (DEBUG_frameDetail || DEBUG_flow) {
             console.log('WAIT_FRAME type:', this.waitFrame.type,
                         'timeoutDelay =', timeoutDelay);
           }
@@ -731,7 +737,7 @@ class ZigbeeDriver {
   }
 
   waitTimedOut() {
-    if (DEBUG_frameDetail) {
+    if (DEBUG_frameDetail || DEBUG_flow) {
       console.log('WAIT_FRAME timed out');
     }
     // We timed out waiting for a response, resend the last command.
@@ -746,7 +752,8 @@ class ZigbeeDriver {
 
     if (waitFrame.waitRetryCount >= waitFrame.waitRetryMax) {
       if (DEBUG_flow) {
-        console.log('WAIT_FRAME exceeded max retry count');
+        console.log('WAIT_FRAME waitRetryCount:', waitFrame.waitRetryCount,
+                    'exceeded waitRetryMax:', waitFrame.waitRetryMax);
       }
       if (timeoutFunc) {
         timeoutFunc();

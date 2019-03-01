@@ -19,6 +19,39 @@ function addHexValues(dict) {
   }
 }
 
+// For each key/value pair, add an entry where the key is the value and
+// vice-versa.
+function addInverseMap(dict) {
+  const entries = Object.entries(dict);
+  for (const [key, value] of entries) {
+    dict[value] = parseInt(key);
+  }
+}
+
+// The following come from the Zigbee Specification,
+// section 2.2.9 APS Sub-Layer Status values
+const APS_STATUS = {
+  0x00: 'SUCCESS',
+  0xa0: 'ASDU_TOO_LONG',
+  0xa1: 'DEFRAG_DEFERRED',
+  0xa2: 'DEFRAG_UNSUPPORTED',
+  0xa3: 'ILLEGAL_REQUEST',
+  0xa4: 'INVALID_BINDING',
+  0xa5: 'INVALID_GROUP',
+  0xa6: 'INVALID_PARAMETER',
+  0xa7: 'NO_ACK',
+  0xa8: 'NO_BOUND_DEVICE',
+  0xa9: 'NO_SHORT_ADDRESS',
+  0xaa: 'NOT_SUPPORTED',
+  0xab: 'SECURED_LINK_KEY',
+  0xac: 'SECURED_NWK_KEY',
+  0xad: 'SECURITY_FAIL',
+  0xae: 'TABLE_FULL',
+  0xaf: 'UNSECURED',
+  0xb0: 'UNSUPPORTED_ATTRIBUTE',
+};
+addInverseMap(APS_STATUS);
+
 const BROADCAST_ADDR = {
   ALL: 'ffff',
   NON_SLEEPING: 'fffd', // i.e. rxOnWhenIdle = true
@@ -104,6 +137,9 @@ const COLOR_CAPABILITY = {
   XY: (1 << 3),
   TEMPERATURE: (1 << 4),
 };
+COLOR_CAPABILITY.COLOR = COLOR_CAPABILITY.HUE_SAT |
+                         COLOR_CAPABILITY.ENHANCED_HUE_SAT |
+                         COLOR_CAPABILITY.XY;
 
 // COLOR_MODE describes values for the colorMode attribute from
 // the lightingColorCtrl cluster.
@@ -149,6 +185,7 @@ const PROFILE_ID = {
   ZDO: 0,
   ZHA: zclId.profile('HA').value,
   ZLL: zclId.profile('LL').value,
+  GREEN: 0xa1e0,
 };
 addHexValues(PROFILE_ID);
 
@@ -219,6 +256,10 @@ const ZHA_DEVICE_ID = {
            deviceId == ZHA_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
   },
+
+  isColorLight: function isColorLight(deviceId) {
+    return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
+  },
 };
 
 // ZLL Device Id describes device IDs from the ZLL spec.
@@ -229,7 +270,7 @@ const ZLL_DEVICE_ID = {
   DIMMABLE_SWITCH: '0110',
   COLOR_LIGHT: '0200',
   EXTENDED_COLOR_LIGHT: '0210',
-  COLOR_TEMPERATURE_LIHT: '0220',
+  COLOR_TEMPERATURE_LIGHT: '0220',
   COLOR_CONTROLLER: '0800',
   COLOR_SCENE_CONTROLLER: '0810',
   NON_COLOR_CONTROLLER: '0820',
@@ -242,7 +283,16 @@ const ZLL_DEVICE_ID = {
            deviceId == ZLL_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
            deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT ||
-           deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIHT;
+           deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
+  },
+
+  isColorLight: function isColorLight(deviceId) {
+    return deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
+           deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT;
+  },
+
+  isColorTemperatureLight: function isColorTemperatureLight(deviceId) {
+    return deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
   },
 };
 
@@ -255,6 +305,7 @@ const ZONE_STATUS = {
 };
 
 module.exports = {
+  APS_STATUS,
   ATTR_ID,
   BROADCAST_ADDR,
   CLUSTER_ID,

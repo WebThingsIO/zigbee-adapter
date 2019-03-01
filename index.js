@@ -153,6 +153,8 @@ async function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
                                           match.port.comName,
                                           match.serialPort);
     }
+  }).catch((err) => {
+    errorCallback(manifest.name, err);
   });
 }
 

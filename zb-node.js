@@ -27,6 +27,7 @@ const {
   POWERSOURCE,
   PROFILE_ID,
   STATUS,
+  UNKNOWN_ADDR_16,
 } = require('./zb-constants');
 
 const {DEBUG_node} = require('./zb-debug');
@@ -35,7 +36,7 @@ const DEBUG = DEBUG_node;
 const FAST_CHECKIN_INTERVAL = 20 * 4;       // 20 seconds (quarter seconds)
 const SLOW_CHECKIN_INTERVAL = 10 * 60 * 4;  // 10 min (quarter seconds)
 
-const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic'];
+const SKIP_DISCOVER_READ_CLUSTERS = ['haDiagnostic', 'genGreenPowerProxy'];
 
 const DEVICE_INFO_FIELDS = [
   'name', 'type', '@type', 'defaultName', 'extendedTimeout',
@@ -94,6 +95,21 @@ class ZigbeeNode extends Device {
     this.rebindRequired = true;
     this.zclSeqNum = 1;
     this.classified = false;
+  }
+
+  updateAddr16(addr16) {
+    if (addr16 &&
+        this.addr16 != addr16 &&
+        parseInt(addr16, 16) < 0xfffc) {
+      console.log('updateAddr16:', this.addr64,
+                  'Updated addr16 from:', this.addr16, 'to:', addr16);
+      this.addr16 = addr16;
+      const device = this.adapter.devices[this.id];
+      if (device) {
+        device.addr16 = addr16;
+      }
+      this.adapter.saveDeviceInfoDeferred();
+    }
   }
 
   advanceZclSeqNum() {
@@ -228,7 +244,7 @@ class ZigbeeNode extends Device {
   }
 
   debugCmd(cmd, params) {
-    console.log('debugCmd:', this.addr64, cmd, params);
+    console.log('debugCmd:', this.addr64, this.addr16, cmd, params);
     switch (cmd) {
 
       case 'bind': {
@@ -589,6 +605,8 @@ class ZigbeeNode extends Device {
         type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'discoverRsp',
         zclSeqNum: discoverFrame.zcl.seqNum,
+        waitRetryMax: 1,
+        waitRetryTimeout: 1000,
       });
     }
 
@@ -625,6 +643,8 @@ class ZigbeeNode extends Device {
         type: this.driver.getExplicitRxFrameType(),
         zclCmdId: 'readRsp',
         zclSeqNum: readFrame.zcl.seqNum,
+        waitRetryMax: 1,
+        waitRetryTimeout: 1000,
       });
     }
   }
@@ -911,6 +931,9 @@ class ZigbeeNode extends Device {
               clearTimeout(this.occupancyTimer);
             }
             // create a new timer
+            DEBUG &&
+              console.log('Creating a timer for',
+                          this.occupancyTimeout, 'seconds');
             this.occupancyTimer = setTimeout(() => {
               this.occupancyTimer = null;
               property.setCachedValue(false);
@@ -1265,9 +1288,35 @@ class ZigbeeNode extends Device {
       return;
     }
 
-    DEBUG && console.log('rebind called for node:', this.addr64,
+    DEBUG && console.log('rebind called for node:', this.addr64, this.addr16,
                          'rebindRequired =', this.rebindRequired,
                          'pollCtrlBindingNeeded =', this.pollCtrlBindingNeeded);
+
+    if (typeof this.addr16 === 'undefined') {
+      DEBUG && console.log('rebind: Requesting 16-bit address for',
+                           this.addr64);
+      this.rebinding = true;
+      const updateFrame = this.adapter.zdo.makeFrame({
+        destination64: this.addr64,
+        clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
+        addr64: this.addr64,
+        requestType: 0, // 0 = Single Device Response
+        startIndex: 0,
+        callback: (_frame) => {
+          this.rebinding = false;
+          this.rebind();
+        },
+        timeoutFunc: () => {
+          this.rebinding = false;
+        },
+      });
+      this.adapter.sendFrameWaitFrameAtFront(updateFrame, {
+        type: this.driver.getExplicitRxFrameType(),
+        zdoSeq: updateFrame.zdoSeq,
+        waitRetryMax: 1,
+      });
+      return;
+    }
 
     if (this.genPollCtrlEndpoint && this.pollCtrlBindingNeeded) {
       if (this.writingCheckinInterval) {
@@ -1621,9 +1670,10 @@ class ZigbeeNode extends Device {
   makeBindFrame(endpoint, clusterId, configReportFrames) {
     DEBUG && console.log('makeBindFrame: endpoint =', endpoint,
                          'clusterId =', clusterId);
+    const addr16 = this.addr16 || UNKNOWN_ADDR_16;
     const frame = this.adapter.zdo.makeFrame({
       destination64: this.addr64,
-      destination16: this.addr16,
+      destination16: addr16,
       clusterId: zdo.CLUSTER_ID.BIND_REQUEST,
       bindSrcAddr64: this.addr64, // address of device that sends reports
       bindSrcEndpoint: endpoint,  // endpoint of device that sends reports

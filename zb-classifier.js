@@ -13,7 +13,6 @@
 const {
   CLUSTER_ID,
   COLOR_CAPABILITY,
-  COLOR_MODE,
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_SEQ,
   PROFILE_ID,
@@ -1604,26 +1603,6 @@ class ZigbeeClassifier {
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SSIASZONE_HEX);
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
-    if (node.lightingColorCtrlEndpoint) {
-      // Fix up colorCapabilities, if colorMode is present.
-      if (!node.hasOwnProperty('colorCapabilities')) {
-        node.colorCapabilities = 0;
-      }
-      if (node.hasOwnProperty('colorMode')) {
-        switch (node.colorMode) {
-          case COLOR_MODE.HUE_SAT:
-            node.colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
-            break;
-          case COLOR_MODE.XY:
-            node.colorCapabilities |= COLOR_CAPABILITY.XY;
-            break;
-          case COLOR_MODE.TEMPERATURE:
-            node.colorCapabilities |= COLOR_CAPABILITY.TEMPERATURE;
-            break;
-        }
-      }
-    }
-
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
       console.log('                   modelId =', node.modelId);
@@ -1796,14 +1775,16 @@ class ZigbeeClassifier {
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
-    const colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
-                                node.colorCapabilities) || 0;
+    let colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
+                             node.colorCapabilities) || 0;
     let isLight = false;
+    let isColorLight = false;
+    let isColorTemperatureLight = false;
+
     if (lightLinkEndpoint && node.activeEndpoints[lightLinkEndpoint].deviceId) {
       // The device supports ZLL, check the deviceId associated with the ZLL
       // endpoint to see if its a light or not.
       const zllDeviceId = node.activeEndpoints[lightLinkEndpoint].deviceId;
-      isLight = ZLL_DEVICE_ID.isLight(zllDeviceId);
       if (zllDeviceId == ZLL_DEVICE_ID.ON_OFF_SWITCH) {
         // This isn't really a multi-level switch even though it has a level
         // control. So call the correct routine.
@@ -1812,17 +1793,45 @@ class ZigbeeClassifier {
         this.initOnOffSwitch(node, genLevelCtrlEndpoint);
         return;
       }
+      if (ZLL_DEVICE_ID.isLight(zllDeviceId)) {
+        isLight = true;
+        if (ZLL_DEVICE_ID.isColorLight(zllDeviceId)) {
+          isColorLight = true;
+        }
+        if (ZLL_DEVICE_ID.isColorTemperatureLight(zllDeviceId)) {
+          isColorTemperatureLight = true;
+        }
+      }
     }
     const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-    if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX &&
-        ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
-      isLight = true;
+    if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX) {
+      if (ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
+        isLight = true;
+        if (ZHA_DEVICE_ID.isColorLight(levelEndpoint.deviceId)) {
+          // ZHA-only color temperature bulbs are reported as color
+          // bulbs by deviceId (The Sylvania Adjustable bulb fits this
+          // category) but the colorCapabilities tells the true story.
+          if (!node.hasOwnProperty('colorCapabilities')) {
+            // We have nothing else to go by. Assume its a color light.
+            isColorLight = true;
+            colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
+          }
+        }
+      }
+    }
+
+    if (isLight) {
+      if ((colorCapabilities & COLOR_CAPABILITY.COLOR) != 0) {
+        isColorLight = true;
+      }
+      if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0) {
+        isColorTemperatureLight = true;
+      }
     }
 
     if (isLight) {
       // It looks like a light bulb
-      if ((colorCapabilities &
-           (COLOR_CAPABILITY.HUE_SAT | COLOR_CAPABILITY.XY)) != 0) {
+      if (isColorLight) {
         // Hue and Saturation (or XY) are supported
         if ((colorCapabilities & COLOR_CAPABILITY.HUE_SAT) != 0) {
           this.addColorProperty(node, node.lightingColorCtrlEndpoint);
@@ -1832,7 +1841,7 @@ class ZigbeeClassifier {
         node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
-        if ((colorCapabilities & COLOR_CAPABILITY.TEMPERATURE) != 0) {
+        if (isColorTemperatureLight) {
           // Color temperature is basically a specialized way of selecting
           // a color, so we don't include this property with full-color
           // bulbs.
