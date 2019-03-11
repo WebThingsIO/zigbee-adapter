@@ -1986,6 +1986,7 @@ class ZigbeeClassifier {
         break;
 
       case 'RWL020':
+      case 'RWL021':
         // This is the Philips Hue Dimmer. It has 4 buttons and uses
         // 2 of the buttons to perform the dimming.
         levelProperty.buttonIndex = 3;
