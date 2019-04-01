@@ -2,7 +2,7 @@
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
   "version": "0.7.6",
-  "description": "Zigbee adapter plugin for Mozilla IoT Gateway",
+  "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
   "scripts": {
