@@ -9,10 +9,10 @@ else
 fi
 if [ "${ADDON_ARCH}" == "linux-arm" ]; then
   # We assume that CC and CXX are pointing to the cross compilers
-  yarn --ignore-scripts --production
+  npm install --ignore-scripts --production
   npm rebuild --arch=armv6l --target_arch=arm
 else
-  yarn install --production
+  npm install --production
 fi
 
 rm -f SHA256SUMS
