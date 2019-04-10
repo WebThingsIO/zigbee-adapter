@@ -1774,6 +1774,22 @@ class ZigbeeNode extends Device {
     const sourceEndpoint = parseInt(frame.sourceEndpoint, 16);
     const destinationEndpoint = parseInt(frame.destinationEndpoint, 16);
 
+    // The zcl-packet library expects the cmdId in the payload to be a number,
+    // but when it delivered the original frame to us, frame.zcl.cmdId is
+    // a string. So we need to convert it back to a number.
+
+    let zclCmd;
+    if (frame.zcl.frameCntl.frameType == 0) {
+      zclCmd = zclId.foundation(frame.zcl.cmdId);
+    } else if (frame.zcl.frameCntl.frameType == 1) {
+      const clusterId = parseInt(frame.clusterId, 16);
+      zclCmd = zclId.functional(clusterId, frame.zcl.cmdId);
+    }
+    let cmdId = 0;
+    if (zclCmd) {
+      cmdId = zclCmd.value;
+    }
+
     this.zclSeqNum = frame.zcl.seqNum;
     const rspFrame = this.makeZclFrame(
       sourceEndpoint,
@@ -1787,7 +1803,7 @@ class ZigbeeNode extends Device {
           disDefaultRsp: 1,
         },
         payload: {
-          cmdId: frame.zcl.cmdId,
+          cmdId: cmdId,
           statusCode: statusCode,
         },
       }
