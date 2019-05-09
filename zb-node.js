@@ -1271,7 +1271,12 @@ class ZigbeeNode extends Device {
           return;
       }
 
-      // Generate a defaultRsp
+      // Generate a defaultRsp. Note that the deConz dongle may send us
+      // group casts, which are indicated by a dstAddrMode of 1. This happens
+      // when using the IKEA motion sensor.
+
+      // TODO: Don't send defaultRsp to group broadcasts
+
       if (frame.zcl.frameCntl.disDefaultRsp == 0 &&
           this.isZclStatusSuccess(frame)) {
         const defaultRspFrame =
