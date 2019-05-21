@@ -47,8 +47,8 @@ const xbeeSerialProber = new SerialProber({
     {
       // The green Zigbee dongle from Digi has a manufacturer of 'Digi'
       // even though it uses the FTDI vendorId.
-      vendorId: '0403',
-      productId: '6001',
+      vendorId: /0403/i,
+      productId: /6001/i,
       manufacturer: 'Digi',
     },
   ],
@@ -79,8 +79,12 @@ const deconzSerialProber = new SerialProber({
   ],
   filter: [
     {
-      vendorId: '0403',
-      productId: '6015',
+      vendorId: /0403/i,
+      productId: /6015/i,
+    },
+    {
+      vendorId: /1cf1/i,
+      productId: /0030/i,
     },
   ],
 });

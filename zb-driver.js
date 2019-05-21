@@ -373,7 +373,8 @@ class ZigbeeDriver {
   // Called by the driver whenever a new frame becomes available.
   handleFrame(frame) {
     if (DEBUG_frameParsing) {
-      this.dumpFrame('Rcvd (before parsing):', frame);
+      console.log('Rcvd (before parsing):');
+      console.log(util.inspect(frame, {depth: null}));
     }
     if (zdo.isZdoFrame(frame)) {
       zdo.parseZdoFrame(frame);
@@ -392,9 +393,22 @@ class ZigbeeDriver {
   }
 
   handleParsedFrame(frame) {
+    if (frame.hasOwnProperty('remote16') && !frame.hasOwnProperty('remote64')) {
+      // The XBee dongle inserts remote64 and remote16. For the ConBee we
+      // only get remote16
+      const node = this.adapter.findNodeByAddr16(frame.remote16);
+      if (node) {
+        frame.remote64 = node.addr64;
+        if (DEBUG_frames) {
+          console.log('Looked frame.remote64', frame.remote64,
+                      'from', frame.remote16);
+        }
+      }
+    }
     if (DEBUG_frames) {
       this.dumpFrame('Rcvd:', frame);
     }
+
     const frameHandler = this.getFrameHandler(frame);
     if (frameHandler) {
       if (this.waitFrame && this.waitFrame.extraParams) {
