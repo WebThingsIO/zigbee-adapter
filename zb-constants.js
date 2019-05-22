@@ -52,6 +52,32 @@ const APS_STATUS = {
 };
 addInverseMap(APS_STATUS);
 
+// The following come from the Zigbee Specification,
+// section 3.7 NWK Layer Status Values
+const NWK_STATUS = {
+  0x00: 'SUCCESS',
+  0xc1: 'INVALID_PARAMETER',
+  0xc2: 'INVALID_REQUEST',
+  0xc3: 'NOT_PERMITTED',
+  0xc4: 'STARTUP_FAILURE',
+  0xc5: 'ALREADY_PRESENT',
+  0xc6: 'SYNC_FAILURE',
+  0xc7: 'NEIGHBOR_TABLE_FULL',
+  0xc8: 'UNKNOWN_DEVICE',
+  0xc9: 'UNSUPPORTED_ATTRIBUTE',
+  0xca: 'NO_NETWORKS',
+  0xcb: 'RESERVED1',
+  0xcc: 'MAX_FRM_COUNTER',
+  0xcd: 'NO_KEY',
+  0xce: 'BAD_CCM_OUTPUT',
+  0xcf: 'RESERVED2',
+  0xd0: 'ROUTE_DISCOVERY_FAILED',
+  0xd1: 'ROUTE_ERROR',
+  0xd2: 'BT_TABLE_FULL',
+  0xd3: 'FRAME_NOT_BUFFERED',
+};
+addInverseMap(NWK_STATUS);
+
 const BROADCAST_ADDR = {
   ALL: 'ffff',
   NON_SLEEPING: 'fffd', // i.e. rxOnWhenIdle = true
@@ -315,6 +341,7 @@ module.exports = {
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_MODE,
   HVAC_FAN_SEQ,
+  NWK_STATUS,
   POWERSOURCE,
   PROFILE_ID,
   STATUS,

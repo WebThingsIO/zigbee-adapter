@@ -16,6 +16,7 @@ const C = deconzApi.constants;
 
 const {
   APS_STATUS,
+  NWK_STATUS,
 } = require('./zb-constants');
 
 const {
@@ -137,6 +138,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   adapterInitialized() {
+    this.adapter.networkAddr16 = '0000';
     this.adapter.adapterInitialized();
   }
 
@@ -434,6 +436,11 @@ class DeconzDriver extends ZigbeeDriver {
     this.updateFlags(frame);
   }
 
+  // APS_MAC_POLL - this seems to be sent by the ConBee II and not the ConBee
+  // We just ignore the frame for now.
+  handleApsMacPoll(_frame) {
+  }
+
   // Response to DEVICE_STATE request
   handleDeviceState(frame) {
     DEBUG_flow && console.log('handleDeviceState: seqNum:', frame.seqNum);
@@ -573,6 +580,8 @@ class DeconzDriver extends ZigbeeDriver {
       } else if (DEBUG_frameDetail || !noReport.includes(status)) {
         console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`);
       }
+    } else if (NWK_STATUS.hasOwnProperty(status)) {
+      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`);
     } else {
       console.error(`Confirm Status: ${status}: unknown`);
       console.error(frame);
@@ -635,6 +644,7 @@ DeconzDriver.frameHandler = {
   [C.FRAME_TYPE.APS_DATA_INDICATION]:
     DeconzDriver.prototype.handleApsDataIndication,
   [C.FRAME_TYPE.APS_DATA_REQUEST]: DeconzDriver.prototype.handleApsDataRequest,
+  [C.FRAME_TYPE.APS_MAC_POLL]: DeconzDriver.prototype.handleApsMacPoll,
   [C.FRAME_TYPE.DEVICE_STATE]: DeconzDriver.prototype.handleDeviceState,
   [C.FRAME_TYPE.DEVICE_STATE_CHANGED]:
     DeconzDriver.prototype.handleDeviceStateChanged,

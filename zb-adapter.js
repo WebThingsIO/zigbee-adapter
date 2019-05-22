@@ -494,7 +494,7 @@ class ZigbeeAdapter extends Adapter {
       console.log('createNodeIfRequired:', addr64, addr16);
     }
 
-    if (addr64 == 'ffffffffffffffff') {
+    if (addr64 == 'ffffffffffffffff' || typeof addr64 === 'undefined') {
       // We can't create a new node if we don't know the 64-bit address.
       // Hopefully, we've seen this node before.
       return this.findNodeByAddr16(addr16);
