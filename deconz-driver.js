@@ -570,20 +570,43 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   reportConfirmStatus(frame) {
+    if (frame.payloadLen < 11) {
+      // This is an invalid frame. We've already reported it.
+      return;
+    }
+
     // These are common statuses, so don't report them unless we're
     // debugging.
     const noReport = [APS_STATUS.NO_ACK, APS_STATUS.NO_SHORT_ADDRESS];
     const status = frame.confirmStatus;
+
+    let addr = 'unknown';
+    let node;
+    if (frame.hasOwnProperty('destination16')) {
+      addr = frame.destination16;
+      node = this.adapter.findNodeByAddr16(addr);
+    } else if (frame.hasOwnProperty('destination64')) {
+      addr = frame.destination64;
+      node = this.adapter.nodes[addr];
+    }
+    if (node) {
+      addr = `${node.addr64} ${node.addr16}`;
+    }
+
     if (APS_STATUS.hasOwnProperty(status)) {
       if (status == 0) {
-        console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`);
+        console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
+                    `addr: ${addr}`);
       } else if (DEBUG_frameDetail || !noReport.includes(status)) {
-        console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`);
+        console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
+                      `addr: ${addr}`);
       }
     } else if (NWK_STATUS.hasOwnProperty(status)) {
-      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`);
+      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
+                    `addr: ${addr}`);
     } else {
-      console.error(`Confirm Status: ${status}: unknown`);
+      console.error(`Confirm Status: ${status}: unknown`,
+                    `addr: ${addr}`);
       console.error(frame);
     }
   }
