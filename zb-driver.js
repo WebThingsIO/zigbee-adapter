@@ -32,6 +32,7 @@ const EXTENDED_TIMEOUT_DELAY = 10 * 1000;
 const WAIT_RETRY_MAX = 3;   // includes initial send
 
 const PERMIT_JOIN_PRIORITY = 1;
+const WATCHDOG_PRIORITY = 1;
 
 const SEND_FRAME = 0x01;
 const WAIT_FRAME = 0x02;
@@ -812,6 +813,7 @@ module.exports = {
   Command,
   FUNC,
   PERMIT_JOIN_PRIORITY,
+  WATCHDOG_PRIORITY,
   RESOLVE_SET_PROPERTY,
   SEND_FRAME,
   WAIT_FRAME,

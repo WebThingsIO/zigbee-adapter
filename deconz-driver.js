@@ -23,6 +23,7 @@ const {
   Command,
   FUNC,
   PERMIT_JOIN_PRIORITY,
+  WATCHDOG_PRIORITY,
   SEND_FRAME,
   WAIT_FRAME,
   ZigbeeDriver,
@@ -53,7 +54,10 @@ const PARAM = [
   C.PARAM_ID.PROTOCOL_VERSION,
   C.PARAM_ID.NETWORK_UPDATE_ID,
   C.PARAM_ID.PERMIT_JOIN,
+  C.PARAM_ID.WATCHDOG_TTL,
 ];
+
+const WATCHDOG_TIMEOUT_SECS = 3600;   // 1 hour
 
 function serialWriteError(error) {
   if (error) {
@@ -131,6 +135,7 @@ class DeconzDriver extends ZigbeeDriver {
     this.queueCommands([
       FUNC(this, this.version),
       FUNC(this, this.readParameters),
+      FUNC(this, this.kickWatchDog),
       FUNC(this, this.permitJoin, [0]),
       FUNC(this, this.dumpParameters),
       FUNC(this, this.adapterInitialized),
@@ -246,6 +251,10 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   close() {
+    if (this.watchDogTimeout) {
+      clearTimeout(this.WatchDogTimeout);
+      this.WatchDogTimeout = null;
+    }
     this.serialPort.close();
   }
 
@@ -495,6 +504,26 @@ class DeconzDriver extends ZigbeeDriver {
 
   handleVersion(frame) {
     console.log('DeConz Firmware version:', Utils.hexStr(frame.version, 8));
+  }
+
+  kickWatchDog() {
+    if (this.protocolVersion < C.WATCHDOG_PROTOCOL_VERSION) {
+      console.error('This version of ConBee doesn\'t support the watchdog');
+      return;
+    }
+    console.log('Kicking WatchDog for', WATCHDOG_TIMEOUT_SECS, 'seconds');
+    this.queueCommandsAtFront(
+      this.writeParameterCommands(C.PARAM_ID.WATCHDOG_TTL,
+                                  WATCHDOG_TIMEOUT_SECS,
+                                  WATCHDOG_PRIORITY));
+    if (this.watchDogTimeout) {
+      clearTimeout(this.WatchDogTimeout);
+      this.WatchDogTimeout = null;
+    }
+    this.WatchDogTimeout = setTimeout(() => {
+      this.watchDogTimeout = null;
+      this.kickWatchDog();
+    }, (WATCHDOG_TIMEOUT_SECS / 2) * 1000);
   }
 
   nextFrameId() {
