@@ -19,10 +19,10 @@ const registerFamilies = require('./zb-families');
 const {Adapter, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
+  BROADCAST_ADDR,
   CLUSTER_ID,
   PROFILE_ID,
   STATUS,
-  UNKNOWN_ADDR_16,
 } = require('./zb-constants');
 
 const {
@@ -154,12 +154,15 @@ class ZigbeeAdapter extends Adapter {
       return;
     }
     const updateFrame = this.zdo.makeFrame({
+      // Send the network address request to all routers. This way the
+      // parent will respond if it's a sleeping end device.
       destination64: node.addr64,
-      destination16: UNKNOWN_ADDR_16,
+      destination16: BROADCAST_ADDR.ROUTERS,
       clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
       addr64: node.addr64,
       requestType: 0, // 0 = Single Device Response
       startIndex: 0,
+      options: 0,
     });
     this.sendFrameWaitFrameAtFront(updateFrame, {
       type: this.driver.getExplicitRxFrameType(),

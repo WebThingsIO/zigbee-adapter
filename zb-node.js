@@ -21,6 +21,7 @@ const ZigbeeFamily = require('./zb-family');
 const {Device, Event, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
+  BROADCAST_ADDR,
   CLUSTER_ID,
   DIR,
   DOORLOCK_EVENT_CODES,
@@ -1297,11 +1298,15 @@ class ZigbeeNode extends Device {
                            this.addr64);
       this.rebinding = true;
       const updateFrame = this.adapter.zdo.makeFrame({
+        // Send the network address request to all routers. This way the
+        // parent will respond if it's a sleeping end device.
         destination64: this.addr64,
+        destination16: BROADCAST_ADDR.ROUTERS,
         clusterId: zdo.CLUSTER_ID.NETWORK_ADDRESS_REQUEST,
         addr64: this.addr64,
         requestType: 0, // 0 = Single Device Response
         startIndex: 0,
+        options: 0,
         callback: (_frame) => {
           this.rebinding = false;
           this.rebind();
