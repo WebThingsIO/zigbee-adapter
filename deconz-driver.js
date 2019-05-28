@@ -252,8 +252,8 @@ class DeconzDriver extends ZigbeeDriver {
 
   close() {
     if (this.watchDogTimeout) {
-      clearTimeout(this.WatchDogTimeout);
-      this.WatchDogTimeout = null;
+      clearTimeout(this.watchDogTimeout);
+      this.watchDogTimeout = null;
     }
     this.serialPort.close();
   }
@@ -517,10 +517,10 @@ class DeconzDriver extends ZigbeeDriver {
                                   WATCHDOG_TIMEOUT_SECS,
                                   WATCHDOG_PRIORITY));
     if (this.watchDogTimeout) {
-      clearTimeout(this.WatchDogTimeout);
-      this.WatchDogTimeout = null;
+      clearTimeout(this.watchDogTimeout);
+      this.watchDogTimeout = null;
     }
-    this.WatchDogTimeout = setTimeout(() => {
+    this.watchDogTimeout = setTimeout(() => {
       this.watchDogTimeout = null;
       this.kickWatchDog();
     }, (WATCHDOG_TIMEOUT_SECS / 2) * 1000);
