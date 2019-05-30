@@ -429,7 +429,7 @@ class ZigbeeNode extends Device {
   }
 
   findZhaEndpointsWithInputClusterIdHex(clusterIdHex) {
-    let endpoints = [];
+    const endpoints = [];
     for (const endpointNum in this.activeEndpoints) {
       // Since endpointNum is a key, it comes back as a string
       const endpoint = this.activeEndpoints[endpointNum];

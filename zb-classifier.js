@@ -452,7 +452,7 @@ class ZigbeeClassifier {
       suffix = '';
     }
     const endpoint = node.activeEndpoints[genOnOffEndpoint];
-    this.addProperty(
+    const property = this.addProperty(
       node,                           // device
       `on${suffix}`,                  // name
       {                               // property description
@@ -468,6 +468,18 @@ class ZigbeeClassifier {
       'parseOnOffAttr',               // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
+    if (endpoint.deviceId === '000b') {
+      // The ORVIBO Smart Relay doesn't seem to support config reports. It
+      // also doesn't seem to have a reasonable modelId (the report I got showed
+      // a modelId of 82c167c95ed746cdbd21d6817f72c593), so I'm not sure if
+      // that's real or not. It also showed a deviceId of 000b which doesn't
+      // seem to be documented in the zigbee spec, so for now, I'm using that
+      // to identify this. I have one on order and when it arrives I'll get a
+      // chance to play with it and see if the weird string of numbers really
+      // is a valid modelId.
+      property.fireAndForget = true;
+    }
+    return property;
   }
 
   addButtonOnProperty(node, genOnOffOutputEndpoint) {
