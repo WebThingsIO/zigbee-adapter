@@ -482,7 +482,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   handleReadParameter(frame) {
-    if (this.status != 0) {
+    if (frame.status != 0) {
       this.reportStatus(frame);
     }
     const paramId = frame.paramId;
@@ -497,7 +497,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   handleWriteParameter(frame) {
-    if (this.status != 0) {
+    if (frame.status != 0) {
       this.reportStatus(frame);
     }
   }
@@ -559,6 +559,15 @@ class DeconzDriver extends ZigbeeDriver {
       return;
     }
     const paramId = PARAM[this.paramIdx];
+    if (paramId == C.PARAM_ID.WATCHDOG_TTL) {
+      if (this.protocolVersion < C.WATCHDOG_PROTOCOL_VERSION) {
+        // This version of the ConBee firmware doesn't support the
+        // watchdog parameter - skip
+        this.paramIdx++;
+        this.readParameter();
+        return;
+      }
+    }
     const readParamFrame = {
       type: C.FRAME_TYPE.READ_PARAMETER,
       paramId: paramId,
