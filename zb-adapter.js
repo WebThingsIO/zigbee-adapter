@@ -373,7 +373,7 @@ class ZigbeeAdapter extends Adapter {
         FUNC(this, this.enumerateNextNode, []),
       ]);
       this.enumerateIterCb(node);
-    } else if (this.enumerateDonCb) {
+    } else if (this.enumerateDoneCb) {
       this.enumerateDoneCb(node);
     }
   }
