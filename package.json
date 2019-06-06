@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -16,17 +16,17 @@
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "bl": "^2.0.1",
+    "bl": "^2.2.0",
     "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.0",
-    "color": "^3.0.0",
-    "command-line-args": "^5.0.2",
+    "color": "^3.1.2",
+    "command-line-args": "^5.1.1",
     "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
     "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git",
     "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
     "xbee-api": "^0.5.6",
-    "zcl-id": "dhylands/zcl-id#moziot-changes",
-    "zcl-packet": "dhylands/zcl-packet#moziot-changes",
+    "zcl-id": "github:dhylands/zcl-id#moziot-changes",
+    "zcl-packet": "github:dhylands/zcl-packet#moziot-changes",
     "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {
