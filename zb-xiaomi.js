@@ -141,6 +141,57 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.sensor_motion.aq2': { // RTCGQ11LM
+    name: 'occupancy',
+    type: Constants.THING_TYPE_BINARY_SENSOR,
+    '@type': ['BinarySensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    occupancyTimeout: 10, // seconds
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.OCCUPANCY_SENSOR_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      occupied: {
+        descr: {
+          '@type': 'BooleanProperty',
+          type: 'boolean',
+          label: 'Occupied',
+          description: 'Occupancy Sensor',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.OCCUPANCY_SENSOR,
+        attr: 'occupancy',
+        value: false,
+        parseValueFromAttr: 'parseOccupiedAttr',
+      },
+      illuminance: {
+        descr: {
+          '@type': 'IlluminanceProperty',
+          type: 'number',
+          label: 'Illuminance',
+          unit: 'lux',
+          minimum: 0,
+          maximum: 15000,
+          description: 'Lux Sensor',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.ILLUMINANCE_MEASUREMENT,
+        attr: 'measuredValue',
+        value: 0,
+        parseValueFromAttr: 'parseIlluminanceMeasurementAttr',
+      },
+    },
+  },
   'lumi.sensor_ht': {       // WSDCGQ01LM (round)
     name: 'temperature',
     '@type': ['TemperatureSensor'],
