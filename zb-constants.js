@@ -78,6 +78,37 @@ const NWK_STATUS = {
 };
 addInverseMap(NWK_STATUS);
 
+// The following came from the Zigbee PRO Stack User Guide published by NXP.
+// https://www.nxp.com/docs/en/user-guide/JN-UG-3048.pdf
+
+/* eslint-disable max-len */
+const MAC_STATUS = {
+  0x00: 'MAC_SUCCESS',                // Success
+  0xE0: 'MAC_BEACON_LOSS',            // Beacon loss after synchronisation request
+  0xE1: 'MAC_CHANNEL_ACCESS_FAILURE', // CSMA/CA channel access failure
+  0xE2: 'MAC_DENIED',                 // GTS request denied
+  0xE3: 'MAC_DISABLE_TRX_FAILURE',    // Could not disable transmit or receive
+  0xE4: 'MAC_FAILED_SECURITY_CHECK',  // Incoming frame failed security check
+  0xE5: 'MAC_FRAME_TOO_LONG',         // Frame too long, after security processing, to be sent
+  0xE6: 'MAC_INVALID_GTS',            // GTS transmission failed
+  0xE7: 'MAC_INVALID_HANDLE',         // Purge request failed to find entry in queue
+  0xE8: 'MAC_INVALID_PARAMETER',      // Out-of-range parameter in function
+  0xE9: 'MAC_NO_ACK',                 // No acknowledgement received when expected
+  0xEA: 'MAC_NO_BEACON',              // Scan failed to find any beacons
+  0xEB: 'MAC_NO_DATA',                // No response data after a data request
+  0xEC: 'MAC_NO_SHORT_ADDRESS',       // No allocated network (short) address for operation
+  0xED: 'MAC_OUT_OF_CAP',             // Receiver-enable request could not be executed, as CAP finished
+  0xEE: 'MAC_PAN_ID_CONFLICT',        // PAN ID conflict has been detected
+  0xEF: 'MAC_REALIGNMENT',            // Co-ordinator realignment has been received
+  0xF0: 'MAC_TRANSACTION_EXPIRED',    // Pending transaction has expired and data discarded
+  0xF1: 'MAC_TRANSACTION_OVERFLOW',   // No capacity to store transaction
+  0xF2: 'MAC_TX_ACTIVE',              // Receiver-enable request could not be executed, as in transmit state
+  0xF3: 'MAC_UNAVAILABLE_KEY',        // Appropriate key is not available in ACL
+  0xF4: 'MAC_UNSUPPORTED_ATTRIBUTE',  // PIB Set/Get on unsupported attribute
+};
+addInverseMap(MAC_STATUS);
+/* eslint-enable max-len */
+
 const BROADCAST_ADDR = {
   ALL: 'ffff',
   NON_SLEEPING: 'fffd', // i.e. rxOnWhenIdle = true
