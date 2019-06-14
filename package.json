@@ -22,6 +22,8 @@
     "color": "^3.1.2",
     "command-line-args": "^5.1.1",
     "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
+    "dissolve": "github:mozilla-iot/dissolve#moziot-changes",
+    "dissolve-chunks": "github:mozilla-iot/dissolve-chunks#moziot-changes",
     "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git",
     "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
     "xbee-api": "^0.5.6",
