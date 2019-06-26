@@ -111,7 +111,7 @@ const MODEL_IDS = {
   'lumi.sensor_motion': {
     name: 'occupancy',
     type: Constants.THING_TYPE_BINARY_SENSOR,
-    '@type': ['BinarySensor'],
+    '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
     occupancyTimeout: 10, // seconds
     activeEndpoints: {
@@ -127,7 +127,7 @@ const MODEL_IDS = {
     properties: {
       occupied: {
         descr: {
-          '@type': 'BooleanProperty',
+          '@type': 'MotionProperty',
           type: 'boolean',
           label: 'Occupied',
           description: 'Occupancy Sensor',
@@ -144,7 +144,7 @@ const MODEL_IDS = {
   'lumi.sensor_motion.aq2': { // RTCGQ11LM
     name: 'occupancy',
     type: Constants.THING_TYPE_BINARY_SENSOR,
-    '@type': ['BinarySensor'],
+    '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
     occupancyTimeout: 10, // seconds
     activeEndpoints: {
@@ -160,7 +160,7 @@ const MODEL_IDS = {
     properties: {
       occupied: {
         descr: {
-          '@type': 'BooleanProperty',
+          '@type': 'MotionProperty',
           type: 'boolean',
           label: 'Occupied',
           description: 'Occupancy Sensor',
