@@ -521,10 +521,36 @@ class ZigbeeDriver {
 
   parseZclFrame(frame) {
     return new Promise((resolve, reject) => {
+      let zclData = frame.data;
+
+      // The Zen thermostat sends configReportRsp with a slightly incorrect
+      // format. The spec says that status records for successfully configured
+      // attributes aren't supposed to be included in the response, and that
+      // if all attributes were configured successfully then only a single
+      // record will be included with the direction and attribute fields
+      // omitted. The Zen Thermostat sends a success record which includes the
+      // direction and attribute fields, and this causes an error in the
+      // ZCL parser. An example invalid ZCL response looks like this:
+      //
+      //  18 07 07 00 00 1e 00
+      //  18    Frame Control
+      //  07    Sequence Number
+      //  07    Command ID (07 = configReportRsp)
+      //  00    Record 1 status = 0 (SUCCESS)
+      //  00    Record 1 direction
+      //  1e 00 Record 1 attribute ID
+
+      if (zclData.length == 7 &&
+          zclData[2] == 0x07 &&   // configReportRsp
+          zclData[3] == 0x00) {   // status == success
+        // We found one of the Zen Thermostat configReportRsp records. Since
+        // the status is zero, we can just remove the direction and attributeID
+        zclData = zclData.slice(0, 4);
+      }
+
       // The OSRAM lightify sends a manufacturer specific command
       // which the zcl-parse library doesn't deal with, so we put a check
       // for that here.
-      const zclData = frame.data;
       if (zclData.length == 5 &&
           zclData[0] == 0x05 &&
           zclData[1] == 0x4e &&
