@@ -623,7 +623,7 @@ class ZigbeeAdapter extends Adapter {
       clusterId: zdo.CLUSTER_ID.MATCH_DESCRIPTOR_RESPONSE,
       zdoSeq: reqFrame.zdoSeq,
       status: 0,
-      zdoAddr16: node.addr16,
+      zdoAddr16: reqFrame.zdoAddr16,
       endpoints: [endpoint],
     }));
   }
