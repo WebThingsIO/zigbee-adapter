@@ -299,6 +299,11 @@ const HVAC_FAN_SEQ = [
   'On/Auto',              // 4
 ];
 
+// The following came from:
+// http://www.zigbee.org/wp-content/uploads/2017/12/
+// docs-15-0014-05-0plo-Lighting-OccupancyDevice-Specification-V1.0.pdf
+//
+// Zigbee Lighting & Occupancy Device Specification Version 1.0
 const ZHA_DEVICE_ID = {
   ON_OFF_SWITCH: '0000',
   ON_OFF_OUTPUT: '0002',
@@ -307,15 +312,33 @@ const ZHA_DEVICE_ID = {
   DIMMABLE_LIGHT: '0101',
   COLORED_DIMMABLE_LIGHT: '0102',
   ON_OFF_LIGHT_SWITCH: '0103',
+  DIMMER_SWITCH: '0104',
+  COLOR_DIMMER_SWITCH: '0105',
+  LIGHT_SENSOR: '0106',
+  OCCUPANCY_SENSOR: '0107',
+  ON_OFF_BALLAST: '0108',
+  DIMMABLE_PLUGIN: '010b',
+  COLOR_TEMPERATURE_LIGHT: '010c',
+  EXTENDED_COLOR_LIGHT: '010d',
+  LIGHT_LEVEL_SENSOR: '010e',
+  COLOR_CONTROLLER: '0800',
+  COLOR_SCENE_CONTROLLER: '0810',
+  NON_COLOR_CONTROLLER: '0820',
+  NON_COLOR_SCENE_CONTROLLER: '0830',
+  CONTROL_BRIDGE: '0840',
+  ON_OFF_SENSOR: '0850',
 
   isLight: function isLight(deviceId) {
     return deviceId == ZHA_DEVICE_ID.ON_OFF_LIGHT ||
            deviceId == ZHA_DEVICE_ID.DIMMABLE_LIGHT ||
-           deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
+           deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT ||
+           deviceId == ZHA_DEVICE_ID.COLOR_TEMPERATURE_LIGHT ||
+           deviceId == ZHA_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
 
   isColorLight: function isColorLight(deviceId) {
-    return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT;
+    return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT ||
+           deviceId == ZHA_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
 };
 
