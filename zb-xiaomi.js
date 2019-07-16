@@ -141,7 +141,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_motion.aq2': { // RTCGQ11LM
+  'lumi.sensor_motion.aq2': {// RTCGQ11LM
     name: 'motion',
     type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['MotionSensor'],
@@ -193,7 +193,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_ht': {       // WSDCGQ01LM (round)
+  'lumi.sensor_ht': {// WSDCGQ01LM (round)
     name: 'temperature',
     '@type': ['TemperatureSensor'],
     powerSource: POWERSOURCE.BATTERY,
@@ -246,7 +246,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.weather': {       // WSDCGQ11LM (square)
+  'lumi.weather': {// WSDCGQ11LM (square)
     name: 'temperature',
     '@type': ['TemperatureSensor'],
     powerSource: POWERSOURCE.BATTERY,

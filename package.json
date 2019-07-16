@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.7.14",
+  "version": "0.7.15",
   "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -32,8 +32,8 @@
     "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.1",
-    "eslint": "^5.12.1"
+    "babel-eslint": "^10.0.2",
+    "eslint": "^6.0.1"
   },
   "license": "MPL-2.0",
   "repository": {
