@@ -518,7 +518,7 @@ class ZigbeeNode extends Device {
       return;
     }
 
-    if (this.adapter.cmdQueue.length == 0) {
+    if (this.adapter.driver.cmdQueue.length == 0) {
       // This is a bit of a hack, but is needed until I rewrite the
       // whole binding/configReport/initialRead to be able to work
       // incrementally. The fact that the command queue is empty
