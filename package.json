@@ -16,9 +16,9 @@
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "bl": "^2.2.0",
+    "bl": "^3.0.0",
     "buffer-reader": "^0.1.0",
-    "clone-deep": "^4.0.0",
+    "clone-deep": "^4.0.1",
     "color": "^3.1.2",
     "command-line-args": "^5.1.1",
     "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
@@ -26,14 +26,14 @@
     "dissolve-chunks": "github:mozilla-iot/dissolve-chunks#moziot-changes",
     "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git",
     "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
-    "xbee-api": "^0.5.6",
+    "xbee-api": "^0.6.0",
     "zcl-id": "github:dhylands/zcl-id#moziot-changes",
     "zcl-packet": "github:dhylands/zcl-packet#moziot-changes",
     "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.2",
-    "eslint": "^6.0.1"
+    "babel-eslint": "^10.0.3",
+    "eslint": "^6.2.2"
   },
   "license": "MPL-2.0",
   "repository": {
