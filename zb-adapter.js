@@ -9,8 +9,11 @@
 
 'use strict';
 
-const path = require('path');
 const fs = require('fs');
+const manifest = require('./manifest.json');
+const mkdirp = require('mkdirp');
+const os = require('os');
+const path = require('path');
 const ZigbeeNode = require('./zb-node');
 const zdo = require('zigbee-zdo');
 const zclId = require('zcl-id');
@@ -44,26 +47,51 @@ String.prototype.swapHex = function() {
   return this.match(/.{2}/g).reverse().join('');
 };
 
+function getDataPath() {
+  let profileDir;
+  if (process.env.hasOwnProperty('MOZIOT_HOME')) {
+    profileDir = process.env.MOZIOT_HOME;
+  } else {
+    profileDir = path.join(os.homedir(), '.mozilla-iot');
+  }
+
+  return path.join(profileDir, 'data', 'zigbee-adapter');
+}
+
+function getConfigPath() {
+  if (process.env.hasOwnProperty('MOZIOT_HOME')) {
+    return path.join(process.env.MOZIOT_HOME, 'config');
+  }
+
+  return path.join(os.homedir(), '.mozilla-iot', 'config');
+}
+
 class ZigbeeAdapter extends Adapter {
-  constructor(addonManager, manifest, driver) {
+  constructor(addonManager, config, driver) {
     // The Zigbee adapter supports multiple dongles and
     // will create an adapter object for each dongle.
     // We don't know the actual adapter id until we
     // retrieve the serial number from the dongle. So we
     // set it to zb-unknown here, and fix things up later
     // just before we call addAdapter.
-    super(addonManager, 'zb-unknown', manifest.name);
-    this.manifest = manifest;
+    super(addonManager, 'zb-unknown', manifest.id);
+    this.config = config;
     this.driver = driver;
     console.log('this.driver =', driver);
 
-    this.configDir = '.';
-    if (process.env.hasOwnProperty('MOZIOT_HOME')) {
-      // Check user profile directory.
-      const profileDir = path.join(process.env.MOZIOT_HOME, 'config');
-      if (fs.existsSync(profileDir) &&
-          fs.lstatSync(profileDir).isDirectory()) {
-        this.configDir = profileDir;
+    this.configDir = getDataPath();
+    if (!fs.existsSync(this.configDir)) {
+      mkdirp.sync(this.configDir, {mode: 0o755});
+    }
+
+    // move any old config files to the new directory
+    const oldConfigDir = getConfigPath();
+    const entries = fs.readdirSync(oldConfigDir);
+    for (const entry of entries) {
+      if (/^zb-[A-Fa-f0-9]+\.json$/.test(entry)) {
+        const oldPath = path.join(oldConfigDir, entry);
+        const newPath = path.join(this.configDir, entry);
+        fs.renameSync(oldPath, newPath);
       }
     }
 

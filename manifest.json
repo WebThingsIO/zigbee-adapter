@@ -1,0 +1,47 @@
+{
+  "author": "Mozilla IoT",
+  "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
+  "gateway_specific_settings": {
+    "webthings": {
+      "exec": "{nodeLoader} {path}",
+      "primary_type": "adapter",
+      "strict_max_version": "*",
+      "strict_min_version": "0.10.0"
+    }
+  },
+  "homepage_url": "https://github.com/mozilla-iot/zigbee-adapter",
+  "id": "zigbee-adapter",
+  "license": "MPL-2.0",
+  "manifest_version": 1,
+  "name": "Zigbee",
+  "options": {
+    "default": {
+      "scanChannels": 8190,
+      "allowFTDISerial": false,
+      "debug": ""
+    },
+    "schema": {
+      "type": "object",
+      "required": [
+        "scanChannels",
+        "allowFTDISerial"
+      ],
+      "properties": {
+        "scanChannels": {
+          "type": "integer",
+          "default": 8190
+        },
+        "allowFTDISerial": {
+          "type": "boolean",
+          "default": false
+        },
+        "debug": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    }
+  },
+  "short_name": "Zigbee",
+  "version": "0.10.0"
+}

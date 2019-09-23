@@ -10,6 +10,7 @@
 'use strict';
 
 const {Database} = require('gateway-addon');
+const manifest = require('./manifest.json');
 const SerialProber = require('serial-prober');
 
 const XBEE_FTDI_FILTER = {
@@ -95,38 +96,34 @@ const PROBERS = [
 ];
 
 // Scan the serial ports looking for an XBee adapter.
-async function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
-  let promise;
+async function loadZigbeeAdapters(addonManager, _, errorCallback) {
   let allowFTDISerial = false;
 
+  let config = {};
   // Attempt to move to new config format
-  if (Database) {
-    const db = new Database(manifest.name);
-    promise = db.open().then(() => {
-      return db.loadConfig();
-    }).then((config) => {
-      if (config.hasOwnProperty('discoverAttributes')) {
-        delete config.discoverAttributes;
-      }
+  const db = new Database(manifest.id);
+  await db.open().then(() => {
+    return db.loadConfig();
+  }).then((cfg) => {
+    config = cfg;
 
-      if (config.hasOwnProperty('scanChannels') &&
-          typeof config.scanChannels === 'string') {
-        config.scanChannels = parseInt(config.scanChannels, 16);
-      }
-      allowFTDISerial = config.allowFTDISerial;
+    if (config.hasOwnProperty('discoverAttributes')) {
+      delete config.discoverAttributes;
+    }
 
-      if (config.hasOwnProperty('debug')) {
-        console.log(`DEBUG config = '${config.debug}'`);
-        require('./zb-debug').set(config.debug);
-      }
+    if (config.hasOwnProperty('scanChannels') &&
+        typeof config.scanChannels === 'string') {
+      config.scanChannels = parseInt(config.scanChannels, 16);
+    }
+    allowFTDISerial = config.allowFTDISerial;
 
-      manifest.moziot.config = config;
-      return db.saveConfig(config);
-    });
-  } else {
-    promise = Promise.resolve();
-  }
-  await promise;
+    if (config.hasOwnProperty('debug')) {
+      console.log(`DEBUG config = '${config.debug}'`);
+      require('./zb-debug').set(config.debug);
+    }
+
+    return db.saveConfig(config);
+  });
 
   const {DEBUG_serialProber} = require('./zb-debug');
   SerialProber.debug(DEBUG_serialProber);
@@ -136,9 +133,9 @@ async function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
   SerialProber.probeAll(PROBERS).then((matches) => {
     if (matches.length == 0) {
       SerialProber.listAll().then(() => {
-        errorCallback(manifest.name, 'No Zigbee dongle found');
+        errorCallback(manifest.id, 'No Zigbee dongle found');
       }).catch((err) => {
-        errorCallback(manifest.name, err);
+        errorCallback(manifest.id, err);
       });
       return;
     }
@@ -153,12 +150,12 @@ async function loadZigbeeAdapters(addonManager, manifest, errorCallback) {
     };
     for (const match of matches) {
       new driver[match.prober.param.name](addonManager,
-                                          manifest,
+                                          config,
                                           match.port.comName,
                                           match.serialPort);
     }
   }).catch((err) => {
-    errorCallback(manifest.name, err);
+    errorCallback(manifest.id, err);
   });
 }
 
