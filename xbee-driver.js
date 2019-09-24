@@ -57,8 +57,8 @@ function serialWriteError(error) {
 
 class XBeeDriver extends ZigbeeDriver {
 
-  constructor(addonManager, manifest, portName, serialPort) {
-    super(addonManager, manifest);
+  constructor(addonManager, config, portName, serialPort) {
+    super(addonManager, config);
     this.portName = portName;
     this.serialPort = serialPort;
 
@@ -233,7 +233,7 @@ class XBeeDriver extends ZigbeeDriver {
                                   {encryptionOptions: 2}));
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS));
     }
-    let configScanChannels = this.manifest.moziot.config.scanChannels;
+    let configScanChannels = this.config.scanChannels;
     if (typeof configScanChannels === 'string') {
       configScanChannels = parseInt(configScanChannels, 16);
     } else if (typeof configScanChannels !== 'number') {

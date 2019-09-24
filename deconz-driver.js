@@ -68,8 +68,8 @@ function serialWriteError(error) {
 
 class DeconzDriver extends ZigbeeDriver {
 
-  constructor(addonManager, manifest, portName, serialPort) {
-    super(addonManager, manifest);
+  constructor(addonManager, config, portName, serialPort) {
+    super(addonManager, config);
     this.portName = portName;
     this.serialPort = serialPort;
 
