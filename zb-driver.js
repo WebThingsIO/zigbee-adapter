@@ -446,7 +446,7 @@ class ZigbeeDriver {
       }
       if (match) {
         if (DEBUG_flow || DEBUG_frameDetail) {
-          console.log('Wait satisified');
+          console.log('Wait satisfied');
         }
         const sendOnSuccess = this.waitFrame.sendOnSuccess;
         const callback = this.waitFrame.callback;
@@ -462,7 +462,7 @@ class ZigbeeDriver {
           callback(frame);
         }
       } else if (DEBUG_flow || DEBUG_frameDetail) {
-        console.log('Wait NOT satisified');
+        console.log('Wait NOT satisfied');
         console.log('    waitFrame =', this.waitFrame);
       }
     }

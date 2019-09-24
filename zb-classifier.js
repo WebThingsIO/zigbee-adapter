@@ -613,6 +613,25 @@ class ZigbeeClassifier {
     node.slowCheckinInterval = 1 * 60 * 4;  // 1 minute (quarterseconds)
   }
 
+  addAutoRelockProperty(node, doorLockEndpoint) {
+    this.addProperty(
+      node,                           // device
+      'autoRelockTime',               // name
+      {// property description
+        label: 'Auto Relock Time (S)',
+        type: 'integer',
+        minimum: 0
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      doorLockEndpoint,               // endpoint
+      CLUSTER_ID.DOORLOCK,            // clusterId
+      'autoRelockTime',               // attr
+      'setNumericValue',              // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      CONFIG_REPORT_INTEGER
+    );
+  }
+
   addPresentValueProperty(node, genBinaryInputEndpoint) {
     this.addProperty(
       node,                           // device
@@ -1758,6 +1777,7 @@ class ZigbeeClassifier {
     node['@type'] = ['BinarySensor']; // TODO: Replace woth DoorLock type
     node.name = `${node.id}-doorlock`;
     this.addDoorLockedProperty(node, doorLockEndpoint);
+    this.addAutoRelockProperty(node, doorLockEndpoint);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {

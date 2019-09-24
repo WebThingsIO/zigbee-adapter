@@ -1016,6 +1016,26 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method setNumericValue
+   *
+   * Writes the specified value to the attribute
+   */
+  setNumericValue(propertyValue) {
+    const attrData = propertyValue;
+    return [
+      {
+        cmd: 'write',
+        payload: [{
+          attrId: this.attrId,
+          dataType: this.attrType,
+          attrData: attrData,
+        }],
+      },
+      `${attrData} (${propertyValue})`,
+    ];
+  }
+
+  /**
    * @returns a promise which resolves to the updated value.
    *
    * @note it is possible that the updated value doesn't match
