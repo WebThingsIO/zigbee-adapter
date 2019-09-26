@@ -84,14 +84,14 @@ function FUNC(ths, func, args) {
 
 class ZigbeeDriver {
 
-  constructor(addonManager, manifest) {
+  constructor(addonManager, config) {
     // This is the only place that we need to reference ZigbeeAdapter.
     // To avoid circular dependency problems, we put the require
     // statement here as well.
     const ZigbeeAdapter = require('./zb-adapter');
-    this.adapter = new ZigbeeAdapter(addonManager, manifest, this);
+    this.adapter = new ZigbeeAdapter(addonManager, config, this);
 
-    this.manifest = manifest;
+    this.config = config;
 
     this.cmdQueue = [];
     this.running = false;
