@@ -620,7 +620,7 @@ class ZigbeeClassifier {
       {// property description
         label: 'Auto Relock Time (S)',
         type: 'integer',
-        minimum: 0
+        minimum: 0,
       },
       PROFILE_ID.ZHA,                 // profileId
       doorLockEndpoint,               // endpoint
