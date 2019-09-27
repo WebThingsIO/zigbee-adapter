@@ -24,7 +24,7 @@ const {
 
 const ZigbeeProperty = require('./zb-property');
 
-const {Constants, Utils} = require('gateway-addon');
+const {Utils} = require('gateway-addon');
 
 const {DEBUG_classifier} = require('./zb-debug');
 const DEBUG = DEBUG_classifier;
@@ -1676,7 +1676,6 @@ class ZigbeeClassifier {
     if (node.isCoordinator) {
       return;
     }
-    node.type = 'thing'; // Replace with THING_TYPE_THING once it exists
 
     if (!node.hasOwnProperty('@type')) {
       node['@type'] = [];
@@ -1695,13 +1694,11 @@ class ZigbeeClassifier {
   }
 
   initBinarySensor(node, endpointNum) {
-    node.type = Constants.THING_TYPE_BINARY_SENSOR;
     node['@type'] = ['BinarySensor'];
     this.addPresentValueProperty(node, endpointNum);
   }
 
   initBinarySensorFromZoneType(node) {
-    node.type = Constants.THING_TYPE_BINARY_SENSOR;
     let propertyName;
     let propertyDescr;
     let name;
@@ -1754,14 +1751,12 @@ class ZigbeeClassifier {
 
   initDoorLock(node, doorLockEndpoint) {
     // TODO: Replace with DoorLock type
-    node.type = Constants.THING_TYPE_ON_OFF_SWITCH;
     node['@type'] = ['BinarySensor']; // TODO: Replace woth DoorLock type
     node.name = `${node.id}-doorlock`;
     this.addDoorLockedProperty(node, doorLockEndpoint);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {
-    node.type = Constants.THING_TYPE_BINARY_SENSOR;
     node['@type'] = ['BinarySensor'];
     node.name = `${node.id}-occupancy`;
 
@@ -1769,7 +1764,6 @@ class ZigbeeClassifier {
   }
 
   initOnOffSwitch(node, genOnOffEndpoint) {
-    node.type = Constants.THING_TYPE_ON_OFF_SWITCH;
     node['@type'] = ['OnOffSwitch'];
     this.addOnProperty(node, genOnOffEndpoint);
   }
@@ -1838,7 +1832,6 @@ class ZigbeeClassifier {
         } else if ((colorCapabilities & COLOR_CAPABILITY.XY) != 0) {
           this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
         }
-        node.type = Constants.THING_TYPE_ON_OFF_COLOR_LIGHT;
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
         if (isColorTemperatureLight) {
@@ -1849,12 +1842,10 @@ class ZigbeeClassifier {
                                            node.lightingColorCtrlEndpoint);
         }
         this.addBrightnessProperty(node, genLevelCtrlEndpoint);
-        node.type = Constants.THING_TYPE_DIMMABLE_LIGHT;
         node['@type'] = ['Light', 'OnOffSwitch'];
       }
     } else {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
-      node.type = Constants.THING_TYPE_MULTI_LEVEL_SWITCH;
       node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch'];
     }
     this.addOnProperty(node, genLevelCtrlEndpoint);
@@ -2005,7 +1996,6 @@ class ZigbeeClassifier {
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
-    node.type = Constants.THING_TYPE_SMART_PLUG;
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
@@ -2026,7 +2016,6 @@ class ZigbeeClassifier {
   }
 
   initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
-    node.type = Constants.THING_TYPE_SMART_PLUG;
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, seMeteringEndpoint);
     if (genLevelCtrlEndpoint) {
