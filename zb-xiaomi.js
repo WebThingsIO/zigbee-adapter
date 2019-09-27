@@ -13,8 +13,6 @@ const cloneDeep = require('clone-deep');
 const ZigbeeFamily = require('./zb-family');
 const ZigbeeProperty = require('./zb-property');
 
-const {Constants} = require('gateway-addon');
-
 const {DEBUG_xiaomi} = require('./zb-debug');
 const DEBUG = DEBUG_xiaomi;
 
@@ -31,7 +29,6 @@ const {
 const MODEL_IDS = {
   'lumi.sensor_magnet': {
     name: 'magnet',
-    type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
@@ -63,7 +60,6 @@ const MODEL_IDS = {
   },
   'lumi.sensor_switch': {
     name: 'switch',
-    type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['BinarySensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
@@ -110,7 +106,6 @@ const MODEL_IDS = {
   },
   'lumi.sensor_motion': {
     name: 'motion',
-    type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
     occupancyTimeout: 10, // seconds
@@ -143,7 +138,6 @@ const MODEL_IDS = {
   },
   'lumi.sensor_motion.aq2': {// RTCGQ11LM
     name: 'motion',
-    type: Constants.THING_TYPE_BINARY_SENSOR,
     '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
     occupancyTimeout: 10, // seconds
