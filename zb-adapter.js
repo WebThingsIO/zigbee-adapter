@@ -499,6 +499,7 @@ class ZigbeeAdapter extends Adapter {
     } else {
       console.error('No handler for ZDO cluster:',
                     zdo.getClusterIdAsString(clusterId));
+      console.error(frame);
     }
   }
 

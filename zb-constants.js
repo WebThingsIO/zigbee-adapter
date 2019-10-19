@@ -252,14 +252,26 @@ const STATUS = {
   INSUFFICIENT_SPACE: zclId.status('insufficientSpace').value,
 };
 
-// THERMOSTAT_MODE is used for the systemMode and runningMode attributes
+// THERMOSTAT_MODE is used for the systemMode attribute
 // for the hvacThermostat cluster.
-const THERMOSTAT_MODE = [
-  'Off',    // 0
-  'Auto',   // 1
+const THERMOSTAT_SYSTEM_MODE = [
+  'off',    // 0
+  'auto',   // 1
   null,     // 2 - not used in the spec
-  'Cool',   // 3
-  'Heat',   // 4
+  'cool',   // 3
+  'heat',   // 4
+  // There are other values, but these are the only ones we support
+  // now.
+];
+
+// THERMOSTAT_MODE is used for the runningMode attribute
+// for the hvacThermostat cluster.
+const THERMOSTAT_RUN_MODE = [
+  'off',      // 0
+  'auto',     // 1
+  null,       // 2 - not used in the spec
+  'cooling',  // 3
+  'heating',  // 4
   // There are other values, but these are the only ones we support
   // now.
 ];
@@ -267,13 +279,13 @@ const THERMOSTAT_MODE = [
 // THERMOSTAT_STATE is used for the runningState attribute from the
 // hvacThermostat cluster.
 const THERMOSTAT_STATE = [
-  'Heat',     // 0  Heat 1st stage State On
-  'Cool',     // 1  Cool 1st stage State On
-  'Fan',      // 2  Fan  1st stage State On
-  'Heat2',    // 3  Heat 2nd stage State On
-  'Cool2',    // 4  Cool 2nd stage State On
-  'Fan2',     // 5  Fan  2nd stage State On
-  'Fan3',     // 6  Fan  3rd stage State On
+  'heating',  // 0  Heat 1st stage State On
+  'cooling',  // 1  Cool 1st stage State On
+  'fan',      // 2  Fan  1st stage State On
+  'heating2', // 3  Heat 2nd stage State On
+  'cooling2', // 4  Cool 2nd stage State On
+  'fan2',     // 5  Fan  2nd stage State On
+  'fan3',     // 6  Fan  3rd stage State On
 ];
 
 // HVAC_FAN_MODE describes the fanMode attribute from the hvacFanCtrl
@@ -399,7 +411,8 @@ module.exports = {
   POWERSOURCE,
   PROFILE_ID,
   STATUS,
-  THERMOSTAT_MODE,
+  THERMOSTAT_RUN_MODE,
+  THERMOSTAT_SYSTEM_MODE,
   THERMOSTAT_STATE,
   UNKNOWN_ADDR_16,
   ZHA_DEVICE_ID,

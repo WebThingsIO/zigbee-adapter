@@ -16,7 +16,7 @@ const {
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_SEQ,
   PROFILE_ID,
-  THERMOSTAT_MODE,
+  THERMOSTAT_SYSTEM_MODE,
   ZHA_DEVICE_ID,
   ZLL_DEVICE_ID,
   ZONE_STATUS,
@@ -1041,6 +1041,7 @@ class ZigbeeClassifier {
         readOnly: true,
         minimum: 0,
         maximum: 40,
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                 // profileId
       hvacThermostatEndpoint,         // endpoint
@@ -1054,21 +1055,23 @@ class ZigbeeClassifier {
       node,                           // device
       'mode',                         // name
       {// property description
+        '@type': 'ThermostatModeProperty',
         label: 'Mode',
         type: 'string',
-        enum: THERMOSTAT_MODE.filter((x) => x),
+        enum: THERMOSTAT_SYSTEM_MODE.filter((x) => x),
       },
       PROFILE_ID.ZHA,                 // profileId
       hvacThermostatEndpoint,         // endpoint
       CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
       'systemMode',                   // attr
-      'setThermostatModeValue',       // setAttrFromValue
-      'parseThermostatModeAttr'       // parseValueFromAttr
+      'setThermostatSystemModeValue', // setAttrFromValue
+      'parseThermostatSystemModeAttr' // parseValueFromAttr
     );
     this.addProperty(
       node,                           // device
       'runMode',                      // name
       {// property description
+        '@type': 'HeatingCoolingProperty',
         label: 'Run Mode',
         type: 'string',
         readOnly: true,
@@ -1078,7 +1081,7 @@ class ZigbeeClassifier {
       CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
       'runningMode',                  // attr
       '',                             // setAttrFromValue
-      'parseThermostatModeAttr',      // parseValueFromAttr
+      'parseThermostatRunModeAttr',   // parseValueFromAttr
       CONFIG_REPORT_MODE
     );
 
@@ -1140,6 +1143,7 @@ class ZigbeeClassifier {
         label: 'Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1155,6 +1159,7 @@ class ZigbeeClassifier {
         label: 'Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1167,9 +1172,11 @@ class ZigbeeClassifier {
       node,                             // device
       'heatTarget',                     // name
       {// property description
+        '@type': 'TargetTemperatureProperty',
         label: 'Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1218,6 +1225,7 @@ class ZigbeeClassifier {
         label: 'Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1233,6 +1241,7 @@ class ZigbeeClassifier {
         label: 'Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1245,9 +1254,11 @@ class ZigbeeClassifier {
       node,                             // device
       'coolTarget',                     // name
       {// property description
+        '@type': 'TargetTemperatureProperty',
         label: 'Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1335,6 +1346,12 @@ class ZigbeeClassifier {
       heatTargetProperty.updateMinimum();
       coolTargetProperty.updateMaximum();
     };
+
+    // It's possible that values have been persisted, but the mins/maxs
+    // haven't been, so we call the update methods here to cover off that
+    // case.
+    heatTargetProperty.updateMinimum();
+    coolTargetProperty.updateMaximum();
 
     this.addProperty(
       node,                             // device
@@ -2028,7 +2045,7 @@ class ZigbeeClassifier {
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     node.name = `${node.id}-thermostat`;
     // TODO: Add Thermostat Capability
-    node['@type'] = ['TemperatureSensor'];
+    node['@type'] = ['Thermostat'];
     this.addThermostatProperties(node, hvacThermostatEndpoint,
                                  hvacFanControlEndpoint);
   }
