@@ -587,9 +587,12 @@ class ZigbeeClassifier {
   }
 
   addDoorLockedProperty(node, doorLockEndpoint) {
-    this.addProperty(
+    // The lockState is both state and control, so we create
+    // a hidden property which is a boolean, and have the visible
+    // state be an enumeration.
+    node.doorLockProperty = this.addProperty(
       node,                           // device
-      'locked',                       // name
+      '_lockedInterntal',             // name
       {// property description
         '@type': 'BooleanProperty',
         label: 'Locked',
@@ -603,11 +606,58 @@ class ZigbeeClassifier {
       'parseDoorLockedAttr',          // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
+    node.doorLockState = this.addProperty(
+      node,
+      'locked',
+      {
+        '@type': 'LockedProperty',
+        type: 'string',
+        title: 'State',
+        enum: ['locked', 'unlocked', 'jammed', 'unknown'],
+        readOnly: true,
+      },
+      0,  // profileId
+      0,  // endpoint
+      0,  // clusterId
+      ''  // attr
+    );
+
+    // When the internal state changes, then we update the visible state.
+    node.doorLockProperty.updated = function() {
+      const state = node.doorLockProperty.value ? 'locked' : 'unlocked';
+      node.setPropertyValue(node.doorLockState, state);
+      if (node.doorLockTimeout) {
+        clearTimeout(node.doorLockTimeout);
+        node.doorLockTimeout = null;
+      }
+      if (node.doorLockAction) {
+        const doorLockAction = node.doorLockAction;
+        node.doorLockAction = null;
+        doorLockAction.finish();
+      }
+    };
+    // Set the initial state. Assume that the doorlock isn't jammed.
+    node.doorLockProperty.updated();
+
     const doorLockEvents = {};
     for (const eventCode of DOORLOCK_EVENT_CODES) {
       doorLockEvents[eventCode] = {'@type': 'DoorLockEvent'};
     }
     this.addEvents(node, doorLockEvents);
+
+    this.addActions(node, {
+      lock: {
+        '@type': 'LockAction',
+        title: 'Lock',
+        description: 'Lock the deadbolt',
+      },
+      unlock: {
+        '@type': 'UnlockAction',
+        title: 'Unlock',
+        description: 'Unlock the deadbolt',
+      },
+    });
+
     // Set the checkin interval for door locks to be faster since we
     // may need to talk to them.
     node.slowCheckinInterval = 1 * 60 * 4;  // 1 minute (quarterseconds)
@@ -1493,6 +1543,12 @@ class ZigbeeClassifier {
     delete node.cieAddr;
   }
 
+  addActions(node, actions) {
+    for (const actionName in actions) {
+      node.addAction(actionName, actions[actionName]);
+    }
+  }
+
   addEvents(node, events) {
     for (const eventName in events) {
       node.addEvent(eventName, events[eventName]);
@@ -1767,9 +1823,8 @@ class ZigbeeClassifier {
   }
 
   initDoorLock(node, doorLockEndpoint) {
-    // TODO: Replace with DoorLock type
-    node['@type'] = ['BinarySensor']; // TODO: Replace woth DoorLock type
-    node.name = `${node.id}-doorlock`;
+    node.name = `${node.id}-DoorLock`;
+    node['@type'] = ['Lock'];
     this.addDoorLockedProperty(node, doorLockEndpoint);
   }
 
