@@ -268,7 +268,7 @@ const THERMOSTAT_SYSTEM_MODE = [
 // for the hvacThermostat cluster.
 const THERMOSTAT_RUN_MODE = [
   'off',      // 0
-  'auto',     // 1
+  null,       // 1 - not used in the spec
   null,       // 2 - not used in the spec
   'cooling',  // 3
   'heating',  // 4
