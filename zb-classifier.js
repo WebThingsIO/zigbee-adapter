@@ -16,7 +16,7 @@ const {
   DOORLOCK_EVENT_CODES,
   HVAC_FAN_SEQ,
   PROFILE_ID,
-  THERMOSTAT_MODE,
+  THERMOSTAT_SYSTEM_MODE,
   ZHA_DEVICE_ID,
   ZLL_DEVICE_ID,
   ZONE_STATUS,
@@ -587,9 +587,12 @@ class ZigbeeClassifier {
   }
 
   addDoorLockedProperty(node, doorLockEndpoint) {
-    this.addProperty(
+    // The lockState is both state and control, so we create
+    // a hidden property which is a boolean, and have the visible
+    // state be an enumeration.
+    node.doorLockProperty = this.addProperty(
       node,                           // device
-      'locked',                       // name
+      '_lockedInterntal',             // name
       {// property description
         '@type': 'BooleanProperty',
         label: 'Locked',
@@ -603,11 +606,58 @@ class ZigbeeClassifier {
       'parseDoorLockedAttr',          // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
+    node.doorLockState = this.addProperty(
+      node,
+      'locked',
+      {
+        '@type': 'LockedProperty',
+        type: 'string',
+        title: 'State',
+        enum: ['locked', 'unlocked', 'jammed', 'unknown'],
+        readOnly: true,
+      },
+      0,  // profileId
+      0,  // endpoint
+      0,  // clusterId
+      ''  // attr
+    );
+
+    // When the internal state changes, then we update the visible state.
+    node.doorLockProperty.updated = function() {
+      const state = node.doorLockProperty.value ? 'locked' : 'unlocked';
+      node.setPropertyValue(node.doorLockState, state);
+      if (node.doorLockTimeout) {
+        clearTimeout(node.doorLockTimeout);
+        node.doorLockTimeout = null;
+      }
+      if (node.doorLockAction) {
+        const doorLockAction = node.doorLockAction;
+        node.doorLockAction = null;
+        doorLockAction.finish();
+      }
+    };
+    // Set the initial state. Assume that the doorlock isn't jammed.
+    node.doorLockProperty.updated();
+
     const doorLockEvents = {};
     for (const eventCode of DOORLOCK_EVENT_CODES) {
       doorLockEvents[eventCode] = {'@type': 'DoorLockEvent'};
     }
     this.addEvents(node, doorLockEvents);
+
+    this.addActions(node, {
+      lock: {
+        '@type': 'LockAction',
+        title: 'Lock',
+        description: 'Lock the deadbolt',
+      },
+      unlock: {
+        '@type': 'UnlockAction',
+        title: 'Unlock',
+        description: 'Unlock the deadbolt',
+      },
+    });
+
     // Set the checkin interval for door locks to be faster since we
     // may need to talk to them.
     node.slowCheckinInterval = 1 * 60 * 4;  // 1 minute (quarterseconds)
@@ -1041,6 +1091,7 @@ class ZigbeeClassifier {
         readOnly: true,
         minimum: 0,
         maximum: 40,
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                 // profileId
       hvacThermostatEndpoint,         // endpoint
@@ -1054,21 +1105,23 @@ class ZigbeeClassifier {
       node,                           // device
       'mode',                         // name
       {// property description
+        '@type': 'ThermostatModeProperty',
         label: 'Mode',
         type: 'string',
-        enum: THERMOSTAT_MODE.filter((x) => x),
+        enum: THERMOSTAT_SYSTEM_MODE.filter((x) => x),
       },
       PROFILE_ID.ZHA,                 // profileId
       hvacThermostatEndpoint,         // endpoint
       CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
       'systemMode',                   // attr
-      'setThermostatModeValue',       // setAttrFromValue
-      'parseThermostatModeAttr'       // parseValueFromAttr
+      'setThermostatSystemModeValue', // setAttrFromValue
+      'parseThermostatSystemModeAttr' // parseValueFromAttr
     );
     this.addProperty(
       node,                           // device
       'runMode',                      // name
       {// property description
+        '@type': 'HeatingCoolingProperty',
         label: 'Run Mode',
         type: 'string',
         readOnly: true,
@@ -1078,7 +1131,7 @@ class ZigbeeClassifier {
       CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
       'runningMode',                  // attr
       '',                             // setAttrFromValue
-      'parseThermostatModeAttr',      // parseValueFromAttr
+      'parseThermostatRunModeAttr',   // parseValueFromAttr
       CONFIG_REPORT_MODE
     );
 
@@ -1140,6 +1193,7 @@ class ZigbeeClassifier {
         label: 'Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1155,6 +1209,7 @@ class ZigbeeClassifier {
         label: 'Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1167,9 +1222,11 @@ class ZigbeeClassifier {
       node,                             // device
       'heatTarget',                     // name
       {// property description
+        '@type': 'TargetTemperatureProperty',
         label: 'Heat Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1218,6 +1275,7 @@ class ZigbeeClassifier {
         label: 'Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1233,6 +1291,7 @@ class ZigbeeClassifier {
         label: 'Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1245,9 +1304,11 @@ class ZigbeeClassifier {
       node,                             // device
       'coolTarget',                     // name
       {// property description
+        '@type': 'TargetTemperatureProperty',
         label: 'Cool Target',
         type: 'number',
         unit: 'degree celsius',
+        multipleOf: 0.5,
       },
       PROFILE_ID.ZHA,                   // profileId
       hvacThermostatEndpoint,           // endpoint
@@ -1335,6 +1396,12 @@ class ZigbeeClassifier {
       heatTargetProperty.updateMinimum();
       coolTargetProperty.updateMaximum();
     };
+
+    // It's possible that values have been persisted, but the mins/maxs
+    // haven't been, so we call the update methods here to cover off that
+    // case.
+    heatTargetProperty.updateMinimum();
+    coolTargetProperty.updateMaximum();
 
     this.addProperty(
       node,                             // device
@@ -1474,6 +1541,12 @@ class ZigbeeClassifier {
 
     // Remove the cieAddr so that we'll requery it from the device.
     delete node.cieAddr;
+  }
+
+  addActions(node, actions) {
+    for (const actionName in actions) {
+      node.addAction(actionName, actions[actionName]);
+    }
   }
 
   addEvents(node, events) {
@@ -1750,9 +1823,8 @@ class ZigbeeClassifier {
   }
 
   initDoorLock(node, doorLockEndpoint) {
-    // TODO: Replace with DoorLock type
-    node['@type'] = ['BinarySensor']; // TODO: Replace woth DoorLock type
-    node.name = `${node.id}-doorlock`;
+    node.name = `${node.id}-DoorLock`;
+    node['@type'] = ['Lock'];
     this.addDoorLockedProperty(node, doorLockEndpoint);
   }
 
@@ -2028,7 +2100,7 @@ class ZigbeeClassifier {
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     node.name = `${node.id}-thermostat`;
     // TODO: Add Thermostat Capability
-    node['@type'] = ['TemperatureSensor'];
+    node['@type'] = ['Thermostat'];
     this.addThermostatProperties(node, hvacThermostatEndpoint,
                                  hvacFanControlEndpoint);
   }

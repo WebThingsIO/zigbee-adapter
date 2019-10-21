@@ -2067,6 +2067,65 @@ class ZigbeeNode extends Device {
       remote64: frame.destination64,
     }, property);
   }
+
+  performAction(action) {
+    console.log(`${this.name}: Performing action '${action.name}'`);
+
+    if (this.doorLockAction) {
+      return Promise.reject('Lock/Unlock already in progress - ignoring');
+    }
+
+    action.start();
+    switch (action.name) {
+
+      case 'lock': // Start locking the door
+        if (this.doorLockState.value === 'locked') {
+          console.log('Door already locked - ignoring');
+          action.finish();
+          return Promise.resolve();
+        }
+        this.doorLockAction = action;
+        this.doorLockProperty.setValue(true);
+        this.setPropertyValue(this.doorLockState, 'unknown');
+        break;
+
+      case 'unlock':  // Start unlocking the door
+        if (this.doorLockState.value === 'unlocked') {
+          console.log('Door already unlocked - ignoring');
+          action.finish();
+          return Promise.resolve();
+        }
+        this.doorLockAction = action;
+        this.doorLockProperty.setValue(false);
+        this.setPropertyValue(this.doorLockState, 'unknown');
+        break;
+
+      default:
+        action.finish();
+        return Promise.reject(`Unrecognized action: ${action.name}`);
+    }
+
+    if (this.doorLockAction) {
+      this.doorLockTimeout = setTimeout(() => {
+        // We didn't receive any type of status update. Assume jammed.
+        this.setPropertyValue(this.doorLockState, 'jammed');
+        const doorLockAction = this.doorLockAction;
+        if (doorLockAction) {
+          this.doorLockAction = null;
+          doorLockAction.finish();
+        }
+      }, 15000);
+    }
+    return Promise.resolve();
+  }
+
+  // Used to set properties which don't have an associated attr
+  setPropertyValue(property, value) {
+    property.setCachedValue(value);
+    console.log('setPropertyValue property:', property.name,
+                'for:', this.name, 'value:', value);
+    this.notifyPropertyChanged(property);
+  }
 }
 
 module.exports = ZigbeeNode;

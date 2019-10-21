@@ -17,7 +17,8 @@ const {Deferred, Property, Utils} = require('gateway-addon');
 const {
   ATTR_ID,
   HVAC_FAN_MODE,
-  THERMOSTAT_MODE,
+  THERMOSTAT_RUN_MODE,
+  THERMOSTAT_SYSTEM_MODE,
   THERMOSTAT_STATE,
 } = require('./zb-constants');
 
@@ -642,17 +643,36 @@ class ZigbeeProperty extends Property {
   }
 
   /**
-   * @method parseThermostatModeAttr
+   * @method parseThermostatRunModeAttr
    *
    * Converts a thermostat mode attribute into a property value (string).
    */
-  parseThermostatModeAttr(attrEntry) {
+  parseThermostatRunModeAttr(attrEntry) {
     const mode = attrEntry.attrData;
     let modeStr;
-    if (mode >= THERMOSTAT_MODE.length) {
+    if (mode >= THERMOSTAT_RUN_MODE.length) {
       modeStr = mode.toString();
     } else {
-      modeStr = THERMOSTAT_MODE[mode];
+      modeStr = THERMOSTAT_RUN_MODE[mode];
+    }
+    return [
+      modeStr,
+      `${modeStr} (${mode})`,
+    ];
+  }
+
+  /**
+   * @method parseThermostatSystemModeAttr
+   *
+   * Converts a thermostat mode attribute into a property value (string).
+   */
+  parseThermostatSystemModeAttr(attrEntry) {
+    const mode = attrEntry.attrData;
+    let modeStr;
+    if (mode >= THERMOSTAT_SYSTEM_MODE.length) {
+      modeStr = mode.toString();
+    } else {
+      modeStr = THERMOSTAT_SYSTEM_MODE[mode];
     }
     return [
       modeStr,
@@ -976,8 +996,8 @@ class ZigbeeProperty extends Property {
    * Converts the system mode or running mode property value (a string)
    * into the appropriate ZCL write command to set the attribute.
    */
-  setThermostatModeValue(propertyValue) {
-    let attrData = THERMOSTAT_MODE.indexOf(propertyValue);
+  setThermostatSystemModeValue(propertyValue) {
+    let attrData = THERMOSTAT_SYSTEM_MODE.indexOf(propertyValue);
     if (attrData < 0) {
       attrData = 0; // Off
     }
