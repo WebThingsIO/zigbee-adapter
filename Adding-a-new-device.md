@@ -29,7 +29,7 @@ will cause the following to be displayed in the log:
 ```
 
 Note that since the device is battery powered you may need to do the
-discovery very quickly after interacting with the device (while its still
+discovery very quickly after interacting with the device (while it's still
 awake) otherwise the device won't see the discover request.
 
 The output of the discovery should show which attrbutes are supported for

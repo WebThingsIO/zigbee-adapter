@@ -1,7 +1,7 @@
 ## Overview
 
-Zigbee devices each have a uniqye 64-bit ID, which is used by the
-adapter to identify devices. Once a network is setup, each devices
+Zigbee devices each have a unique 64-bit ID, which is used by the
+adapter to identify devices. Once a network is setup, each device
 gets dynamically assigned a 16-bit network address. This 16-bit network
 address is what's used for sending/receiving packets. The 16-bit address
 can change over time.
@@ -58,7 +58,7 @@ configReport information can be specified (how much change should cause a
 a report to be generated). ConfigReporting, in turn,
 causes bindings to be setup (the binding determines where the reports
 go). Many devices have limited resources to store the ConfigReporting
-information and will often send reports as a group of attrbutes. So far
+information and will often send reports as a group of attributes. So far
 I've only noticed this being a real issue with the thermostats. This is
 why not every attribute has configReporting enabled.
 
