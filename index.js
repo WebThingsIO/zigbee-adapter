@@ -93,25 +93,25 @@ const deconzSerialProber = new SerialProber({
 const cc2531SerialProber = new SerialProber({
   name: 'cc2531',
   baudRate: 115200,
-  
+
   probeCmd: [
     0xFE,       // SOF
     0x00,       // length
     0x21, 0x01, // CMD: PING REQ
-    0x20        // FCS
+    0x20,       // FCS
   ],
 
   probeRsp: [
     0xFE,
     0x02,
     0x61, 0x01,
-    //CAPABILITIES 
+    // CAPABILITIES
   ],
 
   filter: [
     {
-      vendorId: '0451',
-      productId: '16a8'
+      vendorId: /0451/i,
+      productId: /16a8/i,
     },
   ],
 });
@@ -119,7 +119,7 @@ const cc2531SerialProber = new SerialProber({
 const PROBERS = [
   xbeeSerialProber,
   deconzSerialProber,
-  cc2531SerialProber
+  cc2531SerialProber,
 ];
 
 // Scan the serial ports looking for an XBee adapter.
