@@ -1641,6 +1641,19 @@ class ZigbeeClassifier {
     const haElectricalEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HAELECTRICAL_HEX);
 
+    let isZhaLight = false;
+    if (seMeteringEndpoint && !isZhaLight) {
+      isZhaLight = ZHA_DEVICE_ID.isLight(
+        node.activeEndpoints[seMeteringEndpoint].deviceId
+      );
+    }
+
+    if (haElectricalEndpoint && !isZhaLight) {
+      isZhaLight = ZHA_DEVICE_ID.isLight(
+        node.activeEndpoints[haElectricalEndpoint].deviceId
+      );
+    }
+
     const genBinaryInputEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
     const genLevelCtrlEndpoint =
@@ -1707,11 +1720,13 @@ class ZigbeeClassifier {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint) {
+               !node.lightingColorCtrlEndpoint &&
+               !isZhaLight) {
       this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
     } else if (seMeteringEndpoint &&
                !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint) {
+               !node.lightingColorCtrlEndpoint &&
+               !isZhaLight) {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
     } else if (genLevelCtrlEndpoint) {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
