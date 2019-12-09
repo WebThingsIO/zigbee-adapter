@@ -1337,6 +1337,7 @@ class ZigbeeClassifier {
     heatTargetProperty.updated = function() {
       maxHeatTargetProperty.setMinimum(this.value);
       minHeatTargetProperty.setMaximum(this.value);
+      coolTargetProperty.updateMinimum();
     };
 
     heatTargetProperty.updateMaximum = function() {
@@ -1364,12 +1365,13 @@ class ZigbeeClassifier {
     };
 
     maxCoolTargetProperty.updated = function() {
-      coolTargetProperty.setMaximum(this.target);
+      coolTargetProperty.setMaximum(this.value);
     };
 
     coolTargetProperty.updated = function() {
       maxCoolTargetProperty.setMinimum(this.value);
       minCoolTargetProperty.setMaximum(this.value);
+      heatTargetProperty.updateMaximum();
     };
 
     coolTargetProperty.updateMinimum = function() {
@@ -1402,6 +1404,14 @@ class ZigbeeClassifier {
     // case.
     heatTargetProperty.updateMaximum();
     coolTargetProperty.updateMinimum();
+
+    if (minHeatTargetProperty.hasOwnProperty('value')) {
+      heatTargetProperty.setMinimum(minHeatTargetProperty.value);
+    }
+
+    if (maxCoolTargetProperty.hasOwnProperty('value')) {
+      coolTargetProperty.setMaximum(maxCoolTargetProperty.value);
+    }
 
     this.addProperty(
       node,                             // device
