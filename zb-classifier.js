@@ -1011,6 +1011,7 @@ class ZigbeeClassifier {
         label: 'Voltage',
         type: 'number',
         unit: 'volt',
+        multipleOf: 0.1,
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
