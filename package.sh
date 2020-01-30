@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 rm -rf node_modules
 if [ -z "${ADDON_ARCH}" ]; then
