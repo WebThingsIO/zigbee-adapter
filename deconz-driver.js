@@ -687,7 +687,7 @@ class DeconzDriver extends ZigbeeDriver {
       paramId: paramId,
       [fieldName]: value,
     };
-    if (typeof priorty !== 'undefined') {
+    if (typeof priority !== 'undefined') {
       writeParamFrame.priority = priority;
     }
     return [
