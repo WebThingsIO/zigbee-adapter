@@ -16,7 +16,7 @@
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "bl": "^4.0.0",
+    "bl": "^4.0.1",
     "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.1",
     "color": "^3.1.2",
@@ -32,7 +32,7 @@
     "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.3",
+    "babel-eslint": "^10.1.0",
     "eslint": "^6.8.0",
     "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git"
   },
