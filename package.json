@@ -47,6 +47,7 @@
   },
   "files": [
     "LICENSE",
+    "README.md",
     "SHA256SUMS",
     "index.js",
     "deconz-driver.js",
