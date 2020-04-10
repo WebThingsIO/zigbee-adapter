@@ -64,6 +64,7 @@
     "zb-node.js",
     "zb-property.js",
     "zb-xiaomi.js",
+    "zstack-driver.js",
     "node_modules"
   ],
   "moziot": {

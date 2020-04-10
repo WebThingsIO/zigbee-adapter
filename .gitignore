@@ -1,3 +1,4 @@
+*.sha256sum
 *.swp
 *.tgz
 *~
