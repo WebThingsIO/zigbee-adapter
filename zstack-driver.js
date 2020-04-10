@@ -218,6 +218,19 @@ class ZStackDriver extends ZigbeeDriver {
     ]);
   }
 
+  allowBind() {
+    const frame = {
+      type: cmdType.SREQ,
+      subsys: 'SAPI',
+      cmd: 0x02, // MT_SAPI_ALLOW_BIND_REQ
+      payload: Buffer.from([0xFF]),
+    };
+    this.queueCommandsAtFront([
+      new Command(SEND_FRAME, frame),
+      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+    ]);
+  }
+
   disableTCKeyExchange() {
     const frame = {
       type: cmdType.SREQ,
@@ -346,7 +359,7 @@ class ZStackDriver extends ZigbeeDriver {
             break;
           case zdo.CLUSTER_ID.BIND_REQUEST:
             {
-              builder.appendUInt16LE(0x0000);
+              builder.appendUInt16LE(parseInt(frame.destination16, 16));
               builder.appendBuffer(frame.data.slice(1));
             }
             break;
@@ -577,6 +590,11 @@ class ZStackDriver extends ZigbeeDriver {
       }
     } else if (frame.subsys == subSys.AF) {
       frame.status = frame.payload[0];
+      frame.type = self.getExplicitRxFrameType();
+      // console.log('last frame: ', JSON.stringify(this.lastFrameSent));
+      if (this.lastFrameSent.destination64) {
+        frame.remote64 = this.lastFrameSent.destination64;
+      }
       if (frame.status == 0x00) {
         frame.id = self.lastIDSeq;
       } else {
