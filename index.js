@@ -90,9 +90,36 @@ const deconzSerialProber = new SerialProber({
   ],
 });
 
+const cc2531SerialProber = new SerialProber({
+  name: 'cc2531',
+  baudRate: 115200,
+
+  probeCmd: [
+    0xFE,       // SOF
+    0x00,       // length
+    0x21, 0x01, // CMD: PING REQ
+    0x20,       // FCS
+  ],
+
+  probeRsp: [
+    0xFE,
+    0x02,
+    0x61, 0x01,
+    // CAPABILITIES
+  ],
+
+  filter: [
+    {
+      vendorId: /0451/i,
+      productId: /16a8/i,
+    },
+  ],
+});
+
 const PROBERS = [
   xbeeSerialProber,
   deconzSerialProber,
+  cc2531SerialProber,
 ];
 
 // Scan the serial ports looking for an XBee adapter.
@@ -144,9 +171,11 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     // import the driver class.
     const XBeeDriver = require('./xbee-driver');
     const DeconzDriver = require('./deconz-driver');
+    const ZStackDriver = require('./zstack-driver.js');
     const driver = {
       [xbeeSerialProber.param.name]: XBeeDriver,
       [deconzSerialProber.param.name]: DeconzDriver,
+      [cc2531SerialProber.param.name]: ZStackDriver,
     };
     for (const match of matches) {
       new driver[match.prober.param.name](addonManager,
