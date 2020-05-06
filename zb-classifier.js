@@ -1757,6 +1757,8 @@ class ZigbeeClassifier {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
     } else if (hvacThermostatEndpoint) {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
+    } else if (genOnOffOutputEndpoint) {
+      this.initOnOffButton(node, genOnOffOutputEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
@@ -1773,8 +1775,6 @@ class ZigbeeClassifier {
       this.initOnOffSwitch(node, genOnOffEndpoint);
     } else if (genLevelCtrlOutputEndpoint) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
-    } else if (genOnOffOutputEndpoint) {
-      this.initOnOffButton(node, genOnOffOutputEndpoint);
     } else if (doorLockEndpoint) {
       this.initDoorLock(node, doorLockEndpoint);
     } else if (genBinaryInputEndpoint) {
