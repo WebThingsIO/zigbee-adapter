@@ -1342,12 +1342,25 @@ class ZigbeeClassifier {
     };
 
     heatTargetProperty.updateMaximum = function() {
-      if (!maxHeatTargetProperty.hasOwnProperty('value') ||
-          !deadbandProperty.hasOwnProperty('value') ||
-          !coolTargetProperty.hasOwnProperty('value')) {
+      if (!maxHeatTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
       }
+
+      if ((!deadbandProperty.hasOwnProperty('value') &&
+           !coolTargetProperty.hasOwnProperty('value')) ||
+          (deadbandProperty.value === null &&
+           coolTargetProperty.value === null)) {
+        // it looks like there's no cool target or deadband, so set based on
+        // max heat target
+        heatTargetProperty.setMaximum(maxHeatTargetProperty.value);
+        return;
+      } else if (!deadbandProperty.hasOwnProperty('value') ||
+                 !coolTargetProperty.hasOwnProperty('value')) {
+        // We don't have enough information yet
+        return;
+      }
+
       const max1 = maxHeatTargetProperty.value;
       const max2 = coolTargetProperty.value - deadbandProperty.value;
       heatTargetProperty.setMaximum(Math.min(max1, max2));
@@ -1376,12 +1389,25 @@ class ZigbeeClassifier {
     };
 
     coolTargetProperty.updateMinimum = function() {
-      if (!minCoolTargetProperty.hasOwnProperty('value') ||
-          !deadbandProperty.hasOwnProperty('value') ||
-          !heatTargetProperty.hasOwnProperty('value')) {
+      if (!minCoolTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
       }
+
+      if ((!deadbandProperty.hasOwnProperty('value') &&
+           !heatTargetProperty.hasOwnProperty('value')) ||
+          (deadbandProperty.value === null &&
+           heatTargetProperty.value === null)) {
+        // it looks like there's no heat target or deadband, so set based on
+        // min cool target
+        coolTargetProperty.setMinimum(minCoolTargetProperty.value);
+        return;
+      } else if (!deadbandProperty.hasOwnProperty('value') ||
+                 !heatTargetProperty.hasOwnProperty('value')) {
+        // We don't have enough information yet
+        return;
+      }
+
       const min1 = minCoolTargetProperty.value;
       const min2 = heatTargetProperty.value + deadbandProperty.value;
       coolTargetProperty.setMinimum(Math.max(min1, min2));
