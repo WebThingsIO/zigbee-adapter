@@ -1729,6 +1729,8 @@ class ZigbeeClassifier {
       this.initBinarySensorFromZoneType(node);
     } else if (msOccupancySensingEndpoint) {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
+    } else if (hvacThermostatEndpoint) {
+      this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
@@ -1747,8 +1749,6 @@ class ZigbeeClassifier {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
     } else if (genOnOffOutputEndpoint) {
       this.initOnOffButton(node, genOnOffOutputEndpoint);
-    } else if (hvacThermostatEndpoint) {
-      this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
     } else if (doorLockEndpoint) {
       this.initDoorLock(node, doorLockEndpoint);
     } else if (genBinaryInputEndpoint) {
@@ -1756,10 +1756,12 @@ class ZigbeeClassifier {
     }
 
     // Add extra properties, if necessary.
-    if (msTemperatureEndpoint) {
-      this.addTemperatureSensorProperty(node, msTemperatureEndpoint);
-    } else if (genDeviceTempCfgEndpoint) {
-      this.addDeviceTemperatureProperty(node, genDeviceTempCfgEndpoint);
+    if (!hvacThermostatEndpoint) {
+      if (msTemperatureEndpoint) {
+        this.addTemperatureSensorProperty(node, msTemperatureEndpoint);
+      } else if (genDeviceTempCfgEndpoint) {
+        this.addDeviceTemperatureProperty(node, genDeviceTempCfgEndpoint);
+      }
     }
     if (illuminanceEndpoint) {
       this.addIlluminanceMeasurementProperty(node, illuminanceEndpoint);
