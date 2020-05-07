@@ -1757,8 +1757,6 @@ class ZigbeeClassifier {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
     } else if (hvacThermostatEndpoint) {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
-    } else if (genOnOffOutputEndpoint) {
-      this.initOnOffButton(node, genOnOffOutputEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
@@ -1774,7 +1772,10 @@ class ZigbeeClassifier {
     } else if (genOnOffEndpoint) {
       this.initOnOffSwitch(node, genOnOffEndpoint);
     } else if (genLevelCtrlOutputEndpoint) {
-      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint);
+      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint,
+                                genOnOffOutputEndpoint);
+    } else if (genOnOffOutputEndpoint) {
+      this.initOnOffButton(node, genOnOffOutputEndpoint);
     } else if (doorLockEndpoint) {
       this.initDoorLock(node, doorLockEndpoint);
     } else if (genBinaryInputEndpoint) {
@@ -2012,7 +2013,14 @@ class ZigbeeClassifier {
     }
   }
 
-  initMultiLevelButton(node, genLevelCtrlOutputEndpoint) {
+  initMultiLevelButton(node, genLevelCtrlOutputEndpoint,
+                       genOnOffOutputEndpoint) {
+    if (node.modelId.includes('motion') && genOnOffOutputEndpoint) {
+      // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
+      this.initOnOffButton(node, genOnOffOutputEndpoint);
+      return;
+    }
+
     node.name = `${node.id}-button`;
     node.type = 'multiLevelSwitch';
     node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
