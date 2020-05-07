@@ -1997,7 +1997,7 @@ class ZigbeeClassifier {
       });
     } else {
       node.name = `${node.id}-button`;
-      node['@type'] = ['OnOffSwitch', 'PushButton'];
+      node['@type'] = ['PushButton'];
 
       const onOffProperty =
         this.addButtonOnProperty(node, genOnOffOutputEndpoint);
@@ -2022,8 +2022,7 @@ class ZigbeeClassifier {
     }
 
     node.name = `${node.id}-button`;
-    node.type = 'multiLevelSwitch';
-    node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch', 'PushButton'];
+    node['@type'] = ['PushButton'];
 
     const onOffProperty =
       this.addButtonOnProperty(node, genLevelCtrlOutputEndpoint);
