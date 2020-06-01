@@ -191,7 +191,21 @@ class ZigbeeAdapter extends Adapter {
       requestType: 0, // 0 = Single Device Response
       startIndex: 0,
       options: 0,
-    });
+    });    },
+    "0000000000000000": {
+      "addr64": "0000000000000000",
+      "addr16": "ff70",
+      "activeEndpoints": {},
+      "properties": {},
+      "name": "zb-0000000000000000-Node",
+      "@type": [],
+      "defaultName": "zb-0000000000000000-Node",
+      "extendedTimeout": true,
+      "activeEndpointsPopulated": false,
+      "nodeInfoEndpointsPopulated": false,
+      "powerSource": 0,
+      "rxOnWhenIdle": 1
+
     this.sendFrameWaitFrameAtFront(updateFrame, {
       type: this.driver.getExplicitRxFrameType(),
       zdoSeq: updateFrame.zdoSeq,
@@ -456,7 +470,7 @@ class ZigbeeAdapter extends Adapter {
       node = this.nodes[addr64];
     }
     return node;
-  }fin
+  }
 
   findNodeByAddr16(addr16) {
     for (const nodeId in this.nodes) {
