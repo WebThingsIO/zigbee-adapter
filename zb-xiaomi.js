@@ -58,6 +58,37 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.sensor_magnet.aq2': {
+    name: 'magnet',
+    '@type': ['BinarySensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENONOFF_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      on: {
+        descr: {
+          '@type': 'BooleanProperty',
+          label: 'Open',
+          type: 'boolean',
+          description: 'Magnet Sensor',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENONOFF,
+        attr: 'onOff',
+        value: false,
+        parseValueFromAttr: 'parseOnOffAttr',
+      },
+    },
+  },
   'lumi.sensor_switch': {
     name: 'switch',
     '@type': ['BinarySensor'],
@@ -87,6 +118,70 @@ const MODEL_IDS = {
         value: false,
         parseValueFromAttr: 'parseOffOnAttr',
       },
+      multiClick: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'MultiClick',
+          type: 'number',
+          description: 'Switch Sensor',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENONOFF,
+        attr: '',
+        attrId: 0x8000,
+        value: 0,
+        parseValueFromAttr: 'parseNumericAttr',
+      },
+    },
+  },
+  'lumi.sensor_switch.aq2': {
+    name: 'switch',
+    '@type': ['BinarySensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENONOFF_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      multiClick: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'MultiClick',
+          type: 'number',
+          description: 'Switch Sensor',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENONOFF,
+        attr: '',
+        attrId: 0x8000,
+        value: 0,
+        parseValueFromAttr: 'parseNumericAttr',
+      },
+    },
+  },
+  'lumi.remote.b1acn01': {
+    name: 'switch',
+    '@type': ['BinarySensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENONOFF_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
       multiClick: {
         descr: {
           '@type': 'MultiClickProperty',
