@@ -192,7 +192,6 @@ class ZigbeeAdapter extends Adapter {
       startIndex: 0,
       options: 0,
     });
-
     this.sendFrameWaitFrameAtFront(updateFrame, {
       type: this.driver.getExplicitRxFrameType(),
       zdoSeq: updateFrame.zdoSeq,
