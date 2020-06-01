@@ -456,7 +456,7 @@ class ZigbeeAdapter extends Adapter {
       node = this.nodes[addr64];
     }
     return node;
-  }
+  }fin
 
   findNodeByAddr16(addr16) {
     for (const nodeId in this.nodes) {
@@ -794,9 +794,9 @@ class ZigbeeAdapter extends Adapter {
       const neighborIndex = frame.startIndex + i;
       const neighbor = frame.neighbors[i];
       if (neighbor.addr64 == '0000000000000000') {
-        const node = this.findNodeByAddr16(neighbor.addr16);
-        if (node) {
-          neighbor.addr64 = node.addr64;
+        const tmpnode = this.findNodeByAddr16(neighbor.addr16);
+        if (tmpnode) {
+          neighbor.addr64 = tmpnode.addr64;
         }
       }
       node.neighbors[neighborIndex] = neighbor;
