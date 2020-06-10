@@ -1758,8 +1758,9 @@ class ZigbeeClassifier {
     } else if (hvacThermostatEndpoint) {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
     } else if (seMeteringEndpoint && genLevelCtrlEndpoint) {
-      //Support Ubisys dimmer D1
-      this.initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint); 
+      // Support Ubisys dimmer D1
+      this.initLightingPowerMetering(node, seMeteringEndpoint,
+                                     genLevelCtrlEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
@@ -2161,23 +2162,18 @@ class ZigbeeClassifier {
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
   }
 
-  initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
-    node.name = `${node.id}-thermostat`;
-    // TODO: Add Thermostat Capability
-    node['@type'] = ['Thermostat'];
-    this.addThermostatProperties(node, hvacThermostatEndpoint,
-                                 hvacFanControlEndpoint);
-  }
-  
-  //Support Ubisys dimmer D1
   initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
     node['@type'] = ['OnOffSwitch', 'Light', 'EnergyMonitor'];
     this.addOnProperty(node, genLevelCtrlEndpoint);
-    if (genLevelCtrlEndpoint) {
-      const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-      this.addBrightnessProperty(node, genLevelCtrlEndpoint);
-    }
+    this.addBrightnessProperty(node, genLevelCtrlEndpoint);
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
+  }
+
+  initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
+    node.name = `${node.id}-thermostat`;
+    node['@type'] = ['Thermostat'];
+    this.addThermostatProperties(node, hvacThermostatEndpoint,
+                                 hvacFanControlEndpoint);
   }
 }
 
