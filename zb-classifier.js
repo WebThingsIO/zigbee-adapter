@@ -454,7 +454,7 @@ class ZigbeeClassifier {
       'on',                           // name
       {// property description
         '@type': 'OnOffProperty',
-        label: 'On/Off',
+        label: 'Power',
         type: 'boolean',
       },
       endpoint.profileId,             // profileId
@@ -473,7 +473,7 @@ class ZigbeeClassifier {
       'on',                           // name
       {// property description
         '@type': 'BooleanProperty',
-        label: 'On/Off',
+        label: 'Power',
         type: 'boolean',
         readOnly: true,
       },
