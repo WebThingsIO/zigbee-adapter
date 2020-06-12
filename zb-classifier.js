@@ -795,7 +795,7 @@ class ZigbeeClassifier {
       'instantaneousPower',           // name
       {// property description
         '@type': 'InstantaneousPowerProperty',
-        label: 'Power',
+        label: 'Energy',
         type: 'number',
         unit: 'watt',
         readOnly: true,
@@ -897,7 +897,7 @@ class ZigbeeClassifier {
       'instantaneousPower',           // name
       {// property description
         '@type': 'InstantaneousPowerProperty',
-        label: 'Power',
+        label: 'Energy',
         type: 'number',
         unit: 'watt',
         readOnly: true,
