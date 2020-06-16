@@ -454,7 +454,7 @@ class ZigbeeClassifier {
       'on',                           // name
       {// property description
         '@type': 'OnOffProperty',
-        label: 'Power',
+        label: 'Switch',
         type: 'boolean',
       },
       endpoint.profileId,             // profileId
@@ -473,7 +473,7 @@ class ZigbeeClassifier {
       'on',                           // name
       {// property description
         '@type': 'BooleanProperty',
-        label: 'Power',
+        label: 'Switch',
         type: 'boolean',
         readOnly: true,
       },
@@ -795,7 +795,7 @@ class ZigbeeClassifier {
       'instantaneousPower',           // name
       {// property description
         '@type': 'InstantaneousPowerProperty',
-        label: 'Energy',
+        label: 'Power usage',
         type: 'number',
         unit: 'watt',
         readOnly: true,
@@ -897,7 +897,7 @@ class ZigbeeClassifier {
       'instantaneousPower',           // name
       {// property description
         '@type': 'InstantaneousPowerProperty',
-        label: 'Energy',
+        label: 'Power usage',
         type: 'number',
         unit: 'watt',
         readOnly: true,
