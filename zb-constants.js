@@ -129,6 +129,8 @@ const CLUSTER_ID = {
   GENPOLLCTRL: zclId.cluster('genPollCtrl').value,
   GENPOWERCFG: zclId.cluster('genPowerCfg').value,
   GENSCENES: zclId.cluster('genScenes').value,
+  GENMULTISTATEINPUT: zclId.cluster('genMultistateInput').value,
+  GENANALOGINPUT: zclId.cluster('genAnalogInput').value,
   HAELECTRICAL: zclId.cluster('haElectricalMeasurement').value,
   HVACTHERMOSTAT: zclId.cluster('hvacThermostat').value,
   HVACFANCTRL: zclId.cluster('hvacFanCtrl').value,

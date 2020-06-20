@@ -58,37 +58,6 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_magnet.aq2': {
-    name: 'magnet',
-    '@type': ['BinarySensor'],
-    powerSource: POWERSOURCE.BATTERY,
-    activeEndpoints: {
-      1: {
-        profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.GENONOFF_HEX,
-        ],
-        outputClusters: [],
-      },
-    },
-    properties: {
-      on: {
-        descr: {
-          '@type': 'BooleanProperty',
-          label: 'Open',
-          type: 'boolean',
-          description: 'Magnet Sensor',
-        },
-        profileId: PROFILE_ID.ZHA,
-        endpoint: 1,
-        clusterId: CLUSTER_ID.GENONOFF,
-        attr: 'onOff',
-        value: false,
-        parseValueFromAttr: 'parseOnOffAttr',
-      },
-    },
-  },
   'lumi.sensor_switch': {
     name: 'switch',
     '@type': ['BinarySensor'],
@@ -406,6 +375,93 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.sensor_cube': {
+    name: 'sensor-cube',
+    '@type': ['BinarySensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENBASIC_HEX,
+          CLUSTER_ID.GENOTA_HEX,
+          CLUSTER_ID.GENMULTISTATEINPUT_HEX,
+        ],
+        outputClusters: [],
+      },
+      2: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENMULTISTATEINPUT_HEX,
+        ],
+        outputClusters: [],
+      },
+      3: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENANALOGINPUT_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      transitionString: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'State',
+          type: 'string',
+          description: 'Cube Motion Sensor',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 2,
+        clusterId: CLUSTER_ID.GENMULTISTATEINPUT,
+        attr: 'presentValue',
+        value: '',
+        parseValueFromAttr: 'parseCubeNumericAttr',
+      },
+      /*
+      transitionNumeric: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'State',
+          type: 'number',
+          description: 'Cube Motion Sensor',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 2,
+        clusterId: CLUSTER_ID.GENMULTISTATEINPUT,
+        attr: 'presentValue',
+        value: 0,
+        parseValueFromAttr: 'parseNumericAttr',
+      },
+      */
+      rotate: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'Rotation',
+          type: 'number',
+          unit: '°',
+          description: 'Cube Rotation',
+          minimum: -180,
+          maximum: 180,
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 3,
+        clusterId: CLUSTER_ID.GENANALOGINPUT,
+        attr: 'presentValue',
+        value: '',
+        parseValueFromAttr: 'parseNumericAttr',
+      },
+    },
+  },
+};
+
+const MODEL_IDS_MAP = {
+  'lumi.sensor_magnet.aq2': 'lumi.sensor_magnet',
+  'lumi.sensor_cube.aqgl01': 'lumi.sensor_cube',
 };
 
 class XiaomiFamily extends ZigbeeFamily {
@@ -419,15 +475,21 @@ class XiaomiFamily extends ZigbeeFamily {
   }
 
   identify(node) {
-    if (MODEL_IDS.hasOwnProperty(node.modelId)) {
+    if (MODEL_IDS.hasOwnProperty(this.mapModelID(node))) {
       this.init(node);
       return true;
     }
     return false;
   }
-
+  
+  mapModelID(node) {
+    if (MODEL_IDS_MAP.hasOwnProperty(node.modelId))
+      return MODEL_IDS_MAP[node.modelId];
+    return node.modelId;
+  }
+  
   init(node) {
-    const attribs = MODEL_IDS[node.modelId];
+    const attribs = MODEL_IDS[this.mapModelID(node)];
     if (!attribs) {
       console.log('xiaomi.classify: Unknown modelId:', node.modelId);
       return;
