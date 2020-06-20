@@ -641,7 +641,7 @@ class ZigbeeProperty extends Property {
       `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
     ];
   }
-  
+
   /**
    * @method parseCubeNumericAttr
    *
@@ -680,7 +680,7 @@ class ZigbeeProperty extends Property {
         cubeAction = 'tap';
         break;
       default:
-        cubeAction = 'unknown (' + attrEntry.attrData + ')';
+        cubeAction = `unknown (${attrEntry.attrData})`;
         break;
     }
     return [cubeAction, `${cubeAction}`];

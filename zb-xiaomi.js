@@ -481,13 +481,14 @@ class XiaomiFamily extends ZigbeeFamily {
     }
     return false;
   }
-  
+
   mapModelID(node) {
-    if (MODEL_IDS_MAP.hasOwnProperty(node.modelId))
+    if (MODEL_IDS_MAP.hasOwnProperty(node.modelId)) {
       return MODEL_IDS_MAP[node.modelId];
+    }
     return node.modelId;
   }
-  
+
   init(node) {
     const attribs = MODEL_IDS[this.mapModelID(node)];
     if (!attribs) {
