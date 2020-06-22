@@ -574,7 +574,7 @@ class ZigbeeProperty extends Property {
    * @method parseNumericHundredthsAttr
    *
    * Converts generic numeric attributes in a number, and divides
-   * the number by 10.
+   * the number by 100.
    */
   parseNumericHundredthsAttr(attrEntry) {
     const value = attrEntry.attrData / 100;
@@ -640,6 +640,50 @@ class ZigbeeProperty extends Property {
       propertyValue,
       `${(propertyValue ? 'on' : 'off')} (${attrEntry.attrData})`,
     ];
+  }
+
+  /**
+   * @method parseCubeNumericAttr
+   *
+   * Convert numeric state values to cube action
+   */
+  parseCubeNumericAttr(attrEntry) {
+    let cubeAction = 'none';
+    switch (attrEntry.attrData) {
+      /* Shake/Clear State */
+      case 0:
+        cubeAction = 'shake';
+        break;
+      /* Wake Up */
+      case 2:
+        cubeAction = 'wakeup';
+        break;
+      /* Flip Cube 90° */
+      case 65: case 66: case 68: case 69:
+      case 72: case 74: case 75: case 77:
+      case 80: case 81: case 83: case 84:
+      case 89: case 90: case 92: case 93:
+      case 96: case 98: case 99: case 101:
+      case 104: case 105: case 107: case 108:
+        cubeAction = 'flip90';
+        break;
+      /* Flip Cube 180° */
+      case 128: case 129: case 130: case 131: case 132: case 133:
+        cubeAction = 'flip180';
+        break;
+      /* Slide */
+      case 256: case 258: case 259: case 261: case 260: case 257:
+        cubeAction = 'slide';
+        break;
+      /* Tap */
+      case 512: case 514: case 515: case 517: case 516: case 513:
+        cubeAction = 'tap';
+        break;
+      default:
+        cubeAction = `unknown (${attrEntry.attrData})`;
+        break;
+    }
+    return [cubeAction, `${cubeAction}`];
   }
 
   /**
