@@ -495,19 +495,17 @@ class ZigbeeNode extends Device {
     }
   }
 
-  findPropertyByAttrId(profileId, clusterId, endpoint, attrId) {
+  findPropertiesByAttrId(profileId, clusterId, endpoint, attrId) {
     // Remember that a property can have multiple attrIds
     // (i.e. attrId is an array).
-    for (const property of this.properties.values()) {
-      if (profileId == property.profileId &&
+    return Array.from(this.properties.values()).filter(
+      (property) => profileId == property.profileId &&
           endpoint == property.endpoint &&
           clusterId == property.clusterId &&
           (attrId == property.attrId ||
             (Array.isArray(property.attrId) &&
-            property.attrId.includes(attrId)))) {
-        return property;
-      }
-    }
+            property.attrId.includes(attrId)))
+    );
   }
 
   handleCheckin(frame) {
@@ -561,28 +559,31 @@ class ZigbeeNode extends Device {
 
     for (const attrIdx in frame.extraParams) {
       const attrId = frame.extraParams[attrIdx];
-      const property =
-        this.findPropertyByAttrId(profileId, clusterId, endpoint, attrId);
-      if (property) {
-        // If the configReport was successful, then only a single status
-        // is returned and no attrId's are included.
-        const status =
+      const properties =
+        this.findPropertiesByAttrId(profileId, clusterId, endpoint, attrId);
+      if (properties.length > 0) {
+        for (const property of properties) {
+          // If the configReport was successful, then only a single status
+          // is returned and no attrId's are included.
+          const status =
           (frame.extraParams.length == frame.zcl.payload.length) ?
             frame.zcl.payload[attrIdx].status :
             frame.zcl.payload[0].status;
-        if (status != STATUS.SUCCESS && status != STATUS.INSUFFICIENT_SPACE) {
-          // If the device doesn't support configReports, then treat it as
-          // 'fire and forget'.
-          //
-          // Insufficient space means we're trying to configure reporting
-          // on too many attributes, which is more of a classifier issue
-          // so we don't set fireAndForget in that case because it gets
-          // persisted.
-          console.error(this.addr64,
-                        'configReport failed - setting fireAndForget to true');
-          property.fireAndForget = true;
+          if (status != STATUS.SUCCESS && status != STATUS.INSUFFICIENT_SPACE) {
+            // If the device doesn't support configReports, then treat it as
+            // 'fire and forget'.
+            //
+            // Insufficient space means we're trying to configure reporting
+            // on too many attributes, which is more of a classifier issue
+            // so we don't set fireAndForget in that case because it gets
+            // persisted.
+            console.error(this.addr64,
+                          'configReport failed - ' +
+                          'setting fireAndForget to true');
+            property.fireAndForget = true;
+          }
+          property.configReportNeeded = false;
         }
-        property.configReportNeeded = false;
       } else {
         console.log('##### handleConfigReportRsp:',
                     'Property not found for attrId:', attrId, 'frame:');
@@ -742,66 +743,68 @@ class ZigbeeNode extends Device {
     let propertyFound = false;
 
     for (const attrEntry of frame.zcl.payload) {
-      const property =
-        this.findPropertyByAttrId(profileId, clusterId, endpoint,
-                                  attrEntry.attrId);
-      if (property) {
-        propertyFound = true;
-        // readRsp has a status but report doesn't
-        if (attrEntry.hasOwnProperty('status')) {
-          switch (attrEntry.status) {
-            case STATUS.SUCCESS:
-              break;
-            case STATUS.UNSUPPORTED_ATTRIB:
-              property.fireAndForget = true;
-              if (property.hasOwnProperty('defaultValue')) {
-                attrEntry.dataType =
-                  zclId.attrType(clusterId, attrEntry.attrId).value;
-                attrEntry.attrData = property.defaultValue;
+      const properties =
+        this.findPropertiesByAttrId(profileId, clusterId, endpoint,
+                                    attrEntry.attrId);
+      if (properties.length > 0) {
+        for (const property of properties) {
+          propertyFound = true;
+          // readRsp has a status but report doesn't
+          if (attrEntry.hasOwnProperty('status')) {
+            switch (attrEntry.status) {
+              case STATUS.SUCCESS:
                 break;
-              }
-              break;
-            default:
-              continue;
+              case STATUS.UNSUPPORTED_ATTRIB:
+                property.fireAndForget = true;
+                if (property.hasOwnProperty('defaultValue')) {
+                  attrEntry.dataType =
+                    zclId.attrType(clusterId, attrEntry.attrId).value;
+                  attrEntry.attrData = property.defaultValue;
+                  break;
+                }
+                break;
+              default:
+                continue;
+            }
           }
-        }
 
-        const [value, logValue] = property.parseAttrEntry(attrEntry);
-        if (typeof value === 'undefined') {
-          continue;
-        }
-        property.setCachedValue(value);
-        property.initialReadNeeded = false;
-
-        console.log(this.name,
-                    'property:', property.name,
-                    'profileId:', Utils.hexStr(property.profileId, 4),
-                    'endpoint:', property.endpoint,
-                    'clusterId:', Utils.hexStr(property.clusterId, 4),
-                    frame.zcl.cmdId,
-                    'value:', logValue);
-        const deferredSet = property.deferredSet;
-        if (deferredSet) {
-          property.deferredSet = null;
-          deferredSet.resolve(property.value);
-        }
-        this.notifyPropertyChanged(property);
-
-        if (property.clusterId == CLUSTER_ID.OCCUPANCY_SENSOR &&
-            this.occupancyTimeout) {
-          if (this.occupancyTimer) {
-            // remove any previously created timer
-            clearTimeout(this.occupancyTimer);
+          const [value, logValue] = property.parseAttrEntry(attrEntry);
+          if (typeof value === 'undefined') {
+            continue;
           }
-          // create a new timer
-          this.occupancyTimer = setTimeout(() => {
-            this.occupancyTimer = null;
-            property.setCachedValue(false);
-            console.log(this.name,
-                        'property:', property.name,
-                        'timeout - clearing value');
-            this.notifyPropertyChanged(property);
-          }, this.occupancyTimeout * 1000);
+          property.setCachedValue(value);
+          property.initialReadNeeded = false;
+
+          console.log(this.name,
+                      'property:', property.name,
+                      'profileId:', Utils.hexStr(property.profileId, 4),
+                      'endpoint:', property.endpoint,
+                      'clusterId:', Utils.hexStr(property.clusterId, 4),
+                      frame.zcl.cmdId,
+                      'value:', logValue);
+          const deferredSet = property.deferredSet;
+          if (deferredSet) {
+            property.deferredSet = null;
+            deferredSet.resolve(property.value);
+          }
+          this.notifyPropertyChanged(property);
+
+          if (property.clusterId == CLUSTER_ID.OCCUPANCY_SENSOR &&
+              this.occupancyTimeout) {
+            if (this.occupancyTimer) {
+              // remove any previously created timer
+              clearTimeout(this.occupancyTimer);
+            }
+            // create a new timer
+            this.occupancyTimer = setTimeout(() => {
+              this.occupancyTimer = null;
+              property.setCachedValue(false);
+              console.log(this.name,
+                          'property:', property.name,
+                          'timeout - clearing value');
+              this.notifyPropertyChanged(property);
+            }, this.occupancyTimeout * 1000);
+          }
         }
       }
     }
