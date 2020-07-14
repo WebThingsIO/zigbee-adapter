@@ -180,7 +180,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     for (const match of matches) {
       new driver[match.prober.param.name](addonManager,
                                           config,
-                                          match.port.comName,
+                                          match.port.path,
                                           match.serialPort);
     }
   }).catch((err) => {
