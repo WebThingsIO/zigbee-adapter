@@ -687,6 +687,43 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method decodeCurrentCubeSide
+   *
+   * Decode the current side of the cube
+   */
+  decodeCurrentCubeSide(attrEntry) {
+    const value = decodeByBitmask(attrEntry.attrData);
+
+    function decodeByBitmask(value) {
+      const MASK_TAP = 0x01FF;
+      const MASK_SLIDE = 0xFF;
+      const MASK_FLIP_180 = 0x7F;
+      const MASK_FLIP_90 = 0x3F;
+      const MASK_FLIP_90_TO_SIDE = 0x07;
+
+      const masks = [
+        MASK_TAP,
+        MASK_SLIDE,
+        MASK_FLIP_180,
+      ];
+
+      for (const mask of masks) {
+        if (value & ~mask) {
+          return value & mask;
+        }
+      }
+
+      if (value & ~MASK_FLIP_90) {
+        return value & MASK_FLIP_90_TO_SIDE;
+      }
+
+      return value;
+    }
+
+    return [value, `${value}`];
+  }
+
+  /**
    * @method parseThermostatRunModeAttr
    *
    * Converts a thermostat mode attribute into a property value (string).
