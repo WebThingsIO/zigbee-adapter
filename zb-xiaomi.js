@@ -420,6 +420,21 @@ const MODEL_IDS = {
         value: '',
         parseValueFromAttr: 'parseCubeNumericAttr',
       },
+      current_side: {
+        descr: {
+          '@type': 'MultiClickProperty',
+          label: 'Side',
+          type: 'integer',
+          description: 'Current side of the cube',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 2,
+        clusterId: CLUSTER_ID.GENMULTISTATEINPUT,
+        attr: 'presentValue',
+        value: '',
+        parseValueFromAttr: 'decodeCurrentCubeSide',
+      },
       /*
       transitionNumeric: {
         descr: {
