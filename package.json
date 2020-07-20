@@ -1,19 +1,12 @@
 {
   "name": "zigbee-adapter",
-  "display_name": "Zigbee",
-  "version": "0.11.10",
+  "version": "0.11.11",
   "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
   "scripts": {
     "lint": "eslint ."
   },
-  "keywords": [
-    "mozilla",
-    "iot",
-    "adapter",
-    "zigbee"
-  ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
     "bl": "^4.0.2",
@@ -34,7 +27,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.4.0",
+    "eslint": "^7.5.0",
     "gateway-addon": "github:mozilla-iot/gateway-addon-node"
   },
   "license": "MPL-2.0",
@@ -66,40 +59,5 @@
     "zb-xiaomi.js",
     "zstack-driver.js",
     "node_modules"
-  ],
-  "moziot": {
-    "api": {
-      "min": 2,
-      "max": 2
-    },
-    "enabled": true,
-    "plugin": true,
-    "exec": "{nodeLoader} {path}",
-    "config": {
-      "scanChannels": 8190,
-      "allowFTDISerial": false,
-      "debug": ""
-    },
-    "schema": {
-      "type": "object",
-      "required": [
-        "scanChannels",
-        "allowFTDISerial"
-      ],
-      "properties": {
-        "scanChannels": {
-          "type": "integer",
-          "default": 8190
-        },
-        "allowFTDISerial": {
-          "type": "boolean",
-          "default": false
-        },
-        "debug": {
-          "type": "string",
-          "default": ""
-        }
-      }
-    }
-  }
+  ]
 }
