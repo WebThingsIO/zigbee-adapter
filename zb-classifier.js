@@ -261,6 +261,7 @@ class ZigbeeClassifier {
         unit: 'percent',
         minimum: 0,
         maximum: 100,
+        multipleOf: 0.1,
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
@@ -296,6 +297,7 @@ class ZigbeeClassifier {
         unit: 'percent',
         minimum: 0,
         maximum: 100,
+        multipleOf: 0.1,
       },
       endpoint.profileId,             // profileId
       lightingColorCtrlEndpoint,      // endpoint
@@ -388,6 +390,7 @@ class ZigbeeClassifier {
         unit: 'percent',
         minimum: 0,
         maximum: 100,
+        multipleOf: 0.1,
       },
       endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
@@ -436,6 +439,7 @@ class ZigbeeClassifier {
         unit: 'percent',
         minimum: 0,
         maximum: 100,
+        multipleOf: 0.1,
       },
       endpoint.profileId,             // profileId
       genLevelCtrlEndpoint,           // endpoint
@@ -506,6 +510,7 @@ class ZigbeeClassifier {
         unit: 'percent',
         minimum: 0,
         maximum: 100,
+        multipleOf: 0.1,
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
