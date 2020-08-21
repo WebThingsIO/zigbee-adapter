@@ -145,7 +145,7 @@ class ZigbeeNode extends Device {
         deviceVersion: endpoint.deviceVersion,
         inputClusters: (endpoint.hasOwnProperty('inputClusters') &&
                         endpoint.inputClusters.slice(0)) || [],
-        outputClusters: (endpoint.hasOwnProperty('inputClusters') &&
+        outputClusters: (endpoint.hasOwnProperty('outputClusters') &&
                          endpoint.outputClusters.slice(0)) || [],
         classifierAttributesPopulated: endpoint.classifierAttributesPopulated,
       };
