@@ -2040,12 +2040,12 @@ class ZigbeeClassifier {
 
     if (node.modelId === 'TRADFRI remote control') {
       const genScenesOutputEndpoint =
-        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
-      if (genScenesOutputEndpoint) {
-        const sceneProperty =
-          this.addButtonSceneProperty(node, genScenesOutputEndpoint);
-        sceneProperty.buttonIndex = 4;
-      }
+        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX) ||
+        '1';    // fake in endpoint 1 as version E1810 is missing the GENSCENES output cluster
+
+      const sceneProperty =
+        this.addButtonSceneProperty(node, genScenesOutputEndpoint);
+      sceneProperty.buttonIndex = 4;
 
       // This is the IKEA remote with a center button and 4 other
       // buttons around the edge. The center button sends a toggle
