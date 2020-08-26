@@ -2039,13 +2039,21 @@ class ZigbeeClassifier {
       this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
 
     if (node.modelId === 'TRADFRI remote control') {
-      const genScenesOutputEndpoint =
-        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX) ||
-        '1';    // fake in endpoint 1 as version E1810 is missing the GENSCENES output cluster
-
-      const sceneProperty =
-        this.addButtonSceneProperty(node, genScenesOutputEndpoint);
-      sceneProperty.buttonIndex = 4;
+      let genScenesOutputEndpoint =
+        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+      if (!genScenesOutputEndpoint &&
+          genOnOffOutputEndpoint &&
+          node.activeEndpoints[genOnOffOutputEndpoint] &&
+          node.activeEndpoints[genOnOffOutputEndpoint].deviceId === '0820') {
+        // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
+        // output cluster but still receives updates on that cluster
+        genScenesOutputEndpoint = genOnOffOutputEndpoint;
+      }
+      if (genScenesOutputEndpoint) {
+        const sceneProperty =
+          this.addButtonSceneProperty(node, genScenesOutputEndpoint);
+        sceneProperty.buttonIndex = 4;
+      }
 
       // This is the IKEA remote with a center button and 4 other
       // buttons around the edge. The center button sends a toggle
