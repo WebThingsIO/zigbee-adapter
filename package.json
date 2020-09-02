@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "bl": "^4.0.2",
+    "bl": "^4.0.3",
     "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.1",
     "color": "^3.1.2",
