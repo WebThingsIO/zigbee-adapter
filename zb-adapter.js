@@ -210,7 +210,7 @@ class ZigbeeAdapter extends Adapter {
   handleNetworkAddressResponse(frame) {
     if (frame.status != STATUS.SUCCESS) {
       if (DEBUG_flow) {
-        console.log('handleNetworkAddressResponse: Skipping:', node.addr64,
+        console.log('handleNetworkAddressResponse: Skipping:', frame.nwkAddr64,
                     'due to status:', this.frameStatus(frame));
       }
       return;
