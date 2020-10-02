@@ -1,42 +1,42 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.11.11",
-  "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
-  "author": "Mozilla IoT",
+  "version": "0.11.12",
+  "description": "Zigbee adapter plugin for WebThings Gateway",
+  "author": "WebThingsIO",
   "main": "index.js",
   "scripts": {
     "lint": "eslint ."
   },
-  "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
+  "homepage": "https://github.com/WebThingsIO/zigbee-adapter",
   "dependencies": {
     "bl": "^4.0.3",
     "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.1",
     "color": "^3.1.2",
     "command-line-args": "^5.1.1",
-    "deconz-api": "github:mozilla-iot/deconz-api",
-    "dissolve": "github:mozilla-iot/dissolve#moziot-changes",
-    "dissolve-chunks": "github:mozilla-iot/dissolve-chunks#moziot-changes",
+    "deconz-api": "github:WebThingsIO/deconz-api",
+    "dissolve": "github:WebThingsIO/dissolve#moziot-changes",
+    "dissolve-chunks": "github:WebThingsIO/dissolve-chunks#moziot-changes",
     "mkdirp": "^1.0.4",
-    "serial-prober": "github:mozilla-iot/serial-prober-node",
-    "unpi": "github:mozilla-iot/unpi#moziot-changes",
+    "serial-prober": "github:WebThingsIO/serial-prober-node",
+    "unpi": "github:WebThingsIO/unpi#moziot-changes",
     "xbee-api": "^0.6.0",
-    "zcl-id": "github:mozilla-iot/zcl-id#moziot-changes",
-    "zcl-packet": "github:mozilla-iot/zcl-packet#moziot-changes",
-    "zigbee-zdo": "github:mozilla-iot/zigbee-zdo"
+    "zcl-id": "github:WebThingsIO/zcl-id#moziot-changes",
+    "zcl-packet": "github:WebThingsIO/zcl-packet#moziot-changes",
+    "zigbee-zdo": "github:WebThingsIO/zigbee-zdo"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.5.0",
-    "gateway-addon": "github:mozilla-iot/gateway-addon-node"
+    "eslint": "^7.10.0",
+    "gateway-addon": "github:WebThingsIO/gateway-addon-node"
   },
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mozilla-iot/zigbee-adapter.git"
+    "url": "https://github.com/WebThingsIO/zigbee-adapter.git"
   },
   "bugs": {
-    "url": "https://github.com/mozilla-iot/zigbee-adapter/issues"
+    "url": "https://github.com/WebThingsIO/zigbee-adapter/issues"
   },
   "files": [
     "LICENSE",

@@ -1,6 +1,6 @@
 # Zigbee Adapter
 
-Zigbee device adapter for Mozilla's WebThings Gateway.
+Zigbee device adapter for WebThings Gateway.
 
 ## Compatibility
 

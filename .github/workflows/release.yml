@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - run: echo ::set-env name=UPLOAD_URL::'${{ steps.create_release.outputs.upload_url }}' > upload_url
+    - name: Upload upload_url
+      uses: actions/upload-artifact@v1
+      with:
+        name: upload_url
+        path: upload_url
+
+  build:
+    needs: create-release
+    strategy:
+      matrix:
+        platform: [
+          'linux-arm',
+          'linux-arm64',
+          'linux-x64',
+          'darwin-x64',
+        ]
+        pair: [
+          'node:10',
+          'node:12',
+          'node:14',
+        ]
+        include:
+          - platform: 'linux-arm'
+            host-os: 'ubuntu-latest'
+          - platform: 'linux-arm64'
+            host-os: 'ubuntu-latest'
+          - platform: 'linux-x64'
+            host-os: 'ubuntu-latest'
+          - platform: 'darwin-x64'
+            host-os: 'macos-latest'
+          - pair: 'node:10'
+            language: 'node'
+            version: '10'
+          - pair: 'node:12'
+            language: 'node'
+            version: '12'
+          - pair: 'node:14'
+            language: 'node'
+            version: '14'
+
+    runs-on: ${{ matrix.host-os }}
+
+    steps:
+    - name: Download upload_url
+      uses: actions/download-artifact@v1
+      with:
+        name: upload_url
+    - name: Set upload_url env var
+      run: cat upload_url/upload_url
+    - name: Set env
+      run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:11})
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.version }}
+    - name: Build adapter
+      run: |
+        ./build.sh "${{ matrix.platform }}" "${{ matrix.language }}" "${{ matrix.version }}"
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz
+        asset_name: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz
+        asset_content_type: application/zip
+    - name: Upload Release Asset Checksum
+      id: upload-release-asset-checksum
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ env.UPLOAD_URL }}
+        asset_path: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz.sha256sum
+        asset_name: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz.sha256sum
+        asset_content_type: text/plain
