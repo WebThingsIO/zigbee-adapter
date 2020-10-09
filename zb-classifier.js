@@ -2039,8 +2039,16 @@ class ZigbeeClassifier {
       this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoint);
 
     if (node.modelId === 'TRADFRI remote control') {
-      const genScenesOutputEndpoint =
+      let genScenesOutputEndpoint =
         node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+      if (!genScenesOutputEndpoint &&
+          genOnOffOutputEndpoint &&
+          node.activeEndpoints[genOnOffOutputEndpoint] &&
+          node.activeEndpoints[genOnOffOutputEndpoint].deviceId === '0820') {
+        // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
+        // output cluster but still receives updates on that cluster
+        genScenesOutputEndpoint = genOnOffOutputEndpoint;
+      }
       if (genScenesOutputEndpoint) {
         const sceneProperty =
           this.addButtonSceneProperty(node, genScenesOutputEndpoint);
