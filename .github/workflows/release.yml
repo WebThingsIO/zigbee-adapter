@@ -19,7 +19,8 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-    - run: echo ::set-env name=UPLOAD_URL::'${{ steps.create_release.outputs.upload_url }}' > upload_url
+    - name: Dump upload url to file
+      run: echo '${{ steps.create_release.outputs.upload_url }}' > upload_url
     - name: Upload upload_url
       uses: actions/upload-artifact@v1
       with:
@@ -67,10 +68,10 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: upload_url
-    - name: Set upload_url env var
-      run: cat upload_url/upload_url
-    - name: Set env
-      run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:11})
+    - name: Set upload_url
+      run: echo "UPLOAD_URL=$(cat upload_url/upload_url)" >> $GITHUB_ENV
+    - name: Set release version
+      run: echo "RELEASE_VERSION=${GITHUB_REF:11}" >> $GITHUB_ENV
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.version }}
       uses: actions/setup-node@v1
