@@ -62,13 +62,13 @@ const ZONE_TYPE_NAME = {
   },
   0x0028: {
     name: 'fire',
-    '@type': ['BinarySensor'],
+    '@type': ['SmokeSensor'],
     propertyName: 'on',
     propertyDescr: {
-      '@type': 'BooleanProperty',
+      '@type': 'SmokeProperty',
       type: 'boolean',
-      label: 'Fire',
-      description: 'Fire Sensor',
+      label: 'Smoke',
+      description: 'Smoke Sensor',
       readOnly: true,
     },
   },

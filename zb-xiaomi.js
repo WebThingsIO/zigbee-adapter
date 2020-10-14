@@ -253,7 +253,7 @@ const MODEL_IDS = {
   },
   'lumi.sensor_ht': {// WSDCGQ01LM (round)
     name: 'temperature',
-    '@type': ['TemperatureSensor'],
+    '@type': ['TemperatureSensor', 'HumiditySensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
@@ -286,7 +286,7 @@ const MODEL_IDS = {
       },
       humidity: {
         descr: {
-          '@type': 'LevelProperty',
+          '@type': 'HumidityProperty',
           label: 'Humidity',
           type: 'number',
           unit: 'percent',
@@ -306,7 +306,11 @@ const MODEL_IDS = {
   },
   'lumi.weather': {// WSDCGQ11LM (square)
     name: 'temperature',
-    '@type': ['TemperatureSensor'],
+    '@type': [
+      'TemperatureSensor',
+      'HumiditySensor',
+      'BarometricPressureSensor',
+    ],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
@@ -340,7 +344,7 @@ const MODEL_IDS = {
       },
       humidity: {
         descr: {
-          '@type': 'LevelProperty',
+          '@type': 'HumidityProperty',
           label: 'Humidity',
           type: 'number',
           unit: 'percent',
@@ -358,7 +362,7 @@ const MODEL_IDS = {
       },
       pressure: {
         descr: {
-          '@type': 'LevelProperty',
+          '@type': 'BarometricPressureProperty',
           label: 'Pressure',
           type: 'number',
           unit: 'hPa',
