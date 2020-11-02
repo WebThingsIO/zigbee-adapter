@@ -495,7 +495,7 @@ class ZigbeeClassifier {
       `on${suffix}`,                           // name
       {// property description
         '@type': 'BooleanProperty',
-        label: 'On/Off',
+        label: `On/Off${suffix}`,
         type: 'boolean',
         readOnly: true,
       },
@@ -526,7 +526,7 @@ class ZigbeeClassifier {
       `level${suffix}`,                        // name
       {// property description
         '@type': 'LevelProperty',
-        label: 'Level',
+        label: `Level${suffix}`,
         type: 'number',
         unit: 'percent',
         minimum: 0,
