@@ -451,14 +451,17 @@ class ZigbeeClassifier {
     );
   }
 
-  addOnProperty(node, genOnOffEndpoint) {
+  addOnProperty(node, genOnOffEndpoint, suffix) {
+    if (typeof suffix === 'undefined') {
+      suffix = '';
+    }
     const endpoint = node.activeEndpoints[genOnOffEndpoint];
-    this.addProperty(
+    const property = this.addProperty(
       node,                           // device
-      'on',                           // name
+      `on${suffix}`,                  // name
       {// property description
-        '@type': 'OnOffProperty',
-        label: 'On/Off',
+        '@type': suffix ? 'BooleanProperty' : 'OnOffProperty',
+        label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
       },
       endpoint.profileId,             // profileId
@@ -469,6 +472,18 @@ class ZigbeeClassifier {
       'parseOnOffAttr',               // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
+    if (endpoint.deviceId === '000b') {
+      // The ORVIBO Smart Relay doesn't seem to support config reports. It
+      // also doesn't seem to have a reasonable modelId (the report I got showed
+      // a modelId of 82c167c95ed746cdbd21d6817f72c593), so I'm not sure if
+      // that's real or not. It also showed a deviceId of 000b which doesn't
+      // seem to be documented in the zigbee spec, so for now, I'm using that
+      // to identify this. I have one on order and when it arrives I'll get a
+      // chance to play with it and see if the weird string of numbers really
+      // is a valid modelId.
+      property.fireAndForget = true;
+    }
+    return property;
   }
 
   addButtonOnProperty(node, genOnOffOutputEndpoint) {
@@ -1702,8 +1717,8 @@ class ZigbeeClassifier {
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genLevelCtrlOutputEndpoint =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
-    const genOnOffEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+    const genOnOffEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const genOnOffOutputEndpoint =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const doorLockEndpoint =
@@ -1739,7 +1754,7 @@ class ZigbeeClassifier {
       console.log('    genBinaryInputEndpoint =', genBinaryInputEndpoint);
       console.log('      genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
       console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
-      console.log('          genOnOffEndpoint =', genOnOffEndpoint);
+      console.log('         genOnOffEndpoints =', genOnOffEndpoints);
       console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
       console.log('    hvacFanControlEndpoint =', hvacFanControlEndpoint);
       console.log('    hvacThermostatEndpoint =', hvacThermostatEndpoint);
@@ -1778,8 +1793,8 @@ class ZigbeeClassifier {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
     } else if (genLevelCtrlEndpoint) {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
-    } else if (genOnOffEndpoint) {
-      this.initOnOffSwitch(node, genOnOffEndpoint);
+    } else if (genOnOffEndpoints.length > 0) {
+      this.initOnOffSwitches(node, genOnOffEndpoints);
     } else if (genLevelCtrlOutputEndpoint) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint,
                                 genOnOffOutputEndpoint);
@@ -1899,9 +1914,14 @@ class ZigbeeClassifier {
     this.addOccupancySensorProperty(node, msOccupancySensingEndpoint);
   }
 
-  initOnOffSwitch(node, genOnOffEndpoint) {
+  initOnOffSwitches(node, genOnOffEndpoints) {
     node['@type'] = ['OnOffSwitch'];
-    this.addOnProperty(node, genOnOffEndpoint);
+    console.log('genOnOffEndpoints =', genOnOffEndpoints);
+    for (const idx in genOnOffEndpoints) {
+      console.log('Processing endpoing', idx, '=', genOnOffEndpoints[idx]);
+      const suffix = (idx == 0) ? '' : `${idx}`;
+      this.addOnProperty(node, genOnOffEndpoints[idx], suffix);
+    }
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
@@ -1920,7 +1940,7 @@ class ZigbeeClassifier {
         // control. So call the correct routine.
         // The IKEA outlet is an example of a device which falls into this
         // category.
-        this.initOnOffSwitch(node, genLevelCtrlEndpoint);
+        this.initOnOffSwitches(node, [genLevelCtrlEndpoint]);
         return;
       }
       if (ZLL_DEVICE_ID.isLight(zllDeviceId)) {
