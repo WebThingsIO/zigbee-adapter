@@ -495,7 +495,7 @@ class ZigbeeClassifier {
       `on${suffix}`,                           // name
       {// property description
         '@type': 'BooleanProperty',
-        label: `On/Off${suffix}`,
+        label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
         readOnly: true,
       },
@@ -524,16 +524,16 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `level${suffix}`,                        // name
-      {// property description
-        '@type': 'LevelProperty',
-        label: `Level${suffix}`,
-        type: 'number',
-        unit: 'percent',
-        minimum: 0,
-        maximum: 100,
-        multipleOf: 0.1,
-        readOnly: true,
-      },
+        {// property description
+          '@type': 'LevelProperty',
+          label: suffix ? `Level (${suffix})` : 'Level',
+          type: 'number',
+          unit: 'percent',
+          minimum: 0,
+          maximum: 100,
+          multipleOf: 0.1,
+          readOnly: true,
+        },
       PROFILE_ID.ZHA,                 // profileId
       genLevelCtrlOutputEndpoint,     // endpoint
       CLUSTER_ID.GENLEVELCTRL,        // clusterId
@@ -547,25 +547,28 @@ class ZigbeeClassifier {
     }
     node.levelProperty = property;
     DEBUG && console.log('addProperty:',
-                         '  bindNeeded:', property.bindNeeded,
-                         'value:', property.value);
+        '  bindNeeded:', property.bindNeeded,
+        'value:', property.value);
     return property;
   }
 
-  addButtonMotionProperty(node, genOnOffOutputEndpoint) {
+  addButtonMotionProperty(node, genOnOffOutputEndpoint, suffix) {
+    if (typeof suffix === 'undefined') {
+      suffix = '';
+    }
     const property = this.addProperty(
-      node,                           // device
-      'motion',                       // name
-      {// property description
-        '@type': 'MotionProperty',
-        type: 'boolean',
-        label: 'Motion',
-        description: 'Motion Sensor',
-        readOnly: true,
-      },
-      PROFILE_ID.ZHA,                 // profileId
-      genOnOffOutputEndpoint,         // endpoint
-      CLUSTER_ID.GENONOFF,            // clusterId
+        node,                           // device
+        `motion${suffix}`,                       // name
+        {// property description
+          '@type': 'MotionProperty',
+          type: 'boolean',
+          label: suffix ? `Motion (${suffix})` : 'Motion',
+          description: 'Motion Sensor',
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        genOnOffOutputEndpoint,         // endpoint
+        CLUSTER_ID.GENONOFF,            // clusterId
       '',                             // attr
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
@@ -1720,15 +1723,15 @@ class ZigbeeClassifier {
     const genBinaryInputEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
     const genLevelCtrlEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
-    const genLevelCtrlOutputEndpoint =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
+        node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
+    const genLevelCtrlOutputEndpoints =
+        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genOnOffEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
-    const genOnOffOutputEndpoint =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+        node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+    const genOnOffOutputEndpoints =
+        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const doorLockEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
+        node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
     const msOccupancySensingEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
@@ -1759,9 +1762,9 @@ class ZigbeeClassifier {
       console.log('      haElectricalEndpoint =', haElectricalEndpoint);
       console.log('    genBinaryInputEndpoint =', genBinaryInputEndpoint);
       console.log('      genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
-      console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoint);
+      console.log('genLevelCtrlOutputEndpoint =', genLevelCtrlOutputEndpoints);
       console.log('         genOnOffEndpoints =', genOnOffEndpoints);
-      console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoint);
+      console.log('    genOnOffOutputEndpoint =', genOnOffOutputEndpoints);
       console.log('    hvacFanControlEndpoint =', hvacFanControlEndpoint);
       console.log('    hvacThermostatEndpoint =', hvacThermostatEndpoint);
       console.log('          doorLockEndpoint =', doorLockEndpoint);
@@ -1801,11 +1804,11 @@ class ZigbeeClassifier {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
-    } else if (genLevelCtrlOutputEndpoint.length > 0) {
-      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoint,
-                                genOnOffOutputEndpoint);
-    } else if (genOnOffOutputEndpoint.length > 0) {
-      this.initOnOffButton(node, genOnOffOutputEndpoint);
+    } else if (genLevelCtrlOutputEndpoints.length > 0 && genOnOffOutputEndpoints.length > 0) {
+      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoints,
+          genOnOffOutputEndpoints);
+    } else if (genOnOffOutputEndpoints.length > 0) {
+      this.initOnOffButton(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
       this.initDoorLock(node, doorLockEndpoint);
     } else if (genBinaryInputEndpoint) {
@@ -2014,30 +2017,30 @@ class ZigbeeClassifier {
   }
 
   initOnOffButton(node, genOnOffOutputEndpoints) {
-    if (node.modelId.includes('motion')) {
-      // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
-      node.name = `${node.id}-motion`;
-      node['@type'] = ['MotionSensor'];
+    for (const idx in genOnOffOutputEndpoints) {
+      console.log('Processing endpoint', idx, '=', genOnOffOutputEndpoints[idx]);
+      const suffix = (idx === 0) ? '' : `${idx}`;
+      const endpoint = genOnOffOutputEndpoints[idx];
 
-      this.addButtonMotionProperty(node, genOnOffOutputEndpoints[0]);
-      this.addEvents(node, {
-        motion: {
-          '@type': 'MotionEvent',
-          description: 'Motion detected',
-        },
-        'no-motion': {
-          '@type': 'MotionEvent',
-          description: 'Motion timeout',
-        },
-      });
-    } else {
-      node.name = `${node.id}-button`;
-      node['@type'] = ['PushButton'];
+      if (node.modelId.includes('motion')) {
+        // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
+        node.name = `${node.id}-motion`;
+        node['@type'] = ['MotionSensor'];
 
-      for (const idx in genOnOffOutputEndpoints) {
-        const endpoint = genOnOffOutputEndpoints[idx];
-        console.log('Processing endpoint', idx, '=', genOnOffOutputEndpoints[idx]);
-        const suffix = (idx === 0) ? '' : `${idx}`;
+        this.addButtonMotionProperty(node, endpoint, suffix);
+        this.addEvents(node, {
+          motion: {
+            '@type': 'MotionEvent',
+            description: 'Motion detected',
+          },
+          'no-motion': {
+            '@type': 'MotionEvent',
+            description: 'Motion timeout',
+          },
+        });
+      } else {
+        node.name = `${node.id}-button`;
+        node['@type'] = ['PushButton'];
         const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
 
         onOffProperty.buttonIndex = 1;
@@ -2053,10 +2056,10 @@ class ZigbeeClassifier {
   }
 
   initMultiLevelButton(node, genLevelCtrlOutputEndpoints,
-                       genOnOffOutputEndpoint) {
-    if (node.modelId.includes('motion') && genOnOffOutputEndpoint) {
+                       genOnOffOutputEndpoints) {
+    if (node.modelId.includes('motion') && genOnOffOutputEndpoints) {
       // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
-      this.initOnOffButton(node, genOnOffOutputEndpoint);
+      this.initOnOffButton(node, genOnOffOutputEndpoints);
       return;
     }
 
@@ -2071,19 +2074,24 @@ class ZigbeeClassifier {
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
 
       if (node.modelId === 'TRADFRI remote control') {
-        let genScenesOutputEndpoint =
+        let firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
+        let genScenesOutputEndpoints =
             node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
-        if (!genScenesOutputEndpoint &&
-            endpoint &&
-            node.activeEndpoints[endpoint] &&
-            node.activeEndpoints[endpoint].deviceId === '0820') {
+        let getScenesOutputEndpoint;
+        if (genScenesOutputEndpoints.length === 1) {
+          getScenesOutputEndpoint = genScenesOutputEndpoints[0];
+        }
+        if (!getScenesOutputEndpoint &&
+            firstGenOnOffOutputEndpoint &&
+            node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
+            node.activeEndpoints[firstGenOnOffOutputEndpoint].deviceId === '0820') {
           // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
           // output cluster but still receives updates on that cluster
-          genScenesOutputEndpoint = endpoint;
+          getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
         }
-        if (genScenesOutputEndpoint) {
+        if (getScenesOutputEndpoint) {
           const sceneProperty =
-              this.addButtonSceneProperty(node, genScenesOutputEndpoint, suffix);
+              this.addButtonSceneProperty(node, getScenesOutputEndpoint);
           sceneProperty.buttonIndex = 4;
         }
 
@@ -2119,7 +2127,7 @@ class ZigbeeClassifier {
             },
           });
         }
-        return;
+        continue;
       }
 
       onOffProperty.buttonIndex = 1;
