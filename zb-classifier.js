@@ -524,16 +524,16 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `level${suffix}`,                        // name
-        {// property description
-          '@type': 'LevelProperty',
-          label: suffix ? `Level (${suffix})` : 'Level',
-          type: 'number',
-          unit: 'percent',
-          minimum: 0,
-          maximum: 100,
-          multipleOf: 0.1,
-          readOnly: true,
-        },
+      {// property description
+        '@type': 'LevelProperty',
+        label: suffix ? `Level (${suffix})` : 'Level',
+        type: 'number',
+        unit: 'percent',
+        minimum: 0,
+        maximum: 100,
+        multipleOf: 0.1,
+        readOnly: true,
+      },
       PROFILE_ID.ZHA,                 // profileId
       genLevelCtrlOutputEndpoint,     // endpoint
       CLUSTER_ID.GENLEVELCTRL,        // clusterId
@@ -547,8 +547,8 @@ class ZigbeeClassifier {
     }
     node.levelProperty = property;
     DEBUG && console.log('addProperty:',
-        '  bindNeeded:', property.bindNeeded,
-        'value:', property.value);
+                         '  bindNeeded:', property.bindNeeded,
+                         'value:', property.value);
     return property;
   }
 
@@ -557,18 +557,18 @@ class ZigbeeClassifier {
       suffix = '';
     }
     const property = this.addProperty(
-        node,                           // device
-        `motion${suffix}`,                       // name
-        {// property description
-          '@type': 'MotionProperty',
-          type: 'boolean',
-          label: suffix ? `Motion (${suffix})` : 'Motion',
-          description: 'Motion Sensor',
-          readOnly: true,
-        },
-        PROFILE_ID.ZHA,                 // profileId
-        genOnOffOutputEndpoint,         // endpoint
-        CLUSTER_ID.GENONOFF,            // clusterId
+      node,                           // device
+      `motion${suffix}`,                       // name
+      {// property description
+        '@type': 'MotionProperty',
+        type: 'boolean',
+        label: suffix ? `Motion (${suffix})` : 'Motion',
+        description: 'Motion Sensor',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      genOnOffOutputEndpoint,         // endpoint
+      CLUSTER_ID.GENONOFF,            // clusterId
       '',                             // attr
       '',                             // setAttrFromValue
       ''                              // parseValueFromAttr
@@ -1804,9 +1804,10 @@ class ZigbeeClassifier {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
-    } else if (genLevelCtrlOutputEndpoints.length > 0 && genOnOffOutputEndpoints.length > 0) {
+    } else if (genLevelCtrlOutputEndpoints.length > 0 &&
+      genOnOffOutputEndpoints.length > 0) {
       this.initMultiLevelButton(node, genLevelCtrlOutputEndpoints,
-          genOnOffOutputEndpoints);
+                                genOnOffOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
       this.initOnOffButton(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
@@ -2018,7 +2019,8 @@ class ZigbeeClassifier {
 
   initOnOffButton(node, genOnOffOutputEndpoints) {
     for (const idx in genOnOffOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=', genOnOffOutputEndpoints[idx]);
+      console.log('Processing endpoint', idx, '=',
+                  genOnOffOutputEndpoints[idx]);
       const suffix = (idx === 0) ? '' : `${idx}`;
       const endpoint = genOnOffOutputEndpoints[idx];
 
@@ -2067,16 +2069,18 @@ class ZigbeeClassifier {
     node['@type'] = ['PushButton'];
 
     for (const idx in genLevelCtrlOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=', genLevelCtrlOutputEndpoints[idx]);
+      console.log('Processing endpoint', idx, '=',
+                  genLevelCtrlOutputEndpoints[idx]);
       const suffix = (idx === 0) ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
 
       if (node.modelId === 'TRADFRI remote control') {
-        let firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
-        let genScenesOutputEndpoints =
-            node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
+        const genScenesOutputEndpoints =
+            node.findZhaEndpointWithOutputClusterIdHex(
+              CLUSTER_ID.GENSCENES_HEX);
         let getScenesOutputEndpoint;
         if (genScenesOutputEndpoints.length === 1) {
           getScenesOutputEndpoint = genScenesOutputEndpoints[0];
@@ -2084,7 +2088,8 @@ class ZigbeeClassifier {
         if (!getScenesOutputEndpoint &&
             firstGenOnOffOutputEndpoint &&
             node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint].deviceId === '0820') {
+            node.activeEndpoints[firstGenOnOffOutputEndpoint]
+              .deviceId === '0820') {
           // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
           // output cluster but still receives updates on that cluster
           getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
