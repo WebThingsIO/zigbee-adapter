@@ -1,6 +1,6 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.11.13",
+  "version": "0.12.0",
   "description": "Zigbee adapter plugin for WebThings Gateway",
   "author": "WebThingsIO",
   "main": "index.js",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^7.10.0",
+    "eslint": "^7.12.1",
     "gateway-addon": "github:WebThingsIO/gateway-addon-node"
   },
   "license": "MPL-2.0",
