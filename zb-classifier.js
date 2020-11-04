@@ -2132,7 +2132,7 @@ class ZigbeeClassifier {
             },
           });
         }
-        continue;
+        return;
       }
 
       onOffProperty.buttonIndex = 1;
