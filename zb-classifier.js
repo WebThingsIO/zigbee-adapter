@@ -1806,10 +1806,10 @@ class ZigbeeClassifier {
       this.initOnOffSwitches(node, genOnOffEndpoints);
     } else if (genLevelCtrlOutputEndpoints.length > 0 &&
       genOnOffOutputEndpoints.length > 0) {
-      this.initMultiLevelButton(node, genLevelCtrlOutputEndpoints,
-                                genOnOffOutputEndpoints);
+      this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
+                                 genOnOffOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
-      this.initOnOffButton(node, genOnOffOutputEndpoints);
+      this.initOnOffButtons(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
       this.initDoorLock(node, doorLockEndpoint);
     } else if (genBinaryInputEndpoint) {
@@ -2017,7 +2017,7 @@ class ZigbeeClassifier {
     this.addOnProperty(node, genLevelCtrlEndpoint);
   }
 
-  initOnOffButton(node, genOnOffOutputEndpoints) {
+  initOnOffButtons(node, genOnOffOutputEndpoints) {
     for (const idx in genOnOffOutputEndpoints) {
       console.log('Processing endpoint', idx, '=',
                   genOnOffOutputEndpoints[idx]);
@@ -2057,11 +2057,11 @@ class ZigbeeClassifier {
     }
   }
 
-  initMultiLevelButton(node, genLevelCtrlOutputEndpoints,
-                       genOnOffOutputEndpoints) {
+  initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
+                        genOnOffOutputEndpoints) {
     if (node.modelId.includes('motion') && genOnOffOutputEndpoints) {
       // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
-      this.initOnOffButton(node, genOnOffOutputEndpoints);
+      this.initOnOffButtons(node, genOnOffOutputEndpoints);
       return;
     }
 
