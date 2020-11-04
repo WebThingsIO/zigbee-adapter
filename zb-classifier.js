@@ -1805,7 +1805,7 @@ class ZigbeeClassifier {
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
     } else if (genLevelCtrlOutputEndpoints.length > 0 &&
-      genOnOffOutputEndpoints.length > 0) {
+               genOnOffOutputEndpoints.length > 0) {
       this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
                                  genOnOffOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
