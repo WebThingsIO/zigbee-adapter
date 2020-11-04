@@ -428,17 +428,31 @@ class ZigbeeNode extends Device {
     }
   }
 
+  findZhaEndpointsWithInputClusterIdHex(clusterIdHex) {
+    const endpoints = [];
+    for (const endpointNum in this.activeEndpoints) {
+      // Since endpointNum is a key, it comes back as a string
+      const endpoint = this.activeEndpoints[endpointNum];
+      if (this.endpointHasZhaInputClusterIdHex(endpoint, clusterIdHex)) {
+        endpoints.push(parseInt(endpointNum));
+      }
+    }
+    return endpoints;
+  }
+
   findZhaEndpointWithOutputClusterIdHex(clusterIdHex) {
+    const endpoints = [];
     for (const endpointNum in this.activeEndpoints) {
       // Since endpointNum is a key, it comes back as a string
       const endpoint = this.activeEndpoints[endpointNum];
       if (endpoint.profileId == PROFILE_ID.ZHA_HEX ||
           endpoint.profileId == PROFILE_ID.ZLL_HEX) {
         if (endpoint.outputClusters.includes(clusterIdHex)) {
-          return parseInt(endpointNum);
+          endpoints.push(parseInt(endpointNum));
         }
       }
     }
+    return endpoints;
   }
 
   getAttrEntryFromFrame(frame, attrId) {
