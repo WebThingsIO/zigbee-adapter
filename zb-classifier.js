@@ -492,7 +492,7 @@ class ZigbeeClassifier {
     }
     const property = this.addProperty(
       node,                           // device
-      `on${suffix}`,                           // name
+      `on${suffix}`,                  // name
       {// property description
         '@type': 'BooleanProperty',
         label: suffix ? `On/Off (${suffix})` : 'On/Off',
@@ -523,7 +523,7 @@ class ZigbeeClassifier {
     }
     const property = this.addProperty(
       node,                           // device
-      `level${suffix}`,                        // name
+      `level${suffix}`,               // name
       {// property description
         '@type': 'LevelProperty',
         label: suffix ? `Level (${suffix})` : 'Level',
@@ -558,7 +558,7 @@ class ZigbeeClassifier {
     }
     const property = this.addProperty(
       node,                           // device
-      `motion${suffix}`,                       // name
+      `motion${suffix}`,              // name
       {// property description
         '@type': 'MotionProperty',
         type: 'boolean',
