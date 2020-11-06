@@ -47,7 +47,11 @@ String.prototype.swapHex = function() {
   return this.match(/.{2}/g).reverse().join('');
 };
 
-function getDataPath() {
+function getDataPath(dataDir) {
+  if (dataDir) {
+    return path.join(dataDir, 'zigbee-adapter');
+  }
+
   let profileDir;
   if (process.env.hasOwnProperty('MOZIOT_HOME')) {
     profileDir = process.env.MOZIOT_HOME;
@@ -58,7 +62,11 @@ function getDataPath() {
   return path.join(profileDir, 'data', 'zigbee-adapter');
 }
 
-function getConfigPath() {
+function getConfigPath(configDir) {
+  if (configDir) {
+    return configDir;
+  }
+
   if (process.env.hasOwnProperty('MOZIOT_HOME')) {
     return path.join(process.env.MOZIOT_HOME, 'config');
   }
@@ -79,13 +87,13 @@ class ZigbeeAdapter extends Adapter {
     this.driver = driver;
     console.log('this.driver =', driver);
 
-    this.configDir = getDataPath();
+    this.configDir = getDataPath(this.userProfile.dataDir);
     if (!fs.existsSync(this.configDir)) {
       mkdirp.sync(this.configDir, {mode: 0o755});
     }
 
     // move any old config files to the new directory
-    const oldConfigDir = getConfigPath();
+    const oldConfigDir = getConfigPath(this.userProfile.configDir);
     const entries = fs.readdirSync(oldConfigDir);
     for (const entry of entries) {
       if (/^zb-[A-Fa-f0-9]+\.json$/.test(entry)) {
