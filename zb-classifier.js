@@ -2077,10 +2077,10 @@ class ZigbeeClassifier {
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
 
       if (node.modelId === 'TRADFRI remote control') {
-        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
         const genScenesOutputEndpoints =
             node.findZhaEndpointWithOutputClusterIdHex(
               CLUSTER_ID.GENSCENES_HEX);
+        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
         let getScenesOutputEndpoint;
         if (genScenesOutputEndpoints.length === 1) {
           getScenesOutputEndpoint = genScenesOutputEndpoints[0];
