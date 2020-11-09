@@ -2118,7 +2118,8 @@ class ZigbeeClassifier {
       // buttons around the edge. The center button sends a toggle
       // rather than on/off.
 
-      const onOffPropertyTradF = this.addButtonOnProperty(node, genOnOffOutputEndpoints[0]);
+      const onOffPropertyTradF =
+          this.addButtonOnProperty(node, genOnOffOutputEndpoints[0]);
       onOffPropertyTradF.buttonIndex = 1;
       this.addEvents(node, {
         '1-pressed': {
@@ -2129,7 +2130,8 @@ class ZigbeeClassifier {
 
       // The remaining buttons can all generate pressed,
       // longPressed and released events.
-      const levelPropertyTradF = this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
+      const levelPropertyTradF =
+          this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
       levelPropertyTradF.buttonIndex = 2;
       const label = ['Top', 'Bottom', 'Right', 'Left'];
       for (let i = 0; i < 4; i++) {
@@ -2155,7 +2157,8 @@ class ZigbeeClassifier {
       case '3130':
         // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
         // use long presses to do the dimming
-        const levelProperty3130 = this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
+        const levelProperty3130 =
+            this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
         levelProperty3130.buttonIndex = 1;
         this.addEvents(node, {
           '1-longPressed': {
@@ -2180,7 +2183,8 @@ class ZigbeeClassifier {
       case 'RWL021':
         // This is the Philips Hue Dimmer. It has 4 buttons and uses
         // 2 of the buttons to perform the dimming.
-        const levelPropertyRwl = this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
+        const levelPropertyRwl =
+            this.addButtonLevelProperty(node, genLevelCtrlOutputEndpoints[0]);
         levelPropertyRwl.buttonIndex = 3;
         this.addEvents(node, {
           '3-pressed': {
