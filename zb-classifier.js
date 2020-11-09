@@ -1722,8 +1722,12 @@ class ZigbeeClassifier {
 
     const genBinaryInputEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
-    const genLevelCtrlEndpoint =
-        node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
+    const genScenesEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+    const genScenesOutputEndpoints =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+    const genLevelCtrlEndpoints =
+        node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genLevelCtrlOutputEndpoints =
         node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genOnOffEndpoints =
@@ -1756,28 +1760,30 @@ class ZigbeeClassifier {
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
-      console.log('---- Zigbee classifier -----');
-      console.log('                    modelId =', node.modelId);
-      console.log('         seMeteringEndpoint =', seMeteringEndpoint);
-      console.log('       haElectricalEndpoint =', haElectricalEndpoint);
-      console.log('     genBinaryInputEndpoint =', genBinaryInputEndpoint);
-      console.log('       genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
-      console.log('genLevelCtrlOutputEndpoints =', genLevelCtrlOutputEndpoints);
-      console.log('          genOnOffEndpoints =', genOnOffEndpoints);
-      console.log('    genOnOffOutputEndpoints =', genOnOffOutputEndpoints);
-      console.log('     hvacFanControlEndpoint =', hvacFanControlEndpoint);
-      console.log('     hvacThermostatEndpoint =', hvacThermostatEndpoint);
-      console.log('           doorLockEndpoint =', doorLockEndpoint);
-      console.log('     lightingContolEndpoint =',
+      console.log('----- Zigbee classifier ------');
+      console.log('                              modelId =', node.modelId);
+      console.log('                   seMeteringEndpoint =', seMeteringEndpoint);
+      console.log('                 haElectricalEndpoint =', haElectricalEndpoint);
+      console.log('               genBinaryInputEndpoint =', genBinaryInputEndpoint);
+      console.log('                   genScenesEndpoints =', genScenesEndpoints);
+      console.log('             genScenesOutputEndpoints =', genScenesOutputEndpoints);
+      console.log('                genLevelCtrlEndpoints =', genLevelCtrlEndpoints);
+      console.log('          genLevelCtrlOutputEndpoints =', genLevelCtrlOutputEndpoints);
+      console.log('                    genOnOffEndpoints =', genOnOffEndpoints);
+      console.log('              genOnOffOutputEndpoints =', genOnOffOutputEndpoints);
+      console.log('               hvacFanControlEndpoint =', hvacFanControlEndpoint);
+      console.log('               hvacThermostatEndpoint =', hvacThermostatEndpoint);
+      console.log('                     doorLockEndpoint =', doorLockEndpoint);
+      console.log('               lightingContolEndpoint =',
                   node.lightingColorCtrlEndpoint);
-      console.log('          colorCapabilities =', node.colorCapabilities);
-      console.log('                  colorMode =', node.colorMode);
-      console.log('          lightLinkEndpoint =', lightLinkEndpoint);
-      console.log(' msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
-      console.log('      msTemperatureEndpoint =', msTemperatureEndpoint);
-      console.log('        genPowerCfgEndpoint =', genPowerCfgEndpoint);
-      console.log('   genDeviceTempCfgEndpoint =', genDeviceTempCfgEndpoint);
-      console.log('                   zoneType =', node.zoneType);
+      console.log('                    colorCapabilities =', node.colorCapabilities);
+      console.log('                            colorMode =', node.colorMode);
+      console.log('                    lightLinkEndpoint =', lightLinkEndpoint);
+      console.log('           msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
+      console.log('                msTemperatureEndpoint =', msTemperatureEndpoint);
+      console.log('                  genPowerCfgEndpoint =', genPowerCfgEndpoint);
+      console.log('             genDeviceTempCfgEndpoint =', genDeviceTempCfgEndpoint);
+      console.log('                             zoneType =', node.zoneType);
     }
 
     if (typeof node.zoneType !== 'undefined') {
@@ -1786,28 +1792,28 @@ class ZigbeeClassifier {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
     } else if (hvacThermostatEndpoint) {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
-    } else if (seMeteringEndpoint && genLevelCtrlEndpoint) {
+    } else if (seMeteringEndpoint && genLevelCtrlEndpoints.length > 0) {
       // Support Ubisys dimmer D1
       this.initLightingPowerMetering(node, seMeteringEndpoint,
-                                     genLevelCtrlEndpoint);
+                                     genLevelCtrlEndpoints);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
                !isZhaLight) {
-      this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
+      this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoints);
     } else if (seMeteringEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
                !isZhaLight) {
-      this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
-    } else if (genLevelCtrlEndpoint) {
-      this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
+      this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoints);
+    } else if (genLevelCtrlEndpoints.length > 0) {
+      this.initMultiLevelSwitch(node, genLevelCtrlEndpoints, lightLinkEndpoint);
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
-    } else if (genLevelCtrlOutputEndpoints.length > 0 &&
+    } else if ((genLevelCtrlOutputEndpoints.length > 0 || genScenesOutputEndpoints.length > 0) &&
                genOnOffOutputEndpoints.length > 0) {
       this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
-                                 genOnOffOutputEndpoints);
+                                 genOnOffOutputEndpoints, genScenesOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
       this.initOnOffButtons(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
@@ -1934,7 +1940,7 @@ class ZigbeeClassifier {
     }
   }
 
-  initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
+  initMultiLevelSwitch(node, genLevelCtrlEndpoints, lightLinkEndpoint) {
     let colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                              node.colorCapabilities) || 0;
     let isLight = false;
@@ -1950,7 +1956,7 @@ class ZigbeeClassifier {
         // control. So call the correct routine.
         // The IKEA outlet is an example of a device which falls into this
         // category.
-        this.initOnOffSwitches(node, [genLevelCtrlEndpoint]);
+        this.initOnOffSwitches(node, [genLevelCtrlEndpoints[0]]);
         return;
       }
       if (ZLL_DEVICE_ID.isLight(zllDeviceId)) {
@@ -1963,7 +1969,7 @@ class ZigbeeClassifier {
         }
       }
     }
-    const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoint];
+    const levelEndpoint = node.activeEndpoints[genLevelCtrlEndpoints[0]];
     if (levelEndpoint.profileId == PROFILE_ID.ZHA_HEX) {
       if (ZHA_DEVICE_ID.isLight(levelEndpoint.deviceId)) {
         isLight = true;
@@ -2007,14 +2013,14 @@ class ZigbeeClassifier {
           this.addColorTemperatureProperty(node,
                                            node.lightingColorCtrlEndpoint);
         }
-        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+        this.addBrightnessProperty(node, genLevelCtrlEndpoints[0]);
         node['@type'] = ['Light', 'OnOffSwitch'];
       }
     } else {
-      this.addLevelProperty(node, genLevelCtrlEndpoint);
+      this.addLevelProperty(node, genLevelCtrlEndpoints[0]);
       node['@type'] = ['OnOffSwitch', 'MultiLevelSwitch'];
     }
-    this.addOnProperty(node, genLevelCtrlEndpoint);
+    this.addOnProperty(node, genLevelCtrlEndpoints[0]);
   }
 
   initOnOffButtons(node, genOnOffOutputEndpoints) {
@@ -2058,82 +2064,41 @@ class ZigbeeClassifier {
   }
 
   initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
-                        genOnOffOutputEndpoints) {
-    if (node.modelId.includes('motion') && genOnOffOutputEndpoints) {
-      // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
-      this.initOnOffButtons(node, genOnOffOutputEndpoints);
-      return;
-    }
+                        genOnOffOutputEndpoints, genScenesOutputEndpoints) {
 
     node.name = `${node.id}-button`;
     node['@type'] = ['PushButton'];
 
-    for (const idx in genLevelCtrlOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=',
-                  genLevelCtrlOutputEndpoints[idx]);
-      const suffix = (idx == 0) ? '' : `${idx}`;
-      const endpoint = genLevelCtrlOutputEndpoints[idx];
-      const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
-      const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
-
-      if (node.modelId === 'TRADFRI remote control') {
-        const genScenesOutputEndpoints =
-            node.findZhaEndpointWithOutputClusterIdHex(
-              CLUSTER_ID.GENSCENES_HEX);
-        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
-        let getScenesOutputEndpoint;
-        if (genScenesOutputEndpoints.length === 1) {
-          getScenesOutputEndpoint = genScenesOutputEndpoints[0];
-        }
-        if (!getScenesOutputEndpoint &&
-            firstGenOnOffOutputEndpoint &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint]
-              .deviceId === '0820') {
-          // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
-          // output cluster but still receives updates on that cluster
-          getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
-        }
-        if (getScenesOutputEndpoint) {
-          const sceneProperty =
-              this.addButtonSceneProperty(node, getScenesOutputEndpoint);
-          sceneProperty.buttonIndex = 4;
-        }
-
-        // This is the IKEA remote with a center button and 4 other
-        // buttons around the edge. The center button sends a toggle
-        // rather than on/off.
-
-        onOffProperty.buttonIndex = 1;
-        this.addEvents(node, {
-          '1-pressed': {
-            '@type': 'PressedEvent',
-            description: 'On button pressed and released',
-          },
-        });
-
-        // The remaining buttons can all generate pressed,
-        // longPressed and released events.
-        levelProperty.buttonIndex = 2;
-        const label = ['Top', 'Bottom', 'Right', 'Left'];
-        for (let i = 0; i < 4; i++) {
-          this.addEvents(node, {
-            [`${i + 2}-pressed`]: {
-              '@type': 'PressedEvent',
-              description: `${label[i]} button pressed and released`,
-            },
-            [`${i + 2}-longPressed`]: {
-              '@type': 'LongPressedEvent',
-              description: `${label[i]} button pressed and held`,
-            },
-            [`${i + 2}-released`]: {
-              '@type': 'ReleasedEvent',
-              description: `${label[i]} button released (after being held)`,
-            },
-          });
-        }
-        return;
+    // SPECIAL CASE
+    if (node.modelId.includes('TRADFRI motion') && genOnOffOutputEndpoints) {
+      // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
+      this.initOnOffButtons(node, genOnOffOutputEndpoints);
+      return;
+    }
+    if (node.modelId === 'TRADFRI remote control') {
+      const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
+      let getScenesOutputEndpoint;
+      if (genScenesOutputEndpoints.length === 1) {
+        getScenesOutputEndpoint = genScenesOutputEndpoints[0];
       }
+      if (!getScenesOutputEndpoint &&
+          firstGenOnOffOutputEndpoint &&
+          node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
+          node.activeEndpoints[firstGenOnOffOutputEndpoint]
+            .deviceId === '0820') {
+        // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
+        // output cluster but still receives updates on that cluster
+        getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
+      }
+      if (getScenesOutputEndpoint) {
+        const sceneProperty =
+            this.addButtonSceneProperty(node, getScenesOutputEndpoint);
+        sceneProperty.buttonIndex = 4;
+      }
+
+      // This is the IKEA remote with a center button and 4 other
+      // buttons around the edge. The center button sends a toggle
+      // rather than on/off.
 
       onOffProperty.buttonIndex = 1;
       this.addEvents(node, {
@@ -2141,67 +2106,109 @@ class ZigbeeClassifier {
           '@type': 'PressedEvent',
           description: 'On button pressed and released',
         },
-        '2-pressed': {
-          '@type': 'PressedEvent',
-          description: 'Off button pressed and released',
-        },
       });
-      switch (node.modelId) {
-        case '3130':
-          // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
-          // use long presses to do the dimming
-          levelProperty.buttonIndex = 1;
-          this.addEvents(node, {
-            '1-longPressed': {
-              '@type': 'LongPressedEvent',
-              description: 'On button pressed and held',
-            },
-            '2-longPressed': {
-              '@type': 'LongPressedEvent',
-              description: 'Off button pressed and held',
-            },
-            '1-released': {
-              '@type': 'ReleasedEvent',
-              description: 'On button released (after being held)',
-            },
-            '2-released': {
-              '@type': 'ReleasedEvent',
-              description: 'Off button released (after being held)',
-            },
-          });
-          break;
 
-        case 'RWL020':
-        case 'RWL021':
-          // This is the Philips Hue Dimmer. It has 4 buttons and uses
-          // 2 of the buttons to perform the dimming.
-          levelProperty.buttonIndex = 3;
-          this.addEvents(node, {
-            '3-pressed': {
-              '@type': 'PressedEvent',
-              description: 'Increase button pressed and released',
-            },
-            '4-pressed': {
-              '@type': 'PressedEvent',
-              description: 'Decrease button pressed and released',
-            },
-          });
-          break;
+      // The remaining buttons can all generate pressed,
+      // longPressed and released events.
+      levelProperty.buttonIndex = 2;
+      const label = ['Top', 'Bottom', 'Right', 'Left'];
+      for (let i = 0; i < 4; i++) {
+        this.addEvents(node, {
+          [`${i + 2}-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `${label[i]} button pressed and released`,
+          },
+          [`${i + 2}-longPressed`]: {
+            '@type': 'LongPressedEvent',
+            description: `${label[i]} button pressed and held`,
+          },
+          [`${i + 2}-released`]: {
+            '@type': 'ReleasedEvent',
+            description: `${label[i]} button released (after being held)`,
+          },
+        });
       }
+      return;
+    }
+
+    switch (node.modelId) {
+      case '3130':
+        // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
+        // use long presses to do the dimming
+        levelProperty.buttonIndex = 1;
+          this.addEvents(node, {
+          '1-longPressed': {
+            '@type': 'LongPressedEvent',
+            description: 'On button pressed and held',
+          },
+          '2-longPressed': {
+             '@type': 'LongPressedEvent',
+            description: 'Off button pressed and held',
+          },
+          '1-released': {
+            '@type': 'ReleasedEvent',
+            description: 'On button released (after being held)',
+          },
+          '2-released': {
+            '@type': 'ReleasedEvent',
+            description: 'Off button released (after being held)',
+          },
+        });
+        return;
+      case 'RWL020':
+      case 'RWL021':
+        // This is the Philips Hue Dimmer. It has 4 buttons and uses
+        // 2 of the buttons to perform the dimming.
+        levelProperty.buttonIndex = 3;
+        this.addEvents(node, {
+          '3-pressed': {
+            '@type': 'PressedEvent',
+            description: 'Increase button pressed and released',
+          },
+          '4-pressed': {
+            '@type': 'PressedEvent',
+            description: 'Decrease button pressed and released',
+          },
+        });
+        return;
+    }
+
+    // STANDARD CASE
+    for (const idx in genOnOffOutputEndpoints) {
+      console.log('Processing endpoint', idx, '=',
+                  genOnOffOutputEndpoints[idx]);
+      const suffix = (idx === 0) ? '' : `${idx}`;
+      const endpoint = genLevelCtrlOutputEndpoints[idx];
+      const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
+      onOffProperty.buttonIndex = 1;
+      this.addEvents(node, {
+        [`${idx}-pressed`]: {
+          '@type': 'PressedEvent',
+          description: 'On button pressed and released',
+        }
+      });
+    }
+
+    for (const idx in genLevelCtrlOutputEndpoints) {
+      console.log('Processing endpoint', idx, '=',
+                    genLevelCtrlOutputEndpoints[idx]);
+      const suffix = (idx === 0) ? '' : `${idx}`;
+      const endpoint = genLevelCtrlOutputEndpoints[idx];
+      this.addButtonLevelProperty(node, endpoint, suffix);
     }
   }
 
-  initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
+  initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoints) {
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
-    if (genLevelCtrlEndpoint) {
-      const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
+    if (genLevelCtrlEndpoints.length > 0) {
+      const endpoint = node.activeEndpoints[genLevelCtrlEndpoints[0]];
       if (endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_SWITCH &&
           endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_OUTPUT) {
         // The Samsung SmartSwitch advertises the genLevelCtrl cluster,
         // but it doesn't do anything. It also advertises itself as an
         // onOffOutput, so we use that to filter out the level control.
-        this.addLevelProperty(node, genLevelCtrlEndpoint);
+        this.addLevelProperty(node, genLevelCtrlEndpoints[0]);
         node['@type'].push('MultiLevelSwitch');
       }
     }
@@ -2211,20 +2218,20 @@ class ZigbeeClassifier {
     this.addHaVoltageProperty(node, haElectricalEndpoint);
   }
 
-  initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
+  initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoints) {
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, seMeteringEndpoint);
-    if (genLevelCtrlEndpoint) {
-      this.addLevelProperty(node, genLevelCtrlEndpoint);
+    if (genLevelCtrlEndpoints) {
+      this.addLevelProperty(node, genLevelCtrlEndpoints[0]);
       node['@type'].push('MultiLevelSwitch');
     }
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
   }
 
-  initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
+  initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoints) {
     node['@type'] = ['OnOffSwitch', 'Light', 'EnergyMonitor'];
-    this.addOnProperty(node, genLevelCtrlEndpoint);
-    this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+    this.addOnProperty(node, genLevelCtrlEndpoints[0]);
+    this.addBrightnessProperty(node, genLevelCtrlEndpoints[0]);
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
   }
 
