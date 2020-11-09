@@ -1827,10 +1827,12 @@ class ZigbeeClassifier {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoints, lightLinkEndpoint);
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
-    } else if ((genLevelCtrlOutputEndpoints.length > 0 || genScenesOutputEndpoints.length > 0) &&
-               genOnOffOutputEndpoints.length > 0) {
+    } else if ((genLevelCtrlOutputEndpoints.length > 0 ||
+                genScenesOutputEndpoints.length > 0) &&
+                genOnOffOutputEndpoints.length > 0) {
       this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
-                                 genOnOffOutputEndpoints, genScenesOutputEndpoints);
+                                 genOnOffOutputEndpoints,
+                                 genScenesOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
       this.initOnOffButtons(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
@@ -2153,13 +2155,13 @@ class ZigbeeClassifier {
         // This is an OSRAM Lightify dimmer. It has 2 buttons, and they
         // use long presses to do the dimming
         levelProperty.buttonIndex = 1;
-          this.addEvents(node, {
+        this.addEvents(node, {
           '1-longPressed': {
             '@type': 'LongPressedEvent',
             description: 'On button pressed and held',
           },
           '2-longPressed': {
-             '@type': 'LongPressedEvent',
+            '@type': 'LongPressedEvent',
             description: 'Off button pressed and held',
           },
           '1-released': {
@@ -2208,7 +2210,7 @@ class ZigbeeClassifier {
 
     for (const idx in genLevelCtrlOutputEndpoints) {
       console.log('Processing endpoint', idx, '=',
-                    genLevelCtrlOutputEndpoints[idx]);
+                  genLevelCtrlOutputEndpoints[idx]);
       const suffix = (idx === 0) ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       this.addButtonLevelProperty(node, endpoint, suffix);
