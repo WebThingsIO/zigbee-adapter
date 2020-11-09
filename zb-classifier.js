@@ -2021,7 +2021,7 @@ class ZigbeeClassifier {
     for (const idx in genOnOffOutputEndpoints) {
       console.log('Processing endpoint', idx, '=',
                   genOnOffOutputEndpoints[idx]);
-      const suffix = (idx === 0) ? '' : `${idx}`;
+      const suffix = (idx == 0) ? '' : `${idx}`;
       const endpoint = genOnOffOutputEndpoints[idx];
 
       if (node.modelId.includes('motion')) {
@@ -2071,7 +2071,7 @@ class ZigbeeClassifier {
     for (const idx in genLevelCtrlOutputEndpoints) {
       console.log('Processing endpoint', idx, '=',
                   genLevelCtrlOutputEndpoints[idx]);
-      const suffix = (idx === 0) ? '' : `${idx}`;
+      const suffix = (idx == 0) ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
