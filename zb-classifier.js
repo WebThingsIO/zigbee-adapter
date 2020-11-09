@@ -2084,7 +2084,6 @@ class ZigbeeClassifier {
 
   initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
                         genOnOffOutputEndpoints, genScenesOutputEndpoints) {
-
     node.name = `${node.id}-button`;
     node['@type'] = ['PushButton'];
 
@@ -2204,7 +2203,7 @@ class ZigbeeClassifier {
         [`${idx}-pressed`]: {
           '@type': 'PressedEvent',
           description: 'On button pressed and released',
-        }
+        },
       });
     }
 
