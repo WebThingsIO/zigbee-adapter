@@ -1762,27 +1762,44 @@ class ZigbeeClassifier {
     if (DEBUG) {
       console.log('----- Zigbee classifier ------');
       console.log('                              modelId =', node.modelId);
-      console.log('                   seMeteringEndpoint =', seMeteringEndpoint);
-      console.log('                 haElectricalEndpoint =', haElectricalEndpoint);
-      console.log('               genBinaryInputEndpoint =', genBinaryInputEndpoint);
-      console.log('                   genScenesEndpoints =', genScenesEndpoints);
-      console.log('             genScenesOutputEndpoints =', genScenesOutputEndpoints);
-      console.log('                genLevelCtrlEndpoints =', genLevelCtrlEndpoints);
-      console.log('          genLevelCtrlOutputEndpoints =', genLevelCtrlOutputEndpoints);
-      console.log('                    genOnOffEndpoints =', genOnOffEndpoints);
-      console.log('              genOnOffOutputEndpoints =', genOnOffOutputEndpoints);
-      console.log('               hvacFanControlEndpoint =', hvacFanControlEndpoint);
-      console.log('               hvacThermostatEndpoint =', hvacThermostatEndpoint);
+      console.log('                   seMeteringEndpoint =',
+                  seMeteringEndpoint);
+      console.log('                 haElectricalEndpoint =',
+                  haElectricalEndpoint);
+      console.log('               genBinaryInputEndpoint =',
+                  genBinaryInputEndpoint);
+      console.log('                   genScenesEndpoints =',
+                  genScenesEndpoints);
+      console.log('             genScenesOutputEndpoints =',
+                  genScenesOutputEndpoints);
+      console.log('                genLevelCtrlEndpoints =',
+                  genLevelCtrlEndpoints);
+      console.log('          genLevelCtrlOutputEndpoints =',
+                  genLevelCtrlOutputEndpoints);
+      console.log('                    genOnOffEndpoints =',
+                  genOnOffEndpoints);
+      console.log('              genOnOffOutputEndpoints =',
+                  genOnOffOutputEndpoints);
+      console.log('               hvacFanControlEndpoint =',
+                  hvacFanControlEndpoint);
+      console.log('               hvacThermostatEndpoint =',
+                  hvacThermostatEndpoint);
       console.log('                     doorLockEndpoint =', doorLockEndpoint);
       console.log('               lightingContolEndpoint =',
                   node.lightingColorCtrlEndpoint);
-      console.log('                    colorCapabilities =', node.colorCapabilities);
+      console.log('                    colorCapabilities =',
+                  node.colorCapabilities);
       console.log('                            colorMode =', node.colorMode);
-      console.log('                    lightLinkEndpoint =', lightLinkEndpoint);
-      console.log('           msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
-      console.log('                msTemperatureEndpoint =', msTemperatureEndpoint);
-      console.log('                  genPowerCfgEndpoint =', genPowerCfgEndpoint);
-      console.log('             genDeviceTempCfgEndpoint =', genDeviceTempCfgEndpoint);
+      console.log('                    lightLinkEndpoint =',
+                  lightLinkEndpoint);
+      console.log('           msOccupancySensingEndpoint =',
+                  msOccupancySensingEndpoint);
+      console.log('                msTemperatureEndpoint =',
+                  msTemperatureEndpoint);
+      console.log('                  genPowerCfgEndpoint =',
+                  genPowerCfgEndpoint);
+      console.log('             genDeviceTempCfgEndpoint =',
+                  genDeviceTempCfgEndpoint);
       console.log('                             zoneType =', node.zoneType);
     }
 
