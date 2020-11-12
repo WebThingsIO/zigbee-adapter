@@ -37,7 +37,7 @@ const ZONE_TYPE_SWITCH = 0x0015;
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
   [ZONE_TYPE_MOTION]: {// 0x000d
-    name: 'motion',
+    type: 'motion-sensor',
     '@type': ['MotionSensor'],
     propertyName: 'motion',
     propertyDescr: {
@@ -49,7 +49,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   [ZONE_TYPE_SWITCH]: {// 0x0015
-    name: 'switch',
+    type: 'door-sensor',
     '@type': ['DoorSensor'],
     propertyName: 'open',
     propertyDescr: {
@@ -61,7 +61,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0028: {
-    name: 'fire',
+    type: 'smoke-sensor',
     '@type': ['SmokeSensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -73,7 +73,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002a: {
-    name: 'water',
+    type: 'leak-sensor',
     '@type': ['LeakSensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -85,7 +85,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002b: {
-    name: 'co',
+    type: 'co-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -97,7 +97,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002c: {
-    name: 'ped',
+    type: 'ped-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -109,7 +109,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002d: {
-    name: 'vibration',
+    type: 'vibration-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -121,7 +121,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x010f: {
-    name: 'remote-panic',
+    type: 'remote-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -133,7 +133,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0115: {
-    name: 'keyfob-panic',
+    type: 'keyfob-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -145,7 +145,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x021d: {
-    name: 'keypad-panic',
+    type: 'keypad-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -157,7 +157,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0226: {
-    name: 'glass',
+    type: 'glass-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -483,6 +483,12 @@ class ZigbeeClassifier {
       // is a valid modelId.
       property.fireAndForget = true;
     }
+    if (typeof property.value === 'undefined') {
+      property.value = false;
+    }
+    if (!node.onOffProperty) {
+      node.onOffProperty = property;
+    }
     return property;
   }
 
@@ -510,7 +516,9 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = false;
     }
-    node.onOffProperty = property;
+    if (!node.onOffProperty) {
+      node.onOffProperty = property;
+    }
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -545,7 +553,6 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = 0;
     }
-    node.levelProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -577,7 +584,6 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = false;
     }
-    node.onOffProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -591,7 +597,7 @@ class ZigbeeClassifier {
       {// property description
         '@type': 'LevelProperty',
         label: 'Scene',
-        type: 'number',
+        type: 'integer',
         minimum: 0,
         maximum: 15,
         readOnly: true,
@@ -608,7 +614,6 @@ class ZigbeeClassifier {
       property.value = 0;
     }
     console.log('addButtonSceneProperty: scene value:', property.value);
-    node.levelProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -1856,26 +1861,27 @@ class ZigbeeClassifier {
   }
 
   initBinarySensor(node, endpointNum) {
+    node.type = 'sensor';
     node['@type'] = ['BinarySensor'];
     this.addPresentValueProperty(node, endpointNum);
   }
 
   initBinarySensorFromZoneType(node) {
+    node.type = 'sensor';
     let propertyName;
     let propertyDescr;
-    let name;
     let zoneType = node.zoneType;
     if (zoneType == 0 && ZONE_TYPE_ZERO.hasOwnProperty(node.modelId)) {
       zoneType = ZONE_TYPE_ZERO[node.modelId];
     }
     if (ZONE_TYPE_NAME.hasOwnProperty(zoneType)) {
-      name = ZONE_TYPE_NAME[zoneType].name;
+      node.type = ZONE_TYPE_NAME[zoneType].type;
       node['@type'] = ZONE_TYPE_NAME[zoneType]['@type'];
       propertyName = ZONE_TYPE_NAME[zoneType].propertyName;
       propertyDescr = ZONE_TYPE_NAME[zoneType].propertyDescr;
     } else if (zoneType == 0x8000) {
       // The SmartThings button has a zoneType of 0x8000
-      node.type = 'thing';
+      node.type = 'button';
       node['@type'] = ['PushButton'];
       this.addEvents(node, {
         pressed: {
@@ -1891,12 +1897,11 @@ class ZigbeeClassifier {
           description: 'Button pressed and held',
         },
       });
-      name = 'button';
       propertyName = null;
       propertyDescr = null;
     } else {
       // This is basically 'just in case' (or unknown zoneType=0)
-      name = 'thing';
+      node.type = 'sensor';
       node['@type'] = ['BinarySensor'];
       propertyName = 'on';
       propertyDescr = {
@@ -1906,25 +1911,26 @@ class ZigbeeClassifier {
         descr: `ZoneType${zoneType}`,
       };
     }
-    node.name = `${node.id}-${name}`;
 
     this.addZoneTypeProperty(node, propertyName, propertyDescr);
   }
 
   initDoorLock(node, doorLockEndpoint) {
-    node.name = `${node.id}-DoorLock`;
+    node.type = 'DoorLock';
     node['@type'] = ['Lock'];
     this.addDoorLockedProperty(node, doorLockEndpoint);
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {
     node['@type'] = ['BinarySensor'];
+    node.type = 'sensor';
     node.name = `${node.id}-occupancy`;
 
     this.addOccupancySensorProperty(node, msOccupancySensingEndpoint);
   }
 
   initOnOffSwitches(node, genOnOffEndpoints) {
+    node.type = 'switch';
     node['@type'] = ['OnOffSwitch'];
     console.log('genOnOffEndpoints =', genOnOffEndpoints);
     for (const idx in genOnOffEndpoints) {
@@ -1935,6 +1941,7 @@ class ZigbeeClassifier {
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
+    node.type = 'switch';
     let colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
                              node.colorCapabilities) || 0;
     let isLight = false;
@@ -1990,6 +1997,7 @@ class ZigbeeClassifier {
     }
 
     if (isLight) {
+      node.type = 'light';
       // It looks like a light bulb
       if (isColorLight) {
         // Hue and Saturation (or XY) are supported
@@ -2018,6 +2026,7 @@ class ZigbeeClassifier {
   }
 
   initOnOffButtons(node, genOnOffOutputEndpoints) {
+    node.type = 'button';
     for (const idx in genOnOffOutputEndpoints) {
       console.log('Processing endpoint', idx, '=',
                   genOnOffOutputEndpoints[idx]);
@@ -2026,7 +2035,7 @@ class ZigbeeClassifier {
 
       if (node.modelId.includes('motion')) {
         // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
-        node.name = `${node.id}-motion`;
+        node.type = 'motion';
         node['@type'] = ['MotionSensor'];
 
         this.addButtonMotionProperty(node, endpoint, suffix);
@@ -2041,7 +2050,6 @@ class ZigbeeClassifier {
           },
         });
       } else {
-        node.name = `${node.id}-button`;
         node['@type'] = ['PushButton'];
         const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
 
@@ -2065,7 +2073,7 @@ class ZigbeeClassifier {
       return;
     }
 
-    node.name = `${node.id}-button`;
+    node.type = 'button';
     node['@type'] = ['PushButton'];
 
     for (const idx in genLevelCtrlOutputEndpoints) {
@@ -2075,35 +2083,36 @@ class ZigbeeClassifier {
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
+      let eventLimit = 2;   // to generate the events for the Level buttons
 
       if (node.modelId === 'TRADFRI remote control') {
+        // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
+        // output cluster but still receives updates on that cluster
+        const t = node.findZhaEndpointWithOutputClusterIdHex(
+          CLUSTER_ID.GENSCENES_HEX);
+        if (t.length == 0 &&
+            endpoint == 1 &&
+            node.activeEndpoints['1'] &&
+            node.activeEndpoints['1'].deviceId === '0820') {
+          node.activeEndpoints['1'].outputClusters.push(
+            CLUSTER_ID.GENSCENES_HEX);
+          node.activeEndpoints['1'].outputClusters.sort();
+        }
+        // end of workaround
+
         const genScenesOutputEndpoints =
-            node.findZhaEndpointWithOutputClusterIdHex(
-              CLUSTER_ID.GENSCENES_HEX);
-        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
-        let getScenesOutputEndpoint;
-        if (genScenesOutputEndpoints.length === 1) {
-          getScenesOutputEndpoint = genScenesOutputEndpoints[0];
-        }
-        if (!getScenesOutputEndpoint &&
-            firstGenOnOffOutputEndpoint &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint]
-              .deviceId === '0820') {
-          // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
-          // output cluster but still receives updates on that cluster
-          getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
-        }
-        if (getScenesOutputEndpoint) {
+          node.findZhaEndpointWithOutputClusterIdHex(
+            CLUSTER_ID.GENSCENES_HEX);
+        if (genScenesOutputEndpoints[0]) {
           const sceneProperty =
-              this.addButtonSceneProperty(node, getScenesOutputEndpoint);
-          sceneProperty.buttonIndex = 4;
+              this.addButtonSceneProperty(node, genScenesOutputEndpoints[0]);
+          sceneProperty.buttonIndex = 4;  // this property also covers button 5
+          eventLimit = 4;   // extend to generate the scene events
         }
 
         // This is the IKEA remote with a center button and 4 other
         // buttons around the edge. The center button sends a toggle
         // rather than on/off.
-
         onOffProperty.buttonIndex = 1;
         this.addEvents(node, {
           '1-pressed': {
@@ -2114,9 +2123,9 @@ class ZigbeeClassifier {
 
         // The remaining buttons can all generate pressed,
         // longPressed and released events.
-        levelProperty.buttonIndex = 2;
+        levelProperty.buttonIndex = 2;  // this property also covers button 3
         const label = ['Top', 'Bottom', 'Right', 'Left'];
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < eventLimit; i++) {
           this.addEvents(node, {
             [`${i + 2}-pressed`]: {
               '@type': 'PressedEvent',
@@ -2192,6 +2201,7 @@ class ZigbeeClassifier {
   }
 
   initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
+    node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
@@ -2212,6 +2222,7 @@ class ZigbeeClassifier {
   }
 
   initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
+    node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, seMeteringEndpoint);
     if (genLevelCtrlEndpoint) {
@@ -2222,6 +2233,7 @@ class ZigbeeClassifier {
   }
 
   initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
+    node.type = 'light';
     node['@type'] = ['OnOffSwitch', 'Light', 'EnergyMonitor'];
     this.addOnProperty(node, genLevelCtrlEndpoint);
     this.addBrightnessProperty(node, genLevelCtrlEndpoint);
@@ -2229,7 +2241,7 @@ class ZigbeeClassifier {
   }
 
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
-    node.name = `${node.id}-thermostat`;
+    node.type = 'thermostat';
     node['@type'] = ['Thermostat'];
     this.addThermostatProperties(node, hvacThermostatEndpoint,
                                  hvacFanControlEndpoint);

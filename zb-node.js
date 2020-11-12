@@ -826,7 +826,14 @@ class ZigbeeNode extends Device {
         frame.clusterId != CLUSTER_ID.GENBASIC_HEX &&
         frame.clusterId != CLUSTER_ID.SSIASZONE_HEX &&
         frame.clusterId != CLUSTER_ID.GENPOLLCTRL_HEX) {
-      console.log('handleReadRsp: ##### No property found for frame #####');
+      console.log('handleReadRsp: ##### No property found for frame #####',
+                  this.name,
+                  'remote64:', frame.remote64,
+                  'profileId:', frame.profileId,
+                  'clusterId:', frame.clusterId,
+                  'sourceEndpoint:', frame.sourceEndpoint,
+                  'cmdId:', frame.zcl.cmdId,
+                  'payload:', JSON.stringify(frame.zcl.payload));
     }
     if (frame.zcl.cmdId === 'report') {
       this.rebindIfRequired();
