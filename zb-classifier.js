@@ -37,7 +37,7 @@ const ZONE_TYPE_SWITCH = 0x0015;
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
   [ZONE_TYPE_MOTION]: {// 0x000d
-    name: 'motion',
+    type: 'motion-sensor',
     '@type': ['MotionSensor'],
     propertyName: 'motion',
     propertyDescr: {
@@ -49,7 +49,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   [ZONE_TYPE_SWITCH]: {// 0x0015
-    name: 'switch',
+    type: 'door-sensor',
     '@type': ['DoorSensor'],
     propertyName: 'open',
     propertyDescr: {
@@ -61,7 +61,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0028: {
-    name: 'fire',
+    type: 'smoke-sensor',
     '@type': ['SmokeSensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -73,7 +73,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002a: {
-    name: 'water',
+    type: 'leak-sensor',
     '@type': ['LeakSensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -85,7 +85,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002b: {
-    name: 'co',
+    type: 'co-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -97,7 +97,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002c: {
-    name: 'ped',
+    type: 'ped-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -109,7 +109,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x002d: {
-    name: 'vibration',
+    type: 'vibration-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -121,7 +121,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x010f: {
-    name: 'remote-panic',
+    type: 'remote-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -133,7 +133,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0115: {
-    name: 'keyfob-panic',
+    type: 'keyfob-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -145,7 +145,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x021d: {
-    name: 'keypad-panic',
+    type: 'keypad-button',
     '@type': ['PushButton'],
     propertyName: 'pushed',
     propertyDescr: {
@@ -157,7 +157,7 @@ const ZONE_TYPE_NAME = {
     },
   },
   0x0226: {
-    name: 'glass',
+    type: 'glass-sensor',
     '@type': ['BinarySensor'],
     propertyName: 'on',
     propertyDescr: {
@@ -1866,7 +1866,7 @@ class ZigbeeClassifier {
       zoneType = ZONE_TYPE_ZERO[node.modelId];
     }
     if (ZONE_TYPE_NAME.hasOwnProperty(zoneType)) {
-      node.type = ZONE_TYPE_NAME[zoneType].name;
+      node.type = ZONE_TYPE_NAME[zoneType].type;
       node['@type'] = ZONE_TYPE_NAME[zoneType]['@type'];
       propertyName = ZONE_TYPE_NAME[zoneType].propertyName;
       propertyDescr = ZONE_TYPE_NAME[zoneType].propertyDescr;
