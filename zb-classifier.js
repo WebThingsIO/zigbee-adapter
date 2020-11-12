@@ -588,7 +588,7 @@ class ZigbeeClassifier {
       {// property description
         '@type': 'LevelProperty',
         label: 'Scene',
-        type: 'number',
+        type: 'integer',
         minimum: 0,
         maximum: 15,
         readOnly: true,
