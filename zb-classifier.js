@@ -510,7 +510,6 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = false;
     }
-    node.onOffProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -545,7 +544,6 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = 0;
     }
-    node.levelProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -577,7 +575,6 @@ class ZigbeeClassifier {
     if (typeof property.value === 'undefined') {
       property.value = false;
     }
-    node.onOffProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
@@ -608,7 +605,6 @@ class ZigbeeClassifier {
       property.value = 0;
     }
     console.log('addButtonSceneProperty: scene value:', property.value);
-    node.levelProperty = property;
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
                          'value:', property.value);
