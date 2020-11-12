@@ -2075,35 +2075,36 @@ class ZigbeeClassifier {
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
+      let eventLimit = 2;   // to generate the events for the Level buttons
 
       if (node.modelId === 'TRADFRI remote control') {
+        // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
+        // output cluster but still receives updates on that cluster
+        const t = node.findZhaEndpointWithOutputClusterIdHex(
+          CLUSTER_ID.GENSCENES_HEX);
+        if (t.length == 0 &&
+            endpoint == 1 &&
+            node.activeEndpoints['1'] &&
+            node.activeEndpoints['1'].deviceId === '0820') {
+          node.activeEndpoints['1'].outputClusters.push(
+            CLUSTER_ID.GENSCENES_HEX);
+          node.activeEndpoints['1'].outputClusters.sort();
+        }
+        // end of workaround
+
         const genScenesOutputEndpoints =
-            node.findZhaEndpointWithOutputClusterIdHex(
-              CLUSTER_ID.GENSCENES_HEX);
-        const firstGenOnOffOutputEndpoint = genScenesOutputEndpoints[0];
-        let getScenesOutputEndpoint;
-        if (genScenesOutputEndpoints.length === 1) {
-          getScenesOutputEndpoint = genScenesOutputEndpoints[0];
-        }
-        if (!getScenesOutputEndpoint &&
-            firstGenOnOffOutputEndpoint &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint] &&
-            node.activeEndpoints[firstGenOnOffOutputEndpoint]
-              .deviceId === '0820') {
-          // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
-          // output cluster but still receives updates on that cluster
-          getScenesOutputEndpoint = firstGenOnOffOutputEndpoint;
-        }
-        if (getScenesOutputEndpoint) {
+          node.findZhaEndpointWithOutputClusterIdHex(
+            CLUSTER_ID.GENSCENES_HEX);
+        if (genScenesOutputEndpoints[0]) {
           const sceneProperty =
-              this.addButtonSceneProperty(node, getScenesOutputEndpoint);
-          sceneProperty.buttonIndex = 4;
+              this.addButtonSceneProperty(node, genScenesOutputEndpoints[0]);
+          sceneProperty.buttonIndex = 4;  // this property also covers button 5
+          eventLimit = 4;   // extend to generate the scene events
         }
 
         // This is the IKEA remote with a center button and 4 other
         // buttons around the edge. The center button sends a toggle
         // rather than on/off.
-
         onOffProperty.buttonIndex = 1;
         this.addEvents(node, {
           '1-pressed': {
@@ -2114,9 +2115,9 @@ class ZigbeeClassifier {
 
         // The remaining buttons can all generate pressed,
         // longPressed and released events.
-        levelProperty.buttonIndex = 2;
+        levelProperty.buttonIndex = 2;  // this property also covers button 3
         const label = ['Top', 'Bottom', 'Right', 'Left'];
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < eventLimit; i++) {
           this.addEvents(node, {
             [`${i + 2}-pressed`]: {
               '@type': 'PressedEvent',
