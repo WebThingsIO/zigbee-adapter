@@ -483,6 +483,12 @@ class ZigbeeClassifier {
       // is a valid modelId.
       property.fireAndForget = true;
     }
+    if (typeof property.value === 'undefined') {
+      property.value = false;
+    }
+    if (!node.onOffProperty) {
+      node.onOffProperty = property;
+    }
     return property;
   }
 
@@ -509,6 +515,9 @@ class ZigbeeClassifier {
     property.bindNeeded = true;
     if (typeof property.value === 'undefined') {
       property.value = false;
+    }
+    if (!node.onOffProperty) {
+      node.onOffProperty = property;
     }
     DEBUG && console.log('addProperty:',
                          '  bindNeeded:', property.bindNeeded,
