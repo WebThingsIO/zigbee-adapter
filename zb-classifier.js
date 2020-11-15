@@ -1727,16 +1727,32 @@ class ZigbeeClassifier {
 
     const genBinaryInputEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
+    const genScenesEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+    const genScenesOutputEndpoints =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+    const genGroupsEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENGROUPS_HEX);
+    const genGroupsOutputEndpoints =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENGROUPS_HEX);
     const genLevelCtrlEndpoint =
-        node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genLevelCtrlOutputEndpoints =
-        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
     const genOnOffEndpoints =
-        node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const genOnOffOutputEndpoints =
-        node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+    const closureShadeCfgEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.CLOSURESHADECFG_HEX);
+    const closureShadeCfgOutputEndpoints =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.CLOSURESSHADECFG_HEX);
+    const closureWindowCoveringEndpoints =
+      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
+    const closureWindowCoveringOutputEndpoints =
+      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
     const doorLockEndpoint =
-        node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
+      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
     const msOccupancySensingEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(
         CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
@@ -1762,27 +1778,39 @@ class ZigbeeClassifier {
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
-      console.log('                    modelId =', node.modelId);
-      console.log('         seMeteringEndpoint =', seMeteringEndpoint);
-      console.log('       haElectricalEndpoint =', haElectricalEndpoint);
-      console.log('     genBinaryInputEndpoint =', genBinaryInputEndpoint);
-      console.log('       genLevelCtrlEndpoint =', genLevelCtrlEndpoint);
-      console.log('genLevelCtrlOutputEndpoints =', genLevelCtrlOutputEndpoints);
-      console.log('          genOnOffEndpoints =', genOnOffEndpoints);
-      console.log('    genOnOffOutputEndpoints =', genOnOffOutputEndpoints);
-      console.log('     hvacFanControlEndpoint =', hvacFanControlEndpoint);
-      console.log('     hvacThermostatEndpoint =', hvacThermostatEndpoint);
-      console.log('           doorLockEndpoint =', doorLockEndpoint);
-      console.log('     lightingContolEndpoint =',
-                  node.lightingColorCtrlEndpoint);
-      console.log('          colorCapabilities =', node.colorCapabilities);
-      console.log('                  colorMode =', node.colorMode);
-      console.log('          lightLinkEndpoint =', lightLinkEndpoint);
-      console.log(' msOccupancySensingEndpoint =', msOccupancySensingEndpoint);
-      console.log('      msTemperatureEndpoint =', msTemperatureEndpoint);
-      console.log('        genPowerCfgEndpoint =', genPowerCfgEndpoint);
-      console.log('   genDeviceTempCfgEndpoint =', genDeviceTempCfgEndpoint);
-      console.log('                   zoneType =', node.zoneType);
+      var listParams = {
+        'modelId': node.modelId,
+        'seMeteringEndpoint': seMeteringEndpoint,
+        'haElectricalEndpoint': haElectricalEndpoint,
+        'genBinaryInputEndpoint': genBinaryInputEndpoint,
+        'genScenesEndpoints': genScenesEndpoints,
+        'genScenesOutputEndpoints': genScenesOutputEndpoints,
+        'genGroupsEndpoints': genGroupsEndpoints,
+        'genGroupsOutputEndpoints': genGroupsOutputEndpoints,
+        'genLevelCtrlEndpoint': genLevelCtrlEndpoint,
+        'genLevelCtrlOutputEndpoints': genLevelCtrlOutputEndpoints,
+        'genOnOffEndpoints': genOnOffEndpoints,
+        'genOnOffOutputEndpoints': genOnOffOutputEndpoints,
+        'closureShadeCfgEndpoints': closureShadeCfgEndpoints,
+        'closureShadeCfgOutputEndpoints': closureShadeCfgOutputEndpoints,
+        'closureWindowCoveringEndpoints': closureWindowCoveringEndpoints,
+        'closureWindowCoveringOutputEndpoints': closureWindowCoveringOutputEndpoints,
+        'hvacFanControlEndpoint': hvacFanControlEndpoint,
+        'hvacThermostatEndpoint': hvacThermostatEndpoint,
+        'doorLockEndpoint': doorLockEndpoint,
+        'lightingControlEndpoint': node.lightingColorCtrlEndpoint,
+        'colorCapabilities': node.colorCapabilities,
+        'colorMode': node.colorMode,
+        'lightLinkEndpoint': lightLinkEndpoint,
+        'msOccupancySensingEndpoint': msOccupancySensingEndpoint,
+        'msTemperatureEndpoint': msTemperatureEndpoint,
+        'genPowerCfgEndpoint': genPowerCfgEndpoint,
+        'genDeviceTempCfgEndpoint': genDeviceTempCfgEndpoint,
+        'zoneType': node.zoneType,
+      };
+      for (const [key, value] of Object.entries(listParams)) {
+        console.log(Utils.padLeft(key + ' =', 38), value);
+      }
     }
 
     if (typeof node.zoneType !== 'undefined') {
