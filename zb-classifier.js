@@ -1744,13 +1744,17 @@ class ZigbeeClassifier {
     const genOnOffOutputEndpoints =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const closureShadeCfgEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.CLOSURESHADECFG_HEX);
+      node.findZhaEndpointsWithInputClusterIdHex(
+        CLUSTER_ID.CLOSURESHADECFG_HEX);
     const closureShadeCfgOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.CLOSURESSHADECFG_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(
+        CLUSTER_ID.CLOSURESSHADECFG_HEX);
     const closureWindowCoveringEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
+      node.findZhaEndpointsWithInputClusterIdHex(
+        CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
     const closureWindowCoveringOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
+      node.findZhaEndpointWithOutputClusterIdHex(
+        CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
     const doorLockEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
     const msOccupancySensingEndpoint =
@@ -1778,38 +1782,39 @@ class ZigbeeClassifier {
 
     if (DEBUG) {
       console.log('---- Zigbee classifier -----');
-      var listParams = {
-        'modelId': node.modelId,
-        'seMeteringEndpoint': seMeteringEndpoint,
-        'haElectricalEndpoint': haElectricalEndpoint,
-        'genBinaryInputEndpoint': genBinaryInputEndpoint,
-        'genScenesEndpoints': genScenesEndpoints,
-        'genScenesOutputEndpoints': genScenesOutputEndpoints,
-        'genGroupsEndpoints': genGroupsEndpoints,
-        'genGroupsOutputEndpoints': genGroupsOutputEndpoints,
-        'genLevelCtrlEndpoint': genLevelCtrlEndpoint,
-        'genLevelCtrlOutputEndpoints': genLevelCtrlOutputEndpoints,
-        'genOnOffEndpoints': genOnOffEndpoints,
-        'genOnOffOutputEndpoints': genOnOffOutputEndpoints,
-        'closureShadeCfgEndpoints': closureShadeCfgEndpoints,
-        'closureShadeCfgOutputEndpoints': closureShadeCfgOutputEndpoints,
-        'closureWindowCoveringEndpoints': closureWindowCoveringEndpoints,
-        'closureWindowCoveringOutputEndpoints': closureWindowCoveringOutputEndpoints,
-        'hvacFanControlEndpoint': hvacFanControlEndpoint,
-        'hvacThermostatEndpoint': hvacThermostatEndpoint,
-        'doorLockEndpoint': doorLockEndpoint,
-        'lightingControlEndpoint': node.lightingColorCtrlEndpoint,
-        'colorCapabilities': node.colorCapabilities,
-        'colorMode': node.colorMode,
-        'lightLinkEndpoint': lightLinkEndpoint,
-        'msOccupancySensingEndpoint': msOccupancySensingEndpoint,
-        'msTemperatureEndpoint': msTemperatureEndpoint,
-        'genPowerCfgEndpoint': genPowerCfgEndpoint,
-        'genDeviceTempCfgEndpoint': genDeviceTempCfgEndpoint,
-        'zoneType': node.zoneType,
+      const listParams = {
+        modelId: node.modelId,
+        seMeteringEndpoint: seMeteringEndpoint,
+        haElectricalEndpoint: haElectricalEndpoint,
+        genBinaryInputEndpoint: genBinaryInputEndpoint,
+        genScenesEndpoints: genScenesEndpoints,
+        genScenesOutputEndpoints: genScenesOutputEndpoints,
+        genGroupsEndpoints: genGroupsEndpoints,
+        genGroupsOutputEndpoints: genGroupsOutputEndpoints,
+        genLevelCtrlEndpoint: genLevelCtrlEndpoint,
+        genLevelCtrlOutputEndpoints: genLevelCtrlOutputEndpoints,
+        genOnOffEndpoints: genOnOffEndpoints,
+        genOnOffOutputEndpoints: genOnOffOutputEndpoints,
+        closureShadeCfgEndpoints: closureShadeCfgEndpoints,
+        closureShadeCfgOutputEndpoints: closureShadeCfgOutputEndpoints,
+        closureWindowCoveringEndpoints: closureWindowCoveringEndpoints,
+        closureWindowCoveringOutputEndpoints:
+          closureWindowCoveringOutputEndpoints,
+        hvacFanControlEndpoint: hvacFanControlEndpoint,
+        hvacThermostatEndpoint: hvacThermostatEndpoint,
+        doorLockEndpoint: doorLockEndpoint,
+        lightingControlEndpoint: node.lightingColorCtrlEndpoint,
+        colorCapabilities: node.colorCapabilities,
+        colorMode: node.colorMode,
+        lightLinkEndpoint: lightLinkEndpoint,
+        msOccupancySensingEndpoint: msOccupancySensingEndpoint,
+        msTemperatureEndpoint: msTemperatureEndpoint,
+        genPowerCfgEndpoint: genPowerCfgEndpoint,
+        genDeviceTempCfgEndpoint: genDeviceTempCfgEndpoint,
+        zoneType: node.zoneType,
       };
       for (const [key, value] of Object.entries(listParams)) {
-        console.log(Utils.padLeft(key + ' =', 38), value);
+        console.log(Utils.padLeft(`${key} =`, 38), value);
       }
     }
 
