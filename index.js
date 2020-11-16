@@ -24,9 +24,7 @@ const XBEE_FTDI_FILTER = {
 
 const xbeeSerialProber = new SerialProber({
   name: 'XBee',
-
-  allowRpiAmaSerial: false,
-
+  allowAMASerial: false,
   baudRate: 9600,
   // XBee Get API Mode Command
   probeCmd: [
@@ -60,9 +58,7 @@ const xbeeSerialProber = new SerialProber({
 
 const deconzSerialProber = new SerialProber({
   name: 'deConz',
-
-  allowRpiAmaSerial: false,
-
+  allowAMASerial: false,
   baudRate: 38400,
   // deConz VERSION Command
   probeCmd: [
@@ -99,9 +95,7 @@ const deconzSerialProber = new SerialProber({
 const cc2531SerialProber = new SerialProber({
   name: 'cc2531',
   baudRate: 115200,
-
-  allowRpiAmaSerial: false,
-
+  allowAMASerial: false,
   probeCmd: [
     0xFE,       // SOF
     0x00,       // length
@@ -133,7 +127,7 @@ const PROBERS = [
 // Scan the serial ports looking for an XBee adapter.
 async function loadZigbeeAdapters(addonManager, _, errorCallback) {
   let allowFTDISerial = false;
-  let allowRPIAMASerial = false;
+  let allowAMASerial = false;
 
   let config = {};
   // Attempt to move to new config format
@@ -152,7 +146,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       config.scanChannels = parseInt(config.scanChannels, 16);
     }
     allowFTDISerial = config.allowFTDISerial;
-    allowRPIAMASerial = config.allowRPIAMASerial;
+    allowAMASerial = config.allowAMASerial;
 
     if (config.hasOwnProperty('debug')) {
       console.log(`DEBUG config = '${config.debug}'`);
@@ -167,8 +161,8 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
   if (allowFTDISerial) {
     xbeeSerialProber.param.filter.push(XBEE_FTDI_FILTER);
   }
-  if (allowRPIAMASerial) {
-    deconzSerialProber.param.allowRpiAmaSerial = true;
+  if (allowAMASerial) {
+    deconzSerialProber.param.allowAMASerial = true;
   }
   SerialProber.probeAll(PROBERS).then((matches) => {
     if (matches.length == 0) {
