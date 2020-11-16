@@ -1743,16 +1743,16 @@ class ZigbeeClassifier {
       node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
     const genOnOffOutputEndpoints =
       node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
-    const closureShadeCfgEndpoints =
+    const closuresShadeCfgEndpoints =
       node.findZhaEndpointsWithInputClusterIdHex(
-        CLUSTER_ID.CLOSURESHADECFG_HEX);
-    const closureShadeCfgOutputEndpoints =
+        CLUSTER_ID.CLOSURESSHADECFG_HEX);
+    const closuresShadeCfgOutputEndpoints =
       node.findZhaEndpointWithOutputClusterIdHex(
         CLUSTER_ID.CLOSURESSHADECFG_HEX);
-    const closureWindowCoveringEndpoints =
+    const closuresWindowCoveringEndpoints =
       node.findZhaEndpointsWithInputClusterIdHex(
         CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
-    const closureWindowCoveringOutputEndpoints =
+    const closuresWindowCoveringOutputEndpoints =
       node.findZhaEndpointWithOutputClusterIdHex(
         CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
     const doorLockEndpoint =
@@ -1795,11 +1795,11 @@ class ZigbeeClassifier {
         genLevelCtrlOutputEndpoints: genLevelCtrlOutputEndpoints,
         genOnOffEndpoints: genOnOffEndpoints,
         genOnOffOutputEndpoints: genOnOffOutputEndpoints,
-        closureShadeCfgEndpoints: closureShadeCfgEndpoints,
-        closureShadeCfgOutputEndpoints: closureShadeCfgOutputEndpoints,
-        closureWindowCoveringEndpoints: closureWindowCoveringEndpoints,
-        closureWindowCoveringOutputEndpoints:
-          closureWindowCoveringOutputEndpoints,
+        closuresShadeCfgEndpoints: closuresShadeCfgEndpoints,
+        closuresShadeCfgOutputEndpoints: closuresShadeCfgOutputEndpoints,
+        closuresWindowCoveringEndpoints: closuresWindowCoveringEndpoints,
+        closuresWindowCoveringOutputEndpoints:
+          closuresWindowCoveringOutputEndpoints,
         hvacFanControlEndpoint: hvacFanControlEndpoint,
         hvacThermostatEndpoint: hvacThermostatEndpoint,
         doorLockEndpoint: doorLockEndpoint,
