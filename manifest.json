@@ -19,6 +19,7 @@
     "default": {
       "scanChannels": 8190,
       "allowFTDISerial": false,
+      "allowRPIAMASerial": false,
       "debug": ""
     },
     "schema": {
@@ -35,6 +36,10 @@
         "allowFTDISerial": {
           "type": "boolean",
           "default": false
+        },
+        "allowRPIAMASerial": {
+            "type": "boolean",
+            "default": false
         },
         "debug": {
           "type": "string",
