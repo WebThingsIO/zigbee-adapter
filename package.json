@@ -18,7 +18,7 @@
     "dissolve": "github:WebThingsIO/dissolve#moziot-changes",
     "dissolve-chunks": "github:WebThingsIO/dissolve-chunks#moziot-changes",
     "mkdirp": "^1.0.4",
-    "serial-prober": "github:WebThingsIO/serial-prober-node#e1309d8",
+    "serial-prober": "github:WebThingsIO/serial-prober-node",
     "unpi": "github:WebThingsIO/unpi#moziot-changes",
     "xbee-api": "^0.6.0",
     "zcl-id": "github:WebThingsIO/zcl-id#moziot-changes",
