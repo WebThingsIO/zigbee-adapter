@@ -119,6 +119,8 @@ const BROADCAST_ADDR = {
 const UNKNOWN_ADDR_16 = 'fffe';
 
 const CLUSTER_ID = {
+  CLOSURESSHADECFG: zclId.cluster('closuresShadeCfg').value,
+  CLOSURESWINDOWCOVERING: zclId.cluster('closuresWindowCovering').value,
   DOORLOCK: zclId.cluster('closuresDoorLock').value,
   GENBASIC: zclId.cluster('genBasic').value,
   GENBINARYINPUT: zclId.cluster('genBinaryInput').value,
@@ -132,7 +134,6 @@ const CLUSTER_ID = {
   GENSCENES: zclId.cluster('genScenes').value,
   GENMULTISTATEINPUT: zclId.cluster('genMultistateInput').value,
   GENANALOGINPUT: zclId.cluster('genAnalogInput').value,
-  CLOSURESWINDOWCOVERING: zclId.cluster('closuresWindowCovering').value,
   HAELECTRICAL: zclId.cluster('haElectricalMeasurement').value,
   HVACTHERMOSTAT: zclId.cluster('hvacThermostat').value,
   HVACFANCTRL: zclId.cluster('hvacFanCtrl').value,
