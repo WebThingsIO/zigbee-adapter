@@ -146,8 +146,6 @@ const CLUSTER_ID = {
   RELATIVE_HUMIDITY: zclId.cluster('msRelativeHumidity').value,
   SEMETERING: zclId.cluster('seMetering').value,
   SSIASZONE: zclId.cluster('ssIasZone').value,
-  SSIASACE: zclId.cluster('ssIasAce').value,
-  SSIASWD: zclId.cluster('ssIasWd').value,
   TEMPERATURE: zclId.cluster('msTemperatureMeasurement').value,
 };
 addHexValues(CLUSTER_ID);
