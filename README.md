@@ -13,6 +13,7 @@ This adapter is compatible with the following USB dongles:
     be accesssible on /dev/ttyAMA0.
   * In `/boot/config.txt` add `dtoverlay=pi3-miniuart-bt` in section `[all]`
   * In `/boot/cmdline.txt` remove `console=tty1` to disable console on tty1
+  * The `allowAMASerial` flag must be enabled via _Settings -> Add-ons -> Zigbee -> Configure_.
   * Notes on the UART config: [UART Configuration - Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/configuration/uart.md)
 
 * ConBee Zigbee USB stick
