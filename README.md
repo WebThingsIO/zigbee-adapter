@@ -9,11 +9,11 @@ This adapter is compatible with the following USB dongles:
 * Digi XStick2 (XU-Z11)
 
 * RaspBee module plugged into a Raspberry Pi
-  * RaspBee module need to be connected with UART PL011, not the mini UART, and
+  * RaspBee module needs to be connected with UART PL011, not the mini UART, and
     be accesssible on /dev/ttyAMA0.
-  * in /boot/config.txt add `dtoverlay=pi3-miniuart-bt` in section `[all]`
-  * in /boot/cmdline.txt remove `console=tty1` to disable console on tty1
-  * Notes on the uart config [UART Configuration - Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/configuration/uart.md)
+  * In `/boot/config.txt` add `dtoverlay=pi3-miniuart-bt` in section `[all]`
+  * In `/boot/cmdline.txt` remove `console=tty1` to disable console on tty1
+  * Notes on the UART config: [UART Configuration - Raspberry Pi Documentation](https://www.raspberrypi.org/documentation/configuration/uart.md)
 
 * ConBee Zigbee USB stick
 
