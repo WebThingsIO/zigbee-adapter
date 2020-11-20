@@ -687,7 +687,7 @@ class ZigbeeNode extends Device {
       this.adapter.populateNodeInfo(this);
     }
 
-    // For the time being, we always indicate that we have no images.
+    // For the time being, we always indicate that we have no OTA images
     const rspFrame = this.makeZclFrame(
       parseInt(frame.sourceEndpoint, 16),
       frame.profileId,
@@ -706,8 +706,8 @@ class ZigbeeNode extends Device {
       }
     );
     rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint, 16);
-    console.log('handleQueryNextImageReq: rspFrame =');
-    console.log(util.inspect(frame, {depth: null}));
+    DEBUG && console.log('handleQueryNextImageReq: rspFrame =',
+                         util.inspect(frame, {depth: null}));
     this.adapter.sendFrameNow(rspFrame);
   }
 
