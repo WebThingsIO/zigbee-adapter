@@ -1102,6 +1102,10 @@ class ZigbeeAdapter extends Adapter {
     // Nothing to do.
   }
 
+  handleManagementNetUpdate(_frame) {
+    // Nothing to do.
+  }
+
   startPairing(timeoutSeconds) {
     console.log('Pairing mode started, timeout =', timeoutSeconds);
     for (const nodeId in this.nodes) {
@@ -1713,6 +1717,8 @@ ZigbeeAdapter.zdoClusterHandler = {
     ZigbeeAdapter.prototype.handleBindResponse,
   [zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_RESPONSE]:
     ZigbeeAdapter.prototype.handlePermitJoinResponse,
+  [zdo.CLUSTER_ID.MANAGEMENT_NETWORK_UPDATE_NOTIFY]:
+    ZigbeeAdapter.prototype.handleManagementNetUpdate,
 };
 
 registerFamilies();
