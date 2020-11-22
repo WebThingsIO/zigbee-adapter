@@ -17,6 +17,7 @@ const C = deconzApi.constants;
 const {
   APS_STATUS,
   NWK_STATUS,
+  MAC_STATUS,
 } = require('./zb-constants');
 
 const {
@@ -634,17 +635,20 @@ class DeconzDriver extends ZigbeeDriver {
     if (APS_STATUS.hasOwnProperty(status)) {
       if (status == 0) {
         console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
-                    `addr: ${addr}`);
+                    `,  addr: ${addr}`);
       } else if (DEBUG_frameDetail || !noReport.includes(status)) {
         console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
-                      `addr: ${addr}`);
+                      `,  addr: ${addr}`);
       }
     } else if (NWK_STATUS.hasOwnProperty(status)) {
       console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
-                    `addr: ${addr}`);
+                    `,  addr: ${addr}`);
+    } else if (MAC_STATUS.hasOwnProperty(status)) {
+      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
+                    `,  addr: ${addr}`);
     } else {
       console.error(`Confirm Status: ${status}: unknown`,
-                    `addr: ${addr}`);
+                    `,  addr: ${addr}`);
       console.error(frame);
     }
   }
