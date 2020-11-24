@@ -516,6 +516,26 @@ class ZigbeeProperty extends Property {
     return [illuminance, `${illuminance.toFixed(0)} (${measuredValue})`];
   }
 
+  /**
+   * @method parseHalfPercentAttr
+   *
+   * Parses a percentage attribute into a property.
+   */
+  parseHalfPercentAttr(attrEntry) {
+    let percentage = null;
+    if (typeof attrEntry.attrData !== 'number') {
+      console.error('zb-property.js/parseHalfPercentAttr:',
+                    'expected attrEntry.attrData to be a number, found a ',
+                    typeof attrEntry.attrData);
+    } else if (attrEntry.attrData === 0xFF) {
+      console.error('zb-property.js/parseHalfPercentAttr:',
+                    'device reported "invalid value", 0xFF');
+    } else {
+      percentage = attrEntry.attrData / 2;
+    }
+    return [percentage, `${percentage} (${attrEntry.attrData})`];
+  }
+
   attrToTemperature(measuredValue) {
     return measuredValue / 100;
   }
