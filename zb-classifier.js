@@ -1033,8 +1033,7 @@ class ZigbeeClassifier {
 
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
     let attr = 'batteryVoltage';
-    if (node.activeEndpoints[genPowerCfgEndpoint].deviceId ==
-        ZHA_DEVICE_ID.SMART_PLUG) {
+    if (node.isMainsPowered()) {
       attr = 'mainsVoltage';
     }
     this.addProperty(
@@ -1056,8 +1055,7 @@ class ZigbeeClassifier {
       'parseNumericTenthsAttr',       // parseValueFromAttr
       CONFIG_REPORT_BATTERY
     );
-    if (node.activeEndpoints[genPowerCfgEndpoint].deviceId !=
-        ZHA_DEVICE_ID.SMART_PLUG) {
+    if (node.isBatteryPowered()) {
       const attrBP = 'batteryPercentageRemaining';
       this.addProperty(
         node,                     // device
