@@ -408,6 +408,10 @@ class ZigbeeNode extends Device {
            this.powerSource != POWERSOURCE.BATTERY;
   }
 
+  isBatteryPowered() {
+    return this.powerSource == POWERSOURCE.BATTERY;
+  }
+
   endpointHasZhaInputClusterIdHex(endpoint, clusterIdHex) {
     if (endpoint.profileId == PROFILE_ID.ZHA_HEX ||
         endpoint.profileId == PROFILE_ID.ZLL_HEX) {

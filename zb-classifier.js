@@ -1033,8 +1033,7 @@ class ZigbeeClassifier {
 
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
     let attr = 'batteryVoltage';
-    if (node.activeEndpoints[genPowerCfgEndpoint].deviceId ==
-        ZHA_DEVICE_ID.SMART_PLUG) {
+    if (node.isMainsPowered()) {
       attr = 'mainsVoltage';
     }
     this.addProperty(
@@ -1056,6 +1055,31 @@ class ZigbeeClassifier {
       'parseNumericTenthsAttr',       // parseValueFromAttr
       CONFIG_REPORT_BATTERY
     );
+    if (node.isBatteryPowered()) {
+      const attrBP = 'batteryPercentageRemaining';
+      this.addProperty(
+        node,                     // device
+        attrBP,                   // name
+        {// property description
+          label: 'Battery Percentage Remaining',
+          type: 'number',
+          unit: 'percent',
+          minimum: 0,
+          maximum: 100,
+          multipleOf: 0.5,
+          readOnly: true,
+          visible: !!node.driver.config.showBattery,
+        },
+        PROFILE_ID.ZHA,           // profileId
+        genPowerCfgEndpoint,      // endpoint
+        CLUSTER_ID.GENPOWERCFG,   // clusterId
+        attrBP,                   // attr
+        '',                       // setAttrFromValue
+        'parseHalfPercentAttr',   // parseValueFromAttr
+        null,                     // configReport - use device internal settings
+        null                      // defaultValue
+      );
+    }
   }
 
   addTemperatureSensorProperty(node, msTemperatureEndpoint) {
