@@ -1058,10 +1058,10 @@ class ZigbeeClassifier {
     );
     if (node.activeEndpoints[genPowerCfgEndpoint].deviceId !=
         ZHA_DEVICE_ID.SMART_PLUG) {
-      const attr_bp = 'batteryPercentageRemaining';
+      const attrBP = 'batteryPercentageRemaining';
       this.addProperty(
         node,                     // device
-        attr_bp,                  // name
+        attrBP,                   // name
         {// property description
           label: 'Battery Percentage Remaining',
           type: 'number',
@@ -1075,7 +1075,7 @@ class ZigbeeClassifier {
         PROFILE_ID.ZHA,           // profileId
         genPowerCfgEndpoint,      // endpoint
         CLUSTER_ID.GENPOWERCFG,   // clusterId
-        attr_bp,                  // attr
+        attrBP,                   // attr
         '',                       // setAttrFromValue
         'parseHalfPercentAttr',   // parseValueFromAttr
         null,                     // configReport - use device internal settings
