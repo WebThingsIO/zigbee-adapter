@@ -1091,8 +1091,9 @@ class ZigbeeNode extends Device {
     property.setCachedValue(level);
     this.notifyPropertyChanged(property);
 
-    let moveMode = property.value > level; // Move down if new value is lower
-    this.handleButtonMoveCommand(property, moveMode, rate, false);
+    // TODO: handle this as properly as move property.
+    // let moveMode = property.value > level; // Move down if new value is lower
+    // this.handleButtonMoveCommand(property, moveMode, rate, false);
   }
 
   handleButtonMoveCommand(property, moveMode, rate, offAtZero) {

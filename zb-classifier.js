@@ -2205,18 +2205,34 @@ class ZigbeeClassifier {
         // endpoint 1 of the RC 110 also controls scenes.
         // The driver treats the scene buttons as level property. Each scene
         // produces a unique level value which is mapped here.
-        const buttonOffset = 2;
-        const mapping = [2, 52, 102, 152, 194, 254];
-        let eventMappings = {};
-        levelProperty.buttonIndex = buttonOffset;
-        for (const id in mapping) {
-          let level = mapping[id];
-          eventMappings[`${level + buttonOffset}-pressed`] = {
+        levelProperty.buttonIndex = 2;
+        levelProperty.maximum = 256;
+        this.addEvents(node, {
+          [`4-pressed`]: {
             '@type': 'PressedEvent',
-            description: `Scene ${id + 1} activated`,
-          }
-        }
-        this.addEvents(eventMappings);
+            description: `Scene 1`,
+          },
+          [`54-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `Scene 2`,
+          },
+          [`104-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `Scene 3`,
+          },
+          [`154-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `Scene 4`,
+          },
+          [`196-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `Scene 5`,
+          },
+          [`256-pressed`]: {
+            '@type': 'PressedEvent',
+            description: `Scene 6`,
+          },
+        });
       }
 
       onOffProperty.buttonIndex = 1;
