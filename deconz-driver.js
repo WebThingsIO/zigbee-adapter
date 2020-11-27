@@ -644,7 +644,7 @@ class DeconzDriver extends ZigbeeDriver {
       console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
                     `,  addr: ${addr}`);
     } else if (MAC_STATUS.hasOwnProperty(status)) {
-      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
+      console.error(`Confirm Status: ${status}: ${MAC_STATUS[status]}`,
                     `,  addr: ${addr}`);
     } else {
       console.error(`Confirm Status: ${status}: unknown`,
