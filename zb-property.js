@@ -432,18 +432,22 @@ class ZigbeeProperty extends Property {
       const multiplierProperty = this.device.findProperty('_counterMul');
       if (multiplierProperty && multiplierProperty.value) {
         this.multiplier = multiplierProperty.value;
+      } else {
+        this.divisor = 1;
       }
     }
     if (!this.hasOwnProperty('divisor')) {
       const divisorProperty = this.device.findProperty('_counterDiv');
       if (divisorProperty && divisorProperty.value) {
         this.divisor = divisorProperty.value;
+      } else {
+        this.divisor = 1000;
       }
     }
 
     let counter = 0;
     if (this.multiplier && this.divisor) {
-      const rawValue = attrEntry.attrData;
+      const rawValue = parseInt(attrEntry.attrData);
       counter = rawValue * this.multiplier / this.divisor;
     }
     return [counter, `${counter}`];
