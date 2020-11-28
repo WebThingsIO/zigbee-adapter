@@ -993,6 +993,16 @@ class ZigbeeNode extends Device {
             this.notifyEvent(`${button}-longPressed`);
             return;
           }
+          case 'moveToLevelWithOnOff': { // level / scene property
+            this.handleButtonMoveToLevelWithOnOffCommand(
+              property,
+              frame.zcl.payload.level,
+              frame.zcl.payload.transtime);
+
+            const button = property.buttonIndex + frame.zcl.payload.level;
+            this.notifyEvent(`${button}-pressed`);
+            return;
+          }
           case 'move': { // level/scene property
             this.handleButtonMoveCommand(property,
                                          frame.zcl.payload.movemode,
@@ -1029,15 +1039,6 @@ class ZigbeeNode extends Device {
               this.heldButton = null;
             }
             return;
-          case 'moveToLevelWithOnOff': { // level / scene property
-            this.handleButtonMoveToLevelWithOnOffCommand(property,
-              frame.zcl.payload.level,
-              frame.zcl.payload.transtime)
-
-            const button = property.buttonIndex + frame.zcl.payload.level;
-            this.notifyEvent(`${button}-pressed`);
-            return;
-          }
         }
       }
     }
@@ -1078,10 +1079,10 @@ class ZigbeeNode extends Device {
 
   handleButtonMoveToLevelWithOnOffCommand(property, level, rate) {
     DEBUG && console.log('handleButtonMoveToLevelWithOnOffCommand:',
-                          this.addr64,
-                          'property:', property.name,
-                          'level:', level,
-                          'rate:', rate);
+                         this.addr64,
+                         'property:', property.name,
+                         'level:', level,
+                         'rate:', rate);
 
     if (this.onOffProperty && !this.onOffProperty.value) {
       // onOff Property was off - turn it on
@@ -1091,7 +1092,7 @@ class ZigbeeNode extends Device {
     property.setCachedValue(level);
     this.notifyPropertyChanged(property);
 
-    // TODO: handle this as properly as move property.
+    // TODO: handle this properly as move property.
     // let moveMode = property.value > level; // Move down if new value is lower
     // this.handleButtonMoveCommand(property, moveMode, rate, false);
   }
