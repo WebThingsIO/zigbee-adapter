@@ -2134,8 +2134,8 @@ class ZigbeeClassifier {
     node['@type'] = ['PushButton'];
 
     for (const idx in genLevelCtrlOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=',
-                  genLevelCtrlOutputEndpoints[idx]);
+      DEBUG && console.log('Processing endpoint', idx, '=',
+                           genLevelCtrlOutputEndpoints[idx]);
       const suffix = (idx == 0) ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
@@ -2205,6 +2205,7 @@ class ZigbeeClassifier {
         // endpoint 1 of the RC 110 also controls scenes.
         // The driver treats the scene buttons as level property. Each scene
         // produces a unique level value which is mapped here.
+        DEBUG && console.log('Adding Scene Events');
         levelProperty.buttonIndex = 2;
         levelProperty.maximum = 256;
         const eventCodes = [2, 52, 102, 153, 194, 254];
