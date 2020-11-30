@@ -568,7 +568,7 @@ const MODEL_IDS = {
         endpoint: 1,
         clusterId: CLUSTER_ID.SSIASZONE,
         attr: '',
-        mask: ZONE_STATUS.ALARM_MASK
+        mask: ZONE_STATUS.ALARM_MASK,
       },
       tamper: {
         descr: {
@@ -582,7 +582,7 @@ const MODEL_IDS = {
         endpoint: 1,
         clusterId: CLUSTER_ID.SSIASZONE,
         attr: '',
-        mask: ZONE_STATUS.TAMPER_MASK
+        mask: ZONE_STATUS.TAMPER_MASK,
       },
       lowBattery: {
         descr: {
@@ -596,7 +596,7 @@ const MODEL_IDS = {
         endpoint: 1,
         clusterId: CLUSTER_ID.SSIASZONE,
         attr: '',
-        mask: ZONE_STATUS.LOW_BATTERY_MASK
+        mask: ZONE_STATUS.LOW_BATTERY_MASK,
       },
     },
   },
