@@ -647,18 +647,6 @@ class ZigbeeProperty extends Property {
   }
 
   /**
-   * @method parseZoneStatusAttr
-   *
-   * Converts a bitmask zone status attribute into the true or false.
-   */
-  parseZoneStatusAttr(attrEntry) {
-    const alarm = attrEntry.attrData & 0b00000011;
-    return [
-      alarm, `${alarm} (${attrEntry.attrData})`,
-    ];
-  }
-
-  /**
    * @method parseOnOffAttr
    *
    * Converts the ZCL 'onOff' attribute (a boolean) into the 'on' property
