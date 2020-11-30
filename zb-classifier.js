@@ -908,7 +908,7 @@ class ZigbeeClassifier {
       PROFILE_ID.ZHA,                   // profileId
       seMeteringEndpoint,               // endpoint
       CLUSTER_ID.SEMETERING,            // clusterId
-      '', // attr
+      'currentSummDeliveredMultiplier', // attr
       '',                               // setAttrFromValue
       'parseNumericAttr',               // parseValueFromAttr
       null,                             // configReport
@@ -924,7 +924,7 @@ class ZigbeeClassifier {
       PROFILE_ID.ZHA,                 // profileId
       seMeteringEndpoint,             // endpoint
       CLUSTER_ID.SEMETERING,          // clusterId
-      '',  // attr
+      'currentSummDeliveredDivisor',  // attr
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
       null,                           // configReport
@@ -941,7 +941,7 @@ class ZigbeeClassifier {
         '@type': 'InstantaneousPowerProperty',
         label: 'Total Energy',
         type: 'number',
-        unit: 'kilowatt',
+        unit: 'watt',
         readOnly: true,
       },
       PROFILE_ID.ZHA,                     // profileId
@@ -950,7 +950,7 @@ class ZigbeeClassifier {
       'currentSummDelivered',             // attr
       '',                                 // setAttrFromValue
       'parseSeCurrentSummDeliveredAttr',  // parseValueFromAttr
-      CONFIG_REPORT_POWER
+      CONFIG_REPORT_MODE
     );
   }
 
