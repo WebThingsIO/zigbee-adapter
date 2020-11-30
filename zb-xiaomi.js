@@ -476,6 +476,120 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.plug.maeu01': {
+    name: 'smartplug',
+    '@type': [
+      'SmartPlug',
+      'EnergyMonitor',
+      'OnOffSwitch',
+      'MultiLevelSensor',
+    ],
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENONOFF_HEX,
+          CLUSTER_ID.SEMETERING_HEX,
+          CLUSTER_ID.HAELECTRICAL_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      switch: {
+        descr: {
+          '@type': 'OnOffProperty',
+          label: 'On/Off',
+          type: 'boolean',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENONOFF,
+        attr: 'onOff',
+        parseValueFromAttr: 'parseOnOffAttr',
+      },
+      counter: {
+        descr: {
+          '@type': 'InstantaneousPowerProperty',
+          label: 'Energy Total',
+          type: 'number',
+          unit: 'watt',
+          description: 'Total consumed energy',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SEMETERING,
+        attr: 'currentSummDelivered',
+        parseValueFromAttr: 'parseUInt48NumericAttr',
+      },
+      instPower: {
+        descr: {
+          '@type': 'InstantaneousPowerProperty',
+          label: 'Power',
+          type: 'number',
+          unit: 'watt',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.HAELECTRICAL,
+        attr: 'activePower',
+        value: 0,
+        parseValueFromAttr: 'parseNumericTenthsAttr',
+      },
+    },
+  },
+  'lumi.sensor_wleak.aq1': {
+    name: 'water-sensor',
+    '@type': ['LeakSensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENPOWERCFG_HEX,
+          CLUSTER_ID.SSIASZONE_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      waterLeak: {
+        descr: {
+          '@type': 'LeakProperty',
+          label: 'Water Leak',
+          type: 'boolean',
+          description: 'Water Leak detected',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: 'zoneStatus',
+        value: 0,
+        parseValueFromAttr: 'parseZoneStatusAttr',
+      },
+      battery: {
+        descr: {
+          '@type': 'LevelProperty',
+          label: 'Battery',
+          type: 'number',
+          unit: 'percent',
+          description: 'Remaining Battery percentage',
+          minimum: 0,
+          maximum: 100,
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENPOWERCFG,
+        attr: 'batteryPercentageRemaining',
+        value: 0,
+        parseValueFromAttr: 'parseLevelAttr',
+      },
+    },
+  },
 };
 
 const MODEL_IDS_MAP = {
