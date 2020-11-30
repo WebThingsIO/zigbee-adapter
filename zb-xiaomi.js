@@ -20,6 +20,7 @@ const {
   CLUSTER_ID,
   PROFILE_ID,
   POWERSOURCE,
+  ZONE_STATUS,
 } = require('./zb-constants');
 
 // The following github repository has a bunch of useful information
@@ -506,7 +507,22 @@ const MODEL_IDS = {
         endpoint: 1,
         clusterId: CLUSTER_ID.GENONOFF,
         attr: 'onOff',
+        setAttrFromValue: 'setOnOffValue',
         parseValueFromAttr: 'parseOnOffAttr',
+      },
+      instantaneousPower: {
+        descr: {
+          '@type': 'InstantaneousPowerProperty',
+          label: 'Power',
+          type: 'number',
+          unit: 'watt',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.HAELECTRICAL,
+        attr: 'activePower',
+        parseValueFromAttr: 'parseNumericTenthsAttr',
       },
       counter: {
         descr: {
@@ -522,21 +538,6 @@ const MODEL_IDS = {
         clusterId: CLUSTER_ID.SEMETERING,
         attr: 'currentSummDelivered',
         parseValueFromAttr: 'parseUInt48NumericAttr',
-      },
-      instPower: {
-        descr: {
-          '@type': 'InstantaneousPowerProperty',
-          label: 'Power',
-          type: 'number',
-          unit: 'watt',
-          readOnly: true,
-        },
-        profileId: PROFILE_ID.ZHA,
-        endpoint: 1,
-        clusterId: CLUSTER_ID.HAELECTRICAL,
-        attr: 'activePower',
-        value: 0,
-        parseValueFromAttr: 'parseNumericTenthsAttr',
       },
     },
   },
@@ -566,27 +567,36 @@ const MODEL_IDS = {
         profileId: PROFILE_ID.ZHA,
         endpoint: 1,
         clusterId: CLUSTER_ID.SSIASZONE,
-        attr: 'zoneStatus',
-        value: 0,
-        parseValueFromAttr: 'parseZoneStatusAttr',
+        attr: '',
+        mask: ZONE_STATUS.ALARM_MASK
       },
-      battery: {
+      tamper: {
         descr: {
-          '@type': 'LevelProperty',
-          label: 'Battery',
-          type: 'number',
-          unit: 'percent',
-          description: 'Remaining Battery percentage',
-          minimum: 0,
-          maximum: 100,
+          '@type': 'BooleanProperty',
+          label: 'Tamper',
+          type: 'boolean',
+          description: 'Tamper',
           readOnly: true,
         },
         profileId: PROFILE_ID.ZHA,
         endpoint: 1,
-        clusterId: CLUSTER_ID.GENPOWERCFG,
-        attr: 'batteryPercentageRemaining',
-        value: 0,
-        parseValueFromAttr: 'parseLevelAttr',
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: '',
+        mask: ZONE_STATUS.TAMPER_MASK
+      },
+      lowBattery: {
+        descr: {
+          '@type': 'BooleanProperty',
+          label: 'Low Battery',
+          type: 'boolean',
+          description: 'Low Battery',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: '',
+        mask: ZONE_STATUS.LOW_BATTERY_MASK
       },
     },
   },
@@ -655,6 +665,11 @@ class XiaomiFamily extends ZigbeeFamily {
               xiaomiProperty.setAttrFromValue || '',
               xiaomiProperty.parseValueFromAttr || ''
             );
+
+            if (xiaomiProperty.hasOwnProperty('mask')) {
+              property.mask = xiaomiProperty.mask;
+            }
+
             property.configReportNeeded = false;
             property.initialReadNeeded = false;
 
