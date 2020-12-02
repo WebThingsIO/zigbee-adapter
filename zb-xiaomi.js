@@ -483,7 +483,6 @@ const MODEL_IDS = {
       'SmartPlug',
       'EnergyMonitor',
       'OnOffSwitch',
-      'MultiLevelSensor',
     ],
     activeEndpoints: {
       1: {
