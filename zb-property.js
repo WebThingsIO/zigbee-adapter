@@ -580,6 +580,17 @@ class ZigbeeProperty extends Property {
   }
 
   /**
+   * @method parseUInt48NumericAttr
+   *
+   * Converts an UInt48 into a number. UInt48 is transferred as
+   * [ uint16, uint32 ]
+   */
+  parseUInt48NumericAttr(attrEntry) {
+    const value = Number(attrEntry.attrData[0]) << 31 | attrEntry.attrData[1];
+    return [value, `${value}`];
+  }
+
+  /**
    * @method parseNumericTenthsAttr
    *
    * Converts generic numeric attributes in a number, and divides

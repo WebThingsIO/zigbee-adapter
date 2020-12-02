@@ -20,6 +20,7 @@ const {
   CLUSTER_ID,
   PROFILE_ID,
   POWERSOURCE,
+  ZONE_STATUS,
 } = require('./zb-constants');
 
 // The following github repository has a bunch of useful information
@@ -476,6 +477,127 @@ const MODEL_IDS = {
       },
     },
   },
+  'lumi.plug.maeu01': {
+    name: 'smartplug',
+    '@type': [
+      'SmartPlug',
+      'EnergyMonitor',
+      'OnOffSwitch',
+    ],
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENONOFF_HEX,
+          CLUSTER_ID.SEMETERING_HEX,
+          CLUSTER_ID.HAELECTRICAL_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      switch: {
+        descr: {
+          '@type': 'OnOffProperty',
+          label: 'On/Off',
+          type: 'boolean',
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.GENONOFF,
+        attr: 'onOff',
+        setAttrFromValue: 'setOnOffValue',
+        parseValueFromAttr: 'parseOnOffAttr',
+      },
+      instantaneousPower: {
+        descr: {
+          '@type': 'InstantaneousPowerProperty',
+          label: 'Power',
+          type: 'number',
+          unit: 'watt',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.HAELECTRICAL,
+        attr: 'activePower',
+        parseValueFromAttr: 'parseNumericTenthsAttr',
+      },
+      counter: {
+        descr: {
+          label: 'Energy Total',
+          type: 'number',
+          unit: 'watt',
+          description: 'Total consumed energy',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SEMETERING,
+        attr: 'currentSummDelivered',
+        parseValueFromAttr: 'parseUInt48NumericAttr',
+      },
+    },
+  },
+  'lumi.sensor_wleak.aq1': {
+    name: 'water-sensor',
+    '@type': ['LeakSensor'],
+    powerSource: POWERSOURCE.BATTERY,
+    activeEndpoints: {
+      1: {
+        profileId: PROFILE_ID.ZHA_HEX,
+        inputClusters: [
+          CLUSTER_ID.GENPOWERCFG_HEX,
+          CLUSTER_ID.SSIASZONE_HEX,
+        ],
+        outputClusters: [],
+      },
+    },
+    properties: {
+      waterLeak: {
+        descr: {
+          '@type': 'LeakProperty',
+          label: 'Water Leak',
+          type: 'boolean',
+          description: 'Water Leak detected',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: '',
+        mask: ZONE_STATUS.ALARM_MASK,
+      },
+      tamper: {
+        descr: {
+          '@type': 'BooleanProperty',
+          label: 'Tamper',
+          type: 'boolean',
+          description: 'Tamper',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: '',
+        mask: ZONE_STATUS.TAMPER_MASK,
+      },
+      lowBattery: {
+        descr: {
+          '@type': 'BooleanProperty',
+          label: 'Low Battery',
+          type: 'boolean',
+          description: 'Low Battery',
+          readOnly: true,
+        },
+        profileId: PROFILE_ID.ZHA,
+        endpoint: 1,
+        clusterId: CLUSTER_ID.SSIASZONE,
+        attr: '',
+        mask: ZONE_STATUS.LOW_BATTERY_MASK,
+      },
+    },
+  },
 };
 
 const MODEL_IDS_MAP = {
@@ -541,6 +663,11 @@ class XiaomiFamily extends ZigbeeFamily {
               xiaomiProperty.setAttrFromValue || '',
               xiaomiProperty.parseValueFromAttr || ''
             );
+
+            if (xiaomiProperty.hasOwnProperty('mask')) {
+              property.mask = xiaomiProperty.mask;
+            }
+
             property.configReportNeeded = false;
             property.initialReadNeeded = false;
 
