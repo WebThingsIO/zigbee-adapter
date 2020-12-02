@@ -526,7 +526,6 @@ const MODEL_IDS = {
       },
       counter: {
         descr: {
-          '@type': 'InstantaneousPowerProperty',
           label: 'Energy Total',
           type: 'number',
           unit: 'watt',
