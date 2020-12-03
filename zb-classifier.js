@@ -2257,6 +2257,7 @@ class ZigbeeClassifier {
           if (endpoint === 1) {
             this.addSceneEvents(levelProperty, node);
           }
+          break;
       }
     }
   }
