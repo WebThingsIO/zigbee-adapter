@@ -200,31 +200,44 @@ class ZigbeeNode extends Device {
     dict.activeEndpoints = cloneDeep(this.activeEndpoints);
     dict.isCoordinator = this.isCoordinator;
     dict.rebindRequired = this.rebindRequired;
+
     for (const field of DEVICE_INFO_FIELDS) {
       if (this.hasOwnProperty(field)) {
         dict[field] = this[field];
       }
     }
+
     for (const endpointNum in dict.activeEndpoints) {
       const endpoint = dict.activeEndpoints[endpointNum];
       let clusterId;
       let idx;
       let zclCluster;
+
       for (idx in endpoint.inputClusters) {
         clusterId = parseInt(endpoint.inputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
+
         if (zclCluster) {
           endpoint.inputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
+
       for (idx in endpoint.outputClusters) {
         clusterId = parseInt(endpoint.outputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
+
         if (zclCluster) {
           endpoint.outputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
     }
+
+    for (const prop of Object.values(dict.properties)) {
+      if (!prop.visible) {
+        delete dict.properties[prop.name];
+      }
+    }
+
     return dict;
   }
 
