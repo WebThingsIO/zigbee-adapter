@@ -1,6 +1,6 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "description": "Zigbee adapter plugin for WebThings Gateway",
   "author": "WebThingsIO",
   "main": "index.js",
