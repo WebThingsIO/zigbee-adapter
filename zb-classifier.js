@@ -1032,29 +1032,51 @@ class ZigbeeClassifier {
   }
 
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
-    let attr = 'batteryVoltage';
     if (node.isMainsPowered()) {
-      attr = 'mainsVoltage';
+      this.addProperty(
+        node,                           // device
+        'mainsVoltage',                 // name
+        {// property description
+          '@type': 'VoltageProperty',
+          label: 'Mains Voltage',
+          type: 'number',
+          unit: 'volt',
+          multipleOf: 0.1,
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        genPowerCfgEndpoint,            // endpoint
+        CLUSTER_ID.GENPOWERCFG,         // clusterId
+        'mainsVoltage',                 // attr
+        '',                             // setAttrFromValue
+        'parseNumericTenthsAttr',       // parseValueFromAttr
+        CONFIG_REPORT_BATTERY
+      );
     }
-    this.addProperty(
-      node,                           // device
-      'voltage',                      // name
-      {// property description
-        '@type': 'VoltageProperty',
-        label: 'Voltage',
-        type: 'number',
-        unit: 'volt',
-        multipleOf: 0.1,
-        readOnly: true,
-      },
-      PROFILE_ID.ZHA,                 // profileId
-      genPowerCfgEndpoint,            // endpoint
-      CLUSTER_ID.GENPOWERCFG,         // clusterId
-      attr,                           // attr
-      '',                             // setAttrFromValue
-      'parseNumericTenthsAttr',       // parseValueFromAttr
-      CONFIG_REPORT_BATTERY
-    );
+
+    // Bit 7 indicates the backup power source, i.e. battery
+    if (node.isBatteryPowered() || node.powerSource & 0x80 !== 0) {
+      this.addProperty(
+        node,                           // device
+        'batteryVoltage',               // name
+        {// property description
+          '@type': 'VoltageProperty',
+          label: 'Battery Voltage',
+          type: 'number',
+          unit: 'volt',
+          multipleOf: 0.1,
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        genPowerCfgEndpoint,            // endpoint
+        CLUSTER_ID.GENPOWERCFG,         // clusterId
+        'batteryVoltage',               // attr
+        '',                             // setAttrFromValue
+        'parseNumericTenthsAttr',       // parseValueFromAttr
+        CONFIG_REPORT_BATTERY
+      );
+    }
+
     if (node.isBatteryPowered()) {
       const attrBP = 'batteryPercentageRemaining';
       this.addProperty(

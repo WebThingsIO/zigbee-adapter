@@ -417,8 +417,11 @@ class ZigbeeNode extends Device {
   }
 
   isMainsPowered() {
-    return this.powerSource != POWERSOURCE.UNKNOWN &&
-           this.powerSource != POWERSOURCE.BATTERY;
+    // Only take the lower 4 bits, as bit 7 indicates the backup power source
+    const ps = this.powerSource & 0x0F;
+    return ps != POWERSOURCE.UNKNOWN &&
+           ps != POWERSOURCE.DC_SOURCE &&
+           ps != POWERSOURCE.BATTERY;
   }
 
   isBatteryPowered() {
