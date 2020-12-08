@@ -1055,8 +1055,19 @@ class ZigbeeClassifier {
       );
     }
 
+    // Some devices report that they have a power source of "unknown" but are
+    // actually battery powered.
+    const hasBattery = [
+      '1116-S',   // Iris V3 Contact Sensor
+      'motionv4', // SmartThings V4 Motion Sensor
+      'motionv5', // SmartThings V5 Motion Sensor
+      'multiv4',  // SmartThings V4 Multi Sensor
+      'tagv4',    // SmartThings V4 Arrival Sensor
+    ];
+
     // Bit 7 indicates the backup power source, i.e. battery
-    if (node.isBatteryPowered() || node.powerSource & 0x80 !== 0) {
+    if (node.isBatteryPowered() || node.powerSource & 0x80 !== 0 ||
+        hasBattery.includes(node.modelId)) {
       this.addProperty(
         node,                           // device
         'batteryVoltage',               // name
