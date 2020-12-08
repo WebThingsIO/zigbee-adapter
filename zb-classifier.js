@@ -174,6 +174,7 @@ const ZONE_TYPE_NAME = {
 // use the modelId to further classify them
 const ZONE_TYPE_ZERO = {
   multiv4: ZONE_TYPE_SWITCH,
+  motionv4: ZONE_TYPE_MOTION,
   motionv5: ZONE_TYPE_MOTION,
 };
 
