@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - v[0-9]+.[0-9]+.[0-9]+
 
 jobs:
   create-release:
@@ -89,7 +89,7 @@ jobs:
         upload_url: ${{ env.UPLOAD_URL }}
         asset_path: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz
         asset_name: zigbee-adapter-${{ env.RELEASE_VERSION }}-${{ matrix.platform }}-v${{ matrix.version }}.tgz
-        asset_content_type: application/zip
+        asset_content_type: application/gnutar
     - name: Upload Release Asset Checksum
       id: upload-release-asset-checksum
       uses: actions/upload-release-asset@v1.0.1
