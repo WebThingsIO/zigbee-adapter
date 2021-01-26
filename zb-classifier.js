@@ -2373,9 +2373,9 @@ class ZigbeeClassifier {
   }
 
   initHaSmartPlug(node,
-              haElectricalEndpoint,
-              seMeteringEndpoint,
-              genLevelCtrlEndpoint) {
+                  haElectricalEndpoint,
+                  seMeteringEndpoint,
+                  genLevelCtrlEndpoint) {
     node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
