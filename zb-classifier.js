@@ -936,9 +936,6 @@ class ZigbeeClassifier {
       node,                           // device
       'counter',                      // name
       {// property description
-        // even though the content is not instantaneous power, this is the only
-        // property type with watt as unit
-        '@type': 'InstantaneousPowerProperty',
         label: 'Total Energy',
         type: 'number',
         unit: 'watt',
