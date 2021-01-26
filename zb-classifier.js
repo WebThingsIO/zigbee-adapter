@@ -898,6 +898,60 @@ class ZigbeeClassifier {
     );
   }
 
+  addSeCurrentSummDeliveredProperty(node, seMeteringEndpoint) {
+    this.addProperty(
+      node,                             // device
+      '_counterMul',                    // name
+      {// property description
+        type: 'number',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                   // profileId
+      seMeteringEndpoint,               // endpoint
+      CLUSTER_ID.SEMETERING,            // clusterId
+      'currentSummDeliveredMultiplier', // attr
+      '',                               // setAttrFromValue
+      'parseNumericAttr',               // parseValueFromAttr
+      null,                             // configReport
+      1                                 // defaultValue
+    );
+    this.addProperty(
+      node,                           // device
+      '_counterDiv',                  // name
+      {// property description
+        type: 'number',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                 // profileId
+      seMeteringEndpoint,             // endpoint
+      CLUSTER_ID.SEMETERING,          // clusterId
+      'currentSummDeliveredDivisor',  // attr
+      '',                             // setAttrFromValue
+      'parseNumericAttr',             // parseValueFromAttr
+      null,                           // configReport
+      // use a default of 1000 for now until
+      // new attribute definitions are available
+      1000                            // defaultValue
+    );
+    this.addProperty(
+      node,                           // device
+      'counter',                      // name
+      {// property description
+        label: 'Total Energy',
+        type: 'number',
+        unit: 'watt',
+        readOnly: true,
+      },
+      PROFILE_ID.ZHA,                     // profileId
+      seMeteringEndpoint,                 // endpoint
+      CLUSTER_ID.SEMETERING,              // clusterId
+      'currentSummDelivered',             // attr
+      '',                                 // setAttrFromValue
+      'parseSeCurrentSummDeliveredAttr',  // parseValueFromAttr
+      CONFIG_REPORT_MODE
+    );
+  }
+
   addSeInstantaneousPowerProperty(node, seMeteringEndpoint) {
     this.addProperty(
       node,                           // device
@@ -1890,7 +1944,10 @@ class ZigbeeClassifier {
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
                !isZhaLight) {
-      this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
+      this.initHaSmartPlug(node,
+                           haElectricalEndpoint,
+                           seMeteringEndpoint,
+                           genLevelCtrlEndpoint);
     } else if (seMeteringEndpoint &&
                !lightLinkEndpoint &&
                !node.lightingColorCtrlEndpoint &&
@@ -2315,7 +2372,10 @@ class ZigbeeClassifier {
     this.addEvents(node, eventMappings);
   }
 
-  initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint) {
+  initHaSmartPlug(node,
+                  haElectricalEndpoint,
+                  seMeteringEndpoint,
+                  genLevelCtrlEndpoint) {
     node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
@@ -2330,10 +2390,16 @@ class ZigbeeClassifier {
         node['@type'].push('MultiLevelSwitch');
       }
     }
+
     this.addHaInstantaneousPowerProperty(node, haElectricalEndpoint);
     this.addHaCurrentProperty(node, haElectricalEndpoint);
     this.addHaFrequencyProperty(node, haElectricalEndpoint);
     this.addHaVoltageProperty(node, haElectricalEndpoint);
+
+    if (seMeteringEndpoint) {
+      // Ha SmartPlugs might have seMetering endpoint with energy counter
+      this.addSeCurrentSummDeliveredProperty(node, seMeteringEndpoint);
+    }
   }
 
   initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
@@ -2345,6 +2411,7 @@ class ZigbeeClassifier {
       node['@type'].push('MultiLevelSwitch');
     }
     this.addSeInstantaneousPowerProperty(node, seMeteringEndpoint);
+    this.addSeCurrentSummDeliveredProperty(node, seMeteringEndpoint);
   }
 
   initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint) {
