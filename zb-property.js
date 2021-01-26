@@ -265,7 +265,7 @@ class ZigbeeProperty extends Property {
 
     // We set the min/max here so that updated values get sent to the
     // gateway when we do the propertyChanged notification.
-    if (!this.hasOwnProperty('maximum')) {
+    if (typeof this.maximum !== 'number') {
       const minColorTempProperty = this.device.findProperty('_minTemperature');
       if (minColorTempProperty && minColorTempProperty.value) {
         this.minimumMireds = minColorTempProperty.value; // mireds
@@ -273,7 +273,7 @@ class ZigbeeProperty extends Property {
         thingDescriptionUpdated = true;
       }
     }
-    if (!this.hasOwnProperty('minimum')) {
+    if (typeof this.minimum !== 'number') {
       const maxColorTempProperty = this.device.findProperty('_maxTemperature');
       if (maxColorTempProperty && maxColorTempProperty.value) {
         this.maximumMireds = maxColorTempProperty.value; // mireds
@@ -518,13 +518,13 @@ class ZigbeeProperty extends Property {
    * Parses the temperature attribute as a property.
    */
   parseIlluminanceMeasurementAttr(attrEntry) {
-    if (!this.hasOwnProperty('minimum')) {
+    if (typeof this.minimum !== 'number') {
       const minProperty = this.device.findProperty('_minIlluminance');
       if (minProperty && minProperty.value) {
         this.minimum = this.attrToIlluminance(minProperty.value);
       }
     }
-    if (!this.hasOwnProperty('maximum')) {
+    if (typeof this.maximum !== 'number') {
       const maxProperty = this.device.findProperty('_maxIlluminance');
       if (maxProperty && maxProperty.value) {
         this.maximum = this.attrToIlluminance(maxProperty.value);
@@ -535,10 +535,10 @@ class ZigbeeProperty extends Property {
     // A measuredValue of 0 is interpreted as "too low to measure".
     if (measuredValue > 0) {
       illuminance = Math.pow(10, (measuredValue - 1) / 10000);
-      if (this.hasOwnProperty('minimum')) {
+      if (typeof this.minimum === 'number') {
         illuminance = Math.max(this.minimum, illuminance);
       }
-      if (this.hasOwnProperty('maximum')) {
+      if (typeof this.maximum === 'number') {
         illuminance = Math.min(this.maximum, illuminance);
       }
     }
@@ -575,13 +575,13 @@ class ZigbeeProperty extends Property {
    * Parses the temperature attribute as a property.
    */
   parseTemperatureMeasurementAttr(attrEntry) {
-    if (!this.hasOwnProperty('minimum')) {
+    if (typeof this.minimum !== 'number') {
       const minTempProperty = this.device.findProperty('_minTemp');
       if (minTempProperty && minTempProperty.value) {
         this.minimum = this.attrToTemperature(minTempProperty.value);
       }
     }
-    if (!this.hasOwnProperty('maximum')) {
+    if (typeof this.maximum !== 'number') {
       const maxTempProperty = this.device.findProperty('_maxTemp');
       if (maxTempProperty && maxTempProperty.value) {
         this.maximum = this.attrToTemperature(maxTempProperty.value);
@@ -589,10 +589,10 @@ class ZigbeeProperty extends Property {
     }
     const measuredValue = attrEntry.attrData;
     let temperature = this.attrToTemperature(measuredValue);
-    if (this.hasOwnProperty('minimum')) {
+    if (typeof this.minimum === 'number') {
       temperature = Math.max(this.minimum, temperature);
     }
-    if (this.hasOwnProperty('maximum')) {
+    if (typeof this.maximum === 'number') {
       temperature = Math.min(this.maximum, temperature);
     }
     return [temperature, `${temperature.toFixed(1)} (${measuredValue})`];
@@ -605,6 +605,17 @@ class ZigbeeProperty extends Property {
    */
   parseNumericAttr(attrEntry) {
     const value = attrEntry.attrData;
+    return [value, `${value}`];
+  }
+
+  /**
+   * @method parseUInt48NumericAttr
+   *
+   * Converts an UInt48 into a number. UInt48 is transferred as
+   * [ uint16, uint32 ]
+   */
+  parseUInt48NumericAttr(attrEntry) {
+    const value = Number(attrEntry.attrData[0]) << 31 | attrEntry.attrData[1];
     return [value, `${value}`];
   }
 
@@ -957,14 +968,14 @@ class ZigbeeProperty extends Property {
     // i.e. 6500K corresponds to a colorTempPhysicalMin = 153
     //      2700L corresponds to a colorTempPhysicalMax = 370
 
-    if (!this.hasOwnProperty('maximum')) {
+    if (typeof this.maximum !== 'number') {
       const minColorTempProperty = this.device.findProperty('_minTemperature');
       if (minColorTempProperty && minColorTempProperty.value) {
         this.minimumMireds = minColorTempProperty.value; // mireds
         this.maximum = Math.trunc(1000000 / this.minimumMireds);
       }
     }
-    if (!this.hasOwnProperty('minimum')) {
+    if (typeof this.minimum !== 'number') {
       const maxColorTempProperty = this.device.findProperty('_maxTemperature');
       if (maxColorTempProperty && maxColorTempProperty.value) {
         this.maximumMireds = maxColorTempProperty.value; // mireds
@@ -1205,7 +1216,7 @@ class ZigbeeProperty extends Property {
   }
 
   setMinimum(minimum) {
-    if (this.hasOwnProperty('minimum') && this.minimum == minimum) {
+    if (typeof this.minimum === 'number' && this.minimum == minimum) {
       // No change detected - ignore
       return;
     }
@@ -1214,7 +1225,7 @@ class ZigbeeProperty extends Property {
   }
 
   setMaximum(maximum) {
-    if (this.hasOwnProperty('maximum') && this.maximum == maximum) {
+    if (typeof this.maximum === 'number' && this.maximum == maximum) {
       // No change detected - ignore
       return;
     }

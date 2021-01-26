@@ -174,6 +174,7 @@ const ZONE_TYPE_NAME = {
 // use the modelId to further classify them
 const ZONE_TYPE_ZERO = {
   multiv4: ZONE_TYPE_SWITCH,
+  motionv4: ZONE_TYPE_MOTION,
   motionv5: ZONE_TYPE_MOTION,
 };
 
@@ -1086,29 +1087,62 @@ class ZigbeeClassifier {
   }
 
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
-    let attr = 'batteryVoltage';
     if (node.isMainsPowered()) {
-      attr = 'mainsVoltage';
+      this.addProperty(
+        node,                           // device
+        'mainsVoltage',                 // name
+        {// property description
+          '@type': 'VoltageProperty',
+          label: 'Mains Voltage',
+          type: 'number',
+          unit: 'volt',
+          multipleOf: 0.1,
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        genPowerCfgEndpoint,            // endpoint
+        CLUSTER_ID.GENPOWERCFG,         // clusterId
+        'mainsVoltage',                 // attr
+        '',                             // setAttrFromValue
+        'parseNumericTenthsAttr',       // parseValueFromAttr
+        CONFIG_REPORT_BATTERY
+      );
     }
-    this.addProperty(
-      node,                           // device
-      'voltage',                      // name
-      {// property description
-        '@type': 'VoltageProperty',
-        label: 'Voltage',
-        type: 'number',
-        unit: 'volt',
-        multipleOf: 0.1,
-        readOnly: true,
-      },
-      PROFILE_ID.ZHA,                 // profileId
-      genPowerCfgEndpoint,            // endpoint
-      CLUSTER_ID.GENPOWERCFG,         // clusterId
-      attr,                           // attr
-      '',                             // setAttrFromValue
-      'parseNumericTenthsAttr',       // parseValueFromAttr
-      CONFIG_REPORT_BATTERY
-    );
+
+    // Some devices report that they have a power source of "unknown" but are
+    // actually battery powered.
+    const hasBattery = [
+      '1116-S',   // Iris V3 Contact Sensor
+      'motionv4', // SmartThings V4 Motion Sensor
+      'motionv5', // SmartThings V5 Motion Sensor
+      'multiv4',  // SmartThings V4 Multi Sensor
+      'tagv4',    // SmartThings V4 Arrival Sensor
+    ];
+
+    // Bit 7 indicates the backup power source, i.e. battery
+    if (node.isBatteryPowered() || node.powerSource & 0x80 !== 0 ||
+        hasBattery.includes(node.modelId)) {
+      this.addProperty(
+        node,                           // device
+        'batteryVoltage',               // name
+        {// property description
+          '@type': 'VoltageProperty',
+          label: 'Battery Voltage',
+          type: 'number',
+          unit: 'volt',
+          multipleOf: 0.1,
+          readOnly: true,
+        },
+        PROFILE_ID.ZHA,                 // profileId
+        genPowerCfgEndpoint,            // endpoint
+        CLUSTER_ID.GENPOWERCFG,         // clusterId
+        'batteryVoltage',               // attr
+        '',                             // setAttrFromValue
+        'parseNumericTenthsAttr',       // parseValueFromAttr
+        CONFIG_REPORT_BATTERY
+      );
+    }
+
     if (node.isBatteryPowered()) {
       const attrBP = 'batteryPercentageRemaining';
       this.addProperty(
@@ -2191,8 +2225,8 @@ class ZigbeeClassifier {
     node['@type'] = ['PushButton'];
 
     for (const idx in genLevelCtrlOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=',
-                  genLevelCtrlOutputEndpoints[idx]);
+      DEBUG && console.log('Processing endpoint', idx, '=',
+                           genLevelCtrlOutputEndpoints[idx]);
       const suffix = (idx == 0) ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
@@ -2310,14 +2344,38 @@ class ZigbeeClassifier {
             },
           });
           break;
+        case 'RC 110':
+          if (endpoint === 1) {
+            this.addSceneEvents(levelProperty, node);
+          }
+          break;
       }
     }
   }
 
+  addSceneEvents(levelProperty, node) {
+    // endpoint 1 of the RC 110 also controls scenes.
+    // The driver treats the scene buttons as level property. Each scene
+    // produces a unique level value which is mapped here.
+    DEBUG && console.log('Adding Scene Events');
+    levelProperty.buttonIndex = 2;
+    levelProperty.maximum = 256;
+    const eventCodes = [2, 52, 102, 153, 194, 254];
+    const eventMappings = {};
+    for (const id in eventCodes) {
+      const code = eventCodes[id];
+      eventMappings[`${code + 2}-pressed`] = {
+        '@type': 'PressedEvent',
+        description: `Scene ${parseInt(id) + 1}`,
+      };
+    }
+    this.addEvents(node, eventMappings);
+  }
+
   initHaSmartPlug(node,
-                  haElectricalEndpoint,
-                  seMeteringEndpoint,
-                  genLevelCtrlEndpoint) {
+              haElectricalEndpoint,
+              seMeteringEndpoint,
+              genLevelCtrlEndpoint) {
     node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);

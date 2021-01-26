@@ -200,31 +200,44 @@ class ZigbeeNode extends Device {
     dict.activeEndpoints = cloneDeep(this.activeEndpoints);
     dict.isCoordinator = this.isCoordinator;
     dict.rebindRequired = this.rebindRequired;
+
     for (const field of DEVICE_INFO_FIELDS) {
       if (this.hasOwnProperty(field)) {
         dict[field] = this[field];
       }
     }
+
     for (const endpointNum in dict.activeEndpoints) {
       const endpoint = dict.activeEndpoints[endpointNum];
       let clusterId;
       let idx;
       let zclCluster;
+
       for (idx in endpoint.inputClusters) {
         clusterId = parseInt(endpoint.inputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
+
         if (zclCluster) {
           endpoint.inputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
+
       for (idx in endpoint.outputClusters) {
         clusterId = parseInt(endpoint.outputClusters[idx], 16);
         zclCluster = zclId.clusterId.get(clusterId);
+
         if (zclCluster) {
           endpoint.outputClusters[idx] += ` - ${zclCluster.key}`;
         }
       }
     }
+
+    for (const prop of Object.values(dict.properties)) {
+      if (!prop.visible) {
+        delete dict.properties[prop.name];
+      }
+    }
+
     return dict;
   }
 
@@ -404,8 +417,11 @@ class ZigbeeNode extends Device {
   }
 
   isMainsPowered() {
-    return this.powerSource != POWERSOURCE.UNKNOWN &&
-           this.powerSource != POWERSOURCE.BATTERY;
+    // Only take the lower 4 bits, as bit 7 indicates the backup power source
+    const ps = this.powerSource & 0x0F;
+    return ps != POWERSOURCE.UNKNOWN &&
+           ps != POWERSOURCE.DC_SOURCE &&
+           ps != POWERSOURCE.BATTERY;
   }
 
   isBatteryPowered() {
@@ -993,6 +1009,16 @@ class ZigbeeNode extends Device {
             this.notifyEvent(`${button}-longPressed`);
             return;
           }
+          case 'moveToLevelWithOnOff': { // level / scene property
+            this.handleButtonMoveToLevelWithOnOffCommand(
+              property,
+              frame.zcl.payload.level,
+              frame.zcl.payload.transtime);
+
+            const button = property.buttonIndex + frame.zcl.payload.level;
+            this.notifyEvent(`${button}-pressed`);
+            return;
+          }
           case 'move': { // level/scene property
             this.handleButtonMoveCommand(property,
                                          frame.zcl.payload.movemode,
@@ -1065,6 +1091,26 @@ class ZigbeeNode extends Device {
     }
     this.handleButtonMoveCommand(property, moveMode, rate, true);
     // implies turn off if level reaches zero
+  }
+
+  handleButtonMoveToLevelWithOnOffCommand(property, level, rate) {
+    DEBUG && console.log('handleButtonMoveToLevelWithOnOffCommand:',
+                         this.addr64,
+                         'property:', property.name,
+                         'level:', level,
+                         'rate:', rate);
+
+    if (this.onOffProperty && !this.onOffProperty.value) {
+      // onOff Property was off - turn it on
+      this.handleButtonOnOffCommand(this.onOffProperty, true);
+    }
+
+    property.setCachedValue(level);
+    this.notifyPropertyChanged(property);
+
+    // TODO: handle this properly as move property.
+    // let moveMode = property.value > level; // Move down if new value is lower
+    // this.handleButtonMoveCommand(property, moveMode, rate, false);
   }
 
   handleButtonMoveCommand(property, moveMode, rate, offAtZero) {
@@ -1287,6 +1333,7 @@ class ZigbeeNode extends Device {
         case 'off':
         case 'offWithEffect':
         case 'moveWithOnOff':
+        case 'moveToLevelWithOnOff':
         case 'move':
         case 'stepWithOnOff':
         case 'step':
