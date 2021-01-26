@@ -92,6 +92,46 @@ const deconzSerialProber = new SerialProber({
   ],
 });
 
+// cloned from deconzSerialProber, just changing the probeCmd sequence
+// Assumes that if both probes could succeed, the first will have taken
+// ownership of the serial port before the 2nd is instantiated
+const deconzNewerFirmwareSerialProber = new SerialProber({
+  name: 'deConz',
+  allowAMASerial: false,
+  baudRate: 38400,
+  // deConz VERSION Command
+  probeCmd: [
+    0xc0,       // END - SLIP Framing
+    0x0d,       // VERSION Command
+    0x01,       // Sequence number
+    0x00,       // Reserved - set to zero
+    0x09, 0x00, // Frame length
+    0x00, 0x00, 0x00, 0x00, // additional VERSION payload / padding
+    0xe9, 0xff, // CRC
+    0xc0,       // END - SLIP framing
+  ],
+  probeRsp: [
+    0xc0,       // END - SLIP framing
+    0x0d,       // VERSION Command
+    0x01,       // Sequence NUmber
+    0x00,       // Reserved
+    0x09, 0x00, // Frame length
+    // This would normally be followed a 4 byte version code, CRC, and END
+    // but since we don't know what those will be we only match on the first
+    // part of the response.
+  ],
+  filter: [
+    {
+      vendorId: /0403/i,
+      productId: /6015/i,
+    },
+    {
+      vendorId: /1cf1/i,
+      productId: /0030/i,
+    },
+  ],
+});
+
 const cc2531SerialProber = new SerialProber({
   name: 'cc2531',
   baudRate: 115200,
@@ -122,6 +162,7 @@ const PROBERS = [
   xbeeSerialProber,
   deconzSerialProber,
   cc2531SerialProber,
+  deconzNewerFirmwareSerialProber,
 ];
 
 // Scan the serial ports looking for an XBee adapter.
@@ -183,6 +224,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       [xbeeSerialProber.param.name]: XBeeDriver,
       [deconzSerialProber.param.name]: DeconzDriver,
       [cc2531SerialProber.param.name]: ZStackDriver,
+      [deconzNewerFirmwareSerialProber.param.name]: DeconzDriver,
     };
     for (const match of matches) {
       new driver[match.prober.param.name](addonManager,
