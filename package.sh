@@ -14,7 +14,7 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-${NODE_VERSION/\.*/}"
 fi
 
-npm install --production
+npm ci --production
 
 shasum --algorithm 256 manifest.json package.json *.js LICENSE README.md > SHA256SUMS
 
