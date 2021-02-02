@@ -422,12 +422,12 @@ class ZigbeeProperty extends Property {
   }
 
   /**
-   * @method parseSeSummDeliveredAttr
+   * @method parseSeCurrentSummDeliveredAttr
    *
    * Converts the currentSummDelivered counter value stored in watts into
    * kilowatts for devices which support the seMetering cluster.
    */
-  parseSeSummDeliveredAttr(attrEntry) {
+  parseSeCurrentSummDeliveredAttr(attrEntry) {
     if (!this.hasOwnProperty('multiplier')) {
       const multiplierProperty = this.device.findProperty('_counterMul');
       if (multiplierProperty && multiplierProperty.value) {
