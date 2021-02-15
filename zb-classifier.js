@@ -338,7 +338,7 @@ class ZigbeeClassifier {
       '',                             // setAttrFromValue
       'parseNumericAttr',             // parseValueFromAttr
       null,                           // configReport
-      153                             // defaultValue (153 = 6500K)
+      153                             // defaultValue (153 = 6535K)
     );
     this.addProperty(
       node,                           // device
@@ -2132,6 +2132,9 @@ class ZigbeeClassifier {
             colorCapabilities |= COLOR_CAPABILITY.HUE_SAT;
           }
         }
+        if (ZHA_DEVICE_ID.isColorTemperatureLight(levelEndpoint.deviceId)) {
+          isColorTemperatureLight = true;
+        }
       }
     }
 
@@ -2155,14 +2158,12 @@ class ZigbeeClassifier {
           this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
         }
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
+      } else if (isColorTemperatureLight) {
+        this.addColorTemperatureProperty(node,
+                                         node.lightingColorCtrlEndpoint);
+        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+        node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
-        if (isColorTemperatureLight) {
-          // Color temperature is basically a specialized way of selecting
-          // a color, so we don't include this property with full-color
-          // bulbs.
-          this.addColorTemperatureProperty(node,
-                                           node.lightingColorCtrlEndpoint);
-        }
         this.addBrightnessProperty(node, genLevelCtrlEndpoint);
         node['@type'] = ['Light', 'OnOffSwitch'];
       }
