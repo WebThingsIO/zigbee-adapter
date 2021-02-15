@@ -362,6 +362,9 @@ const ZHA_DEVICE_ID = {
     return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT ||
            deviceId == ZHA_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
+  isColorTemperatureLight: function isColorTemperatureLight(deviceId) {
+    return deviceId == ZHA_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
+  },
 };
 
 // ZLL Device Id describes device IDs from the ZLL spec.
