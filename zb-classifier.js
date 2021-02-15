@@ -2158,17 +2158,14 @@ class ZigbeeClassifier {
           this.addColorXYProperty(node, node.lightingColorCtrlEndpoint);
         }
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
+      } else if (isColorTemperatureLight) {
+        this.addColorTemperatureProperty(node,
+                                         node.lightingColorCtrlEndpoint);
+        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+        node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
-        if (isColorTemperatureLight) {
-          this.addColorTemperatureProperty(node,
-                                           node.lightingColorCtrlEndpoint);
-          this.addBrightnessProperty(node, genLevelCtrlEndpoint);
-          node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
-        }
-        else {
-          this.addBrightnessProperty(node, genLevelCtrlEndpoint);
-          node['@type'] = ['Light', 'OnOffSwitch'];
-        }
+        this.addBrightnessProperty(node, genLevelCtrlEndpoint);
+        node['@type'] = ['Light', 'OnOffSwitch'];
       }
     } else {
       this.addLevelProperty(node, genLevelCtrlEndpoint);
