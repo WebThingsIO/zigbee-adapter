@@ -14,13 +14,7 @@ const BufferReader = require('buffer-reader');
 const BufferBuilder = require('buffer-builder');
 const Unpi = require('unpi');
 
-const {
-  Command,
-  FUNC,
-  SEND_FRAME,
-  WAIT_FRAME,
-  ZigbeeDriver,
-} = require('./index');
+const { Command, FUNC, SEND_FRAME, WAIT_FRAME, ZigbeeDriver } = require('./index');
 
 // const {
 //   DEBUG_flow,
@@ -30,9 +24,7 @@ const {
 //   DEBUG_slip,
 // } = require('../zb-debug').default;
 
-const {
-  PROFILE_ID,
-} = require('../zb-constants');
+const { PROFILE_ID } = require('../zb-constants');
 
 const cmdType = {
   POLL: 0,
@@ -84,13 +76,12 @@ const nvItems = {
   ZCD_NV_LOGICAL_TYPE: 0x0087,
 };
 
-const BEACON_MAX_DEPTH = 0x0F;
+const BEACON_MAX_DEPTH = 0x0f;
 const DEF_RADIUS = 2 * BEACON_MAX_DEPTH;
 
 let self;
 
 class ZStackDriver extends ZigbeeDriver {
-
   constructor(addonManager, manifest, portName, serialPort) {
     super(addonManager, manifest);
 
@@ -123,15 +114,16 @@ class ZStackDriver extends ZigbeeDriver {
     const frame = {
       type: cmdType.SREQ,
       subsys: 'SAPI',
-      cmd: 0x09,              // ZB_SYSTEM_RESET
+      cmd: 0x09, // ZB_SYSTEM_RESET
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME,
-                  { type: cmdType.AREQ,
-                    subsys: subSys.SYS,
-                    cmd: 0x80,
-                    waitRetryTimeout: 5000 }), // SYS_RESET_IND
+      new Command(WAIT_FRAME, {
+        type: cmdType.AREQ,
+        subsys: subSys.SYS,
+        cmd: 0x80,
+        waitRetryTimeout: 5000,
+      }), // SYS_RESET_IND
     ]);
   }
 
@@ -139,16 +131,21 @@ class ZStackDriver extends ZigbeeDriver {
     const frame = {
       type: cmdType.SREQ,
       subsys: 'AF',
-      cmd: 0x00,              // register app
+      cmd: 0x00, // register app
       payload: Buffer.from([
-        0x01,               // EP number
-        0x04, 0x01,         // ZHA profile
-        0x50, 0x00,         // DeviceID = Home Gateway
-        this.product,       // device
-        0x00,               // no latency
-        0x02,               // 1 input clusters
-        0x00, 0x00, 0x15, 0x00,
-        0x00,               // 1 output clusters
+        0x01, // EP number
+        0x04,
+        0x01, // ZHA profile
+        0x50,
+        0x00, // DeviceID = Home Gateway
+        this.product, // device
+        0x00, // no latency
+        0x02, // 1 input clusters
+        0x00,
+        0x00,
+        0x15,
+        0x00,
+        0x00, // 1 output clusters
       ]),
     };
     this.queueCommandsAtFront([
@@ -197,8 +194,8 @@ class ZStackDriver extends ZigbeeDriver {
     const frame = {
       type: cmdType.SREQ,
       subsys: 'ZDO',
-      cmd: 0x3E,   // ZDO_MSG_CB_REG
-      payload: Buffer.from([0xFF, 0xFF]),
+      cmd: 0x3e, // ZDO_MSG_CB_REG
+      payload: Buffer.from([0xff, 0xff]),
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
@@ -223,7 +220,7 @@ class ZStackDriver extends ZigbeeDriver {
       type: cmdType.SREQ,
       subsys: 'SAPI',
       cmd: 0x02, // MT_SAPI_ALLOW_BIND_REQ
-      payload: Buffer.from([0xFF]),
+      payload: Buffer.from([0xff]),
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
@@ -262,7 +259,7 @@ class ZStackDriver extends ZigbeeDriver {
       type: cmdType.SREQ,
       subsys: 'SYS',
       cmd: 0x08, // OSAL_NV_READ
-      payload: Buffer.from([ 0, 0, 0]),
+      payload: Buffer.from([0, 0, 0]),
     };
 
     this.lastNVReadItem = item;
@@ -326,8 +323,7 @@ class ZStackDriver extends ZigbeeDriver {
             builder.appendUInt16LE(parseInt(frame.destination16, 16));
             builder.appendUInt8(frame.startIndex);
             break;
-          case zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_REQUEST:
-          {
+          case zdo.CLUSTER_ID.MANAGEMENT_PERMIT_JOIN_REQUEST: {
             const dstAddr = parseInt(frame.destination16, 16);
 
             builder.appendUInt8(0x02);
@@ -336,8 +332,7 @@ class ZStackDriver extends ZigbeeDriver {
             builder.appendUInt8(frame.trustCenterSignificance);
             break;
           }
-          case zdo.CLUSTER_ID.MANAGEMENT_LEAVE_REQUEST:
-          {
+          case zdo.CLUSTER_ID.MANAGEMENT_LEAVE_REQUEST: {
             builder.appendUInt16LE(parseInt(frame.destination16, 16));
             builder.appendBuffer(frame.data.slice(1));
             break;
@@ -407,9 +402,10 @@ class ZStackDriver extends ZigbeeDriver {
       return;
     }
 
-    if ((frame.type == cmdType.AREQ && frame.subsys == subSys.ZDO &&
-        frame.cmd == 0xFF) ||
-            frame.drop === true) {
+    if (
+      (frame.type == cmdType.AREQ && frame.subsys == subSys.ZDO && frame.cmd == 0xff) ||
+      frame.drop === true
+    ) {
       return;
     }
 
@@ -423,19 +419,20 @@ class ZStackDriver extends ZigbeeDriver {
     if (frame.subsys == subSys.ZDO) {
       frame.id = self.lastIDSeq;
 
-      if ((frame.cmd >= 0x82 && // nodeDescRsp
-                frame.cmd <= 0x8A) || // serverDiscRsp
-                (frame.cmd >= 0xB0 && // mgmtNwkDiscRsp
-                frame.cmd <= 0xB6) ||   // mgmtPermitJoinRsp
-                (frame.cmd >= 0xA0 &&   // bindings
-                 frame.cmd <= 0xA2)
+      if (
+        (frame.cmd >= 0x82 && // nodeDescRsp
+          frame.cmd <= 0x8a) || // serverDiscRsp
+        (frame.cmd >= 0xb0 && // mgmtNwkDiscRsp
+          frame.cmd <= 0xb6) || // mgmtPermitJoinRsp
+        (frame.cmd >= 0xa0 && // bindings
+          frame.cmd <= 0xa2)
       ) {
         frame.remote16 = reader.nextString(2, 'hex').swapHex();
         reader.move(-1);
         frame.data = reader.restAll();
         frame.data[0] = this.lastZDOSeq;
         frame.profileId = 0;
-        frame.clusterId = (0x8000 | (frame.cmd & 0x7F)).toString(16);
+        frame.clusterId = (0x8000 | (frame.cmd & 0x7f)).toString(16);
 
         // console.log(frame);
         // console.log(this.adapter.nodes);
@@ -445,46 +442,54 @@ class ZStackDriver extends ZigbeeDriver {
         }
         frame.destination64 = this.adapter.destination64;
         // console.log('ZDO RSP: ', frame);
-      } else if (frame.cmd == 0x80) { // nwkAddrRsp
-        frame.clusterId = (0x8000 | (frame.cmd & 0x7F)).toString(16);
+      } else if (frame.cmd == 0x80) {
+        // nwkAddrRsp
+        frame.clusterId = (0x8000 | (frame.cmd & 0x7f)).toString(16);
         frame.profileId = 0;
         frame.data = Buffer.allocUnsafe(frame.payload.length + 1);
         frame.data.writeUInt8(this.lastZDOSeq);
         frame.payload.copy(frame.data, 1, 0, 1 + 8 + 2);
-        frame.data[12] = (frame.payload[12]);
-        frame.data[13] = (frame.payload[11]);
-      } else if (frame.cmd == 0xC0) { // DevStateChanged
+        frame.data[12] = frame.payload[12];
+        frame.data[13] = frame.payload[11];
+      } else if (frame.cmd == 0xc0) {
+        // DevStateChanged
         console.log('ZStack device state changed to ', frame.payload[0]);
         if (frame.payload[0] == devStates.DEV_ZB_COORD) {
           console.log('Zigbee coordinator started!');
           this.getNWKInfo();
           this.getNVInfo();
           this.adapter.adapterInitialized();
-        } else if (frame.payload[0] == devStates.DEV_END_DEVICE ||
-                        frame.payload[0] == devStates.DEV_ROUTER) {
-          console.log(
-            'ZStack role is router or enddevice. Chaning to coodinator!');
+        } else if (
+          frame.payload[0] == devStates.DEV_END_DEVICE ||
+          frame.payload[0] == devStates.DEV_ROUTER
+        ) {
+          console.log('ZStack role is router or enddevice. Chaning to coodinator!');
           this.resetZNP();
           this.writeNVItem(nvItems.ZCD_NV_LOGICAL_TYPE, [0x00]);
         }
-      } else if (frame.cmd == 0xC1) { // endDeviceAnnceInd
+      } else if (frame.cmd == 0xc1) {
+        // endDeviceAnnceInd
         frame.profileId = 0;
         frame.clusterId = '0013';
         frame.remote16 = reader.nextString(2, 'hex').swapHex();
         reader.move(-1);
         frame.data = reader.restAll();
         frame.data[0] = this.lastZDOSeq;
-      } else if (frame.cmd == 0xC4) { // SRC RTG indication
+      } else if (frame.cmd == 0xc4) {
+        // SRC RTG indication
         frame.drop = true;
-      } else if (frame.cmd == 0xC9) { // leave indication
+      } else if (frame.cmd == 0xc9) {
+        // leave indication
         frame.remote16 = reader.nextString(2, 'hex').swapHex();
         frame.remote64 = reader.nextString(8, 'hex').swapHex();
 
         console.log(`Device ${frame.remote64}:${frame.remote16} left network!`);
         frame.drop = true;
-      } else if (frame.cmd == 0xCA) { // TC indication
+      } else if (frame.cmd == 0xca) {
+        // TC indication
         frame.drop = true;
-      } else if (frame.cmd == 0xFF) { // zdoMsgCbIncomming
+      } else if (frame.cmd == 0xff) {
+        // zdoMsgCbIncomming
         frame.profileId = PROFILE_ID.ZDO;
         frame.remote16 = reader.nextString(2, 'hex').swapHex();
         frame.broadcast = reader.nextUInt8() == 0 ? false : true;
@@ -523,19 +528,21 @@ class ZStackDriver extends ZigbeeDriver {
         if (node) {
           frame.remote64 = node.addr64;
         }
-      } else if (frame.cmd == 0x80) { // AF data confirm
+      } else if (frame.cmd == 0x80) {
+        // AF data confirm
         frame.drop = true;
       } else {
         console.warn(`AF AREQ, cmd ${frame.cmd} not handled!`);
       }
     } else if (frame.subsys == subSys.SYS) {
-      if (frame.cmd == 0x80) { // SYS_RESET_IND
+      if (frame.cmd == 0x80) {
+        // SYS_RESET_IND
         // version response
         this.transportRev = frame.payload[1];
         this.product = frame.payload[2];
-        this.version = `${frame.payload[3].toString(16)}.${
-          frame.payload[4].toString(16)}.${
-          frame.payload[5].toString(16)}`;
+        this.version = `${frame.payload[3].toString(16)}.${frame.payload[4].toString(
+          16
+        )}.${frame.payload[5].toString(16)}`;
 
         console.log('ZStack reset. Reason ', frame.payload[0]);
         console.log(
@@ -569,7 +576,8 @@ class ZStackDriver extends ZigbeeDriver {
       //       }
       //     }
     } else if (frame.subsys == subSys.ZDO) {
-      if (frame.cmd == 0x50) { // NWK info rsp
+      if (frame.cmd == 0x50) {
+        // NWK info rsp
         const br = new BufferReader(frame.payload);
         this.shortAddr = br.nextString(2, 'hex').swapHex();
         this.PANID = br.nextString(2, 'hex').swapHex();
@@ -603,7 +611,8 @@ class ZStackDriver extends ZigbeeDriver {
         console.log(`AF SRSP for cmd ${frame.cmd} status error ${frame.status}!`);
       }
     } else if (frame.subsys == subSys.UTIL) {
-      if (frame.cmd == 0x01) { // get NV info
+      if (frame.cmd == 0x01) {
+        // get NV info
         const br = new BufferReader(frame.payload);
         const status = br.nextUInt8();
 
@@ -619,7 +628,7 @@ class ZStackDriver extends ZigbeeDriver {
           if (this.PANID !== nvPANID) {
             console.log(`Saving PAN ID: ${this.PANID} to NV ram!`);
             const p = parseInt(this.PANID, 16);
-            this.writeNVItem(nvItems.ZCD_NV_PANID, [p & 0xFF, p >> 8]);
+            this.writeNVItem(nvItems.ZCD_NV_PANID, [p & 0xff, p >> 8]);
           }
         }
       }
@@ -630,7 +639,7 @@ class ZStackDriver extends ZigbeeDriver {
 
   nextFrameId() {
     self.idSeq++;
-    if (self.idSeq > 0xFF) {
+    if (self.idSeq > 0xff) {
       self.idSeq = 0;
     }
     return self.idSeq;

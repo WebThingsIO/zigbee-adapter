@@ -16,9 +16,7 @@ const zclId = require('zcl-id');
 const zdo = require('zigbee-zdo');
 const { Utils } = require('gateway-addon');
 
-const {
-  PROFILE_ID,
-} = require('../zb-constants');
+const { PROFILE_ID } = require('../zb-constants');
 
 const {
   DEBUG_flow,
@@ -29,7 +27,7 @@ const {
 
 const WAIT_TIMEOUT_DELAY = 1 * 1000;
 const EXTENDED_TIMEOUT_DELAY = 10 * 1000;
-const WAIT_RETRY_MAX = 3;   // includes initial send
+const WAIT_RETRY_MAX = 3; // includes initial send
 
 const PERMIT_JOIN_PRIORITY = 1;
 const WATCHDOG_PRIORITY = 1;
@@ -68,8 +66,7 @@ class Command {
         break;
       case RESOLVE_SET_PROPERTY: {
         const property = this.cmdData;
-        console.log(`${idxStr}RESOLVE_SET_PROPERTY: ${property.device.addr64}`,
-                    property.name);
+        console.log(`${idxStr}RESOLVE_SET_PROPERTY: ${property.device.addr64}`, property.name);
         break;
       }
       default:
@@ -83,7 +80,6 @@ function FUNC(ths, func, args) {
 }
 
 class ZigbeeDriver {
-
   constructor(addonManager, config) {
     // This is the only place that we need to reference ZigbeeAdapter.
     // To avoid circular dependency problems, we put the require
@@ -121,9 +117,10 @@ class ZigbeeDriver {
       frameTypeStr += ` CL:${Utils.hexStr(frame.clusterId, 4)}`;
       if (zdo.isZdoFrame(frame)) {
         frameTypeStr += ` - ${zdo.getClusterIdDescription(frame.clusterId)}`;
-      } if (this.isZclFrame(frame)) {
+      }
+      if (this.isZclFrame(frame)) {
         const cluster = zclId.cluster(parseInt(frame.clusterId, 16));
-        const clusterKey = cluster && cluster.key || '???';
+        const clusterKey = (cluster && cluster.key) || '???';
         frameTypeStr += ` - ${clusterKey}`;
       }
     }
@@ -185,86 +182,136 @@ class ZigbeeDriver {
 
   dumpZigbeeRxFrame(label, frame) {
     const cluster = zclId.cluster(parseInt(frame.clusterId, 16));
-    const clusterKey = cluster && cluster.key || '???';
+    const clusterKey = (cluster && cluster.key) || '???';
     const remoteAddr = frame.remote64 || frame.remote16;
     if (zdo.isZdoFrame(frame)) {
       const shortDescr = frame.shortDescr || '';
       const status = this.frameStatus(frame);
-      console.log(label, 'Explicit Rx', remoteAddr,
-                  'ZDO',
-                  zdo.getClusterIdAsString(frame.clusterId),
-                  zdo.getClusterIdDescription(frame.clusterId),
-                  shortDescr,
-                  'status:', status.key, `(${status.value})`);
+      console.log(
+        label,
+        'Explicit Rx',
+        remoteAddr,
+        'ZDO',
+        zdo.getClusterIdAsString(frame.clusterId),
+        zdo.getClusterIdDescription(frame.clusterId),
+        shortDescr,
+        'status:',
+        status.key,
+        `(${status.value})`
+      );
       zdo.dumpZdoFrame(`${label}  `, frame);
     } else if (this.isZhaFrame(frame)) {
       if (frame.zcl) {
-        console.log(label, 'Explicit Rx', remoteAddr,
-                    'ZHA', frame.clusterId, clusterKey,
-                    frame.zcl ? frame.zcl.cmdId : '???');
+        console.log(
+          label,
+          'Explicit Rx',
+          remoteAddr,
+          'ZHA',
+          frame.clusterId,
+          clusterKey,
+          frame.zcl ? frame.zcl.cmdId : '???'
+        );
         this.dumpZclPayload(label, frame);
       } else {
-        console.log(label, 'Explicit Rx', remoteAddr,
-                    'ZHA', frame.clusterId, clusterKey,
-                    '??? no zcl ???');
+        console.log(
+          label,
+          'Explicit Rx',
+          remoteAddr,
+          'ZHA',
+          frame.clusterId,
+          clusterKey,
+          '??? no zcl ???'
+        );
       }
     } else if (this.isZllFrame(frame)) {
       if (frame.zcl) {
-        console.log(label, 'Explicit Rx', remoteAddr,
-                    'ZLL', frame.clusterId, clusterKey,
-                    frame.zcl ? frame.zcl.cmdId : '???');
+        console.log(
+          label,
+          'Explicit Rx',
+          remoteAddr,
+          'ZLL',
+          frame.clusterId,
+          clusterKey,
+          frame.zcl ? frame.zcl.cmdId : '???'
+        );
         this.dumpZclPayload(label, frame);
       } else {
-        console.log(label, 'Explicit Rx', remoteAddr,
-                    'ZLL', frame.clusterId, clusterKey,
-                    '??? no zcl ???');
+        console.log(
+          label,
+          'Explicit Rx',
+          remoteAddr,
+          'ZLL',
+          frame.clusterId,
+          clusterKey,
+          '??? no zcl ???'
+        );
       }
     } else {
-      console.log(label, 'Explicit Rx', remoteAddr,
-                  `???(${frame.profileId})`, frame.clusterId);
+      console.log(label, 'Explicit Rx', remoteAddr, `???(${frame.profileId})`, frame.clusterId);
     }
   }
 
   dumpZigbeeTxFrame(label, frame) {
     const cluster = zclId.cluster(parseInt(frame.clusterId, 16));
-    const clusterKey = cluster && cluster.key || '???';
+    const clusterKey = (cluster && cluster.key) || '???';
     const dstAddr = frame.destination64 || frame.destination16;
     if (zdo.isZdoFrame(frame)) {
       const shortDescr = frame.shortDescr || '';
-      console.log(label, 'Explicit Tx', dstAddr,
-                  'ZDO',
-                  zdo.getClusterIdAsString(frame.clusterId),
-                  zdo.getClusterIdDescription(frame.clusterId),
-                  shortDescr);
+      console.log(
+        label,
+        'Explicit Tx',
+        dstAddr,
+        'ZDO',
+        zdo.getClusterIdAsString(frame.clusterId),
+        zdo.getClusterIdDescription(frame.clusterId),
+        shortDescr
+      );
       zdo.dumpZdoFrame(`${label}  `, frame);
     } else if (this.isZhaFrame(frame)) {
       if (frame.zcl) {
         const cmd = frame.zcl.cmd || frame.zcl.cmdId;
-        console.log(label, 'Explicit Tx', dstAddr,
-                    'ZHA', frame.clusterId, clusterKey, cmd);
+        console.log(label, 'Explicit Tx', dstAddr, 'ZHA', frame.clusterId, clusterKey, cmd);
         this.dumpZclPayload(label, frame);
       } else {
-        console.log(label, 'Explicit Tx', dstAddr,
-                    `ID:${frame.id}`,
-                    'ZHA', frame.clusterId, clusterKey,
-                    '??? no zcl ???');
+        console.log(
+          label,
+          'Explicit Tx',
+          dstAddr,
+          `ID:${frame.id}`,
+          'ZHA',
+          frame.clusterId,
+          clusterKey,
+          '??? no zcl ???'
+        );
       }
     } else if (this.isZllFrame(frame)) {
       if (frame.zcl) {
         const cmd = frame.zcl.cmd || frame.zcl.cmdId;
-        console.log(label, 'Explicit Tx', dstAddr,
-                    `ID:${frame.id}`,
-                    'ZLL', frame.clusterId, clusterKey, cmd);
+        console.log(
+          label,
+          'Explicit Tx',
+          dstAddr,
+          `ID:${frame.id}`,
+          'ZLL',
+          frame.clusterId,
+          clusterKey,
+          cmd
+        );
         this.dumpZclPayload(label, frame);
       } else {
-        console.log(label, 'Explicit Tx', dstAddr,
-                    `ID:${frame.id}`,
-                    'ZLL', frame.clusterId, clusterKey,
-                    '??? no zcl ???');
+        console.log(
+          label,
+          'Explicit Tx',
+          dstAddr,
+          `ID:${frame.id}`,
+          'ZLL',
+          frame.clusterId,
+          clusterKey,
+          '??? no zcl ???'
+        );
       }
     } else {
-      console.log(label, 'Explicit Tx', dstAddr,
-                  `???(${frame.profileId})`, frame.clusterId);
+      console.log(label, 'Explicit Tx', dstAddr, `???(${frame.profileId})`, frame.clusterId);
     }
   }
 
@@ -273,25 +320,17 @@ class ZigbeeDriver {
     for (const cmd of cmdSeq) {
       if (cmd.constructor === Array) {
         for (const cmd2 of cmd) {
-          assert(cmd2 instanceof Command,
-                 '### Expecting instance of Command ###');
-          assert(typeof cmd2.cmdType === 'number',
-                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
-          assert(cmd2.cmdType >= MIN_COMMAND_TYPE,
-                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
-          assert(cmd2.cmdType <= MAX_COMMAND_TYPE,
-                 `### Invalid Command Type: ${cmd2.cmdType} ###`);
+          assert(cmd2 instanceof Command, '### Expecting instance of Command ###');
+          assert(typeof cmd2.cmdType === 'number', `### Invalid Command Type: ${cmd2.cmdType} ###`);
+          assert(cmd2.cmdType >= MIN_COMMAND_TYPE, `### Invalid Command Type: ${cmd2.cmdType} ###`);
+          assert(cmd2.cmdType <= MAX_COMMAND_TYPE, `### Invalid Command Type: ${cmd2.cmdType} ###`);
           cmds.push(cmd2);
         }
       } else {
-        assert(cmd instanceof Command,
-               '### Expecting instance of Command ###');
-        assert(typeof cmd.cmdType === 'number',
-               `### Invalid Command Type: ${cmd.cmdType} ###`);
-        assert(cmd.cmdType >= MIN_COMMAND_TYPE,
-               `### Invalid Command Type: ${cmd.cmdType} ###`);
-        assert(cmd.cmdType <= MAX_COMMAND_TYPE,
-               `### Invalid Command Type: ${cmd.cmdType} ###`);
+        assert(cmd instanceof Command, '### Expecting instance of Command ###');
+        assert(typeof cmd.cmdType === 'number', `### Invalid Command Type: ${cmd.cmdType} ###`);
+        assert(cmd.cmdType >= MIN_COMMAND_TYPE, `### Invalid Command Type: ${cmd.cmdType} ###`);
+        assert(cmd.cmdType <= MAX_COMMAND_TYPE, `### Invalid Command Type: ${cmd.cmdType} ###`);
         cmds.push(cmd);
       }
     }
@@ -351,8 +390,7 @@ class ZigbeeDriver {
       try {
         this.adapter.handleZdoFrame(frame);
       } catch (e) {
-        console.error('handleExplicitRx:',
-                      'Caught an exception parsing ZDO frame');
+        console.error('handleExplicitRx:', 'Caught an exception parsing ZDO frame');
         console.error(e);
         console.error(util.inspect(frame, { depth: null }));
       }
@@ -360,8 +398,7 @@ class ZigbeeDriver {
       try {
         this.adapter.handleZclFrame(frame);
       } catch (e) {
-        console.error('handleExplicitRx:',
-                      'Caught an exception parsing ZCL frame');
+        console.error('handleExplicitRx:', 'Caught an exception parsing ZCL frame');
         console.error(e);
         console.error(util.inspect(frame, { depth: null }));
       }
@@ -381,13 +418,15 @@ class ZigbeeDriver {
       zdo.parseZdoFrame(frame);
       this.handleParsedFrame(frame);
     } else if (this.isZclFrame(frame)) {
-      this.parseZclFrame(frame).then((frame) => {
-        this.handleParsedFrame(frame);
-      }).catch((error) => {
-        console.error('Error parsing ZCL frame');
-        console.error(error);
-        console.error(util.inspect(frame, { depth: null }));
-      });
+      this.parseZclFrame(frame)
+        .then((frame) => {
+          this.handleParsedFrame(frame);
+        })
+        .catch((error) => {
+          console.error('Error parsing ZCL frame');
+          console.error(error);
+          console.error(util.inspect(frame, { depth: null }));
+        });
     } else {
       this.handleParsedFrame(frame);
     }
@@ -401,8 +440,7 @@ class ZigbeeDriver {
       if (node) {
         frame.remote64 = node.addr64;
         if (DEBUG_frames) {
-          console.log('Looked frame.remote64', frame.remote64,
-                      'from', frame.remote16);
+          console.log('Looked frame.remote64', frame.remote64, 'from', frame.remote16);
         }
       }
     }
@@ -471,11 +509,9 @@ class ZigbeeDriver {
 
   isZclFrame(frame) {
     if (typeof frame.profileId === 'number') {
-      return frame.profileId === PROFILE_ID.ZHA ||
-             frame.profileId === PROFILE_ID.ZLL;
+      return frame.profileId === PROFILE_ID.ZHA || frame.profileId === PROFILE_ID.ZLL;
     }
-    return frame.profileId === PROFILE_ID.ZHA_HEX ||
-           frame.profileId === PROFILE_ID.ZLL_HEX;
+    return frame.profileId === PROFILE_ID.ZHA_HEX || frame.profileId === PROFILE_ID.ZLL_HEX;
   }
 
   isZhaFrame(frame) {
@@ -540,9 +576,12 @@ class ZigbeeDriver {
       //  00    Record 1 direction
       //  1e 00 Record 1 attribute ID
 
-      if (zclData.length == 7 &&
-          zclData[2] == 0x07 &&   // configReportRsp
-          zclData[3] == 0x00) {   // status == success
+      if (
+        zclData.length == 7 &&
+        zclData[2] == 0x07 && // configReportRsp
+        zclData[3] == 0x00
+      ) {
+        // status == success
         // We found one of the Zen Thermostat configReportRsp records. Since
         // the status is zero, we can just remove the direction and attributeID
         zclData = zclData.slice(0, 4);
@@ -551,11 +590,13 @@ class ZigbeeDriver {
       // The OSRAM lightify sends a manufacturer specific command
       // which the zcl-parse library doesn't deal with, so we put a check
       // for that here.
-      if (zclData.length == 5 &&
-          zclData[0] == 0x05 &&
-          zclData[1] == 0x4e &&
-          zclData[2] == 0x10 &&
-          zclData[4] == 0x03) {
+      if (
+        zclData.length == 5 &&
+        zclData[0] == 0x05 &&
+        zclData[1] == 0x4e &&
+        zclData[2] == 0x10 &&
+        zclData[4] == 0x03
+      ) {
         frame.zcl = {
           frameCntl: {
             frameType: 1,
@@ -565,7 +606,7 @@ class ZigbeeDriver {
           },
           manufCode: 0x104e,
           seqNum: zclData[3],
-          cmdId: 'confirm',   // Made up - i.e. not from spec
+          cmdId: 'confirm', // Made up - i.e. not from spec
           payload: {},
         };
         resolve(frame);
@@ -604,8 +645,7 @@ class ZigbeeDriver {
       // the queue with no priority, or a command with a priority
       // greater than the one being inserted.
       idx = this.cmdQueue.findIndex((cmd) => {
-        return typeof cmd.priority === 'undefined' ||
-               priority < cmd.priority;
+        return typeof cmd.priority === 'undefined' || priority < cmd.priority;
       });
     }
     if (idx < 0) {
@@ -640,8 +680,7 @@ class ZigbeeDriver {
       // the queue with no priority, or a command with a priority
       // greater than or equal to the one being inserted.
       idx = this.cmdQueue.findIndex((cmd) => {
-        return typeof cmd.priority === 'undefined' ||
-               priority <= cmd.priority;
+        return typeof cmd.priority === 'undefined' || priority <= cmd.priority;
       });
     }
     if (idx < 0) {
@@ -658,8 +697,7 @@ class ZigbeeDriver {
 
   run() {
     if (DEBUG_flow) {
-      console.log('run queue len =', this.cmdQueue.length,
-                  'running =', this.running);
+      console.log('run queue len =', this.cmdQueue.length, 'running =', this.running);
     }
     if (this.waitFrame) {
       if (DEBUG_flow) {
@@ -689,17 +727,22 @@ class ZigbeeDriver {
           // in the node.activeEndpoints, we get the endpoint as a string
           // containing a decimal number. So we put these asserts in to
           // make sure that we're dealing with numbers and not strings.
-          if (frame.hasOwnProperty('sourceEndpoint') &&
-              typeof frame.sourceEndpoint !== 'number') {
+          if (frame.hasOwnProperty('sourceEndpoint') && typeof frame.sourceEndpoint !== 'number') {
             console.log(frame);
-            assert(typeof frame.sourceEndpoint === 'number',
-                   'Expecting sourceEndpoint to be a number');
+            assert(
+              typeof frame.sourceEndpoint === 'number',
+              'Expecting sourceEndpoint to be a number'
+            );
           }
-          if (frame.hasOwnProperty('destinationEndpoint') &&
-              typeof frame.destinationEndpoint !== 'number') {
+          if (
+            frame.hasOwnProperty('destinationEndpoint') &&
+            typeof frame.destinationEndpoint !== 'number'
+          ) {
             console.log(frame);
-            assert(typeof frame.destinationEndpoint === 'number',
-                   'Expecting destinationEndpoint to be a number');
+            assert(
+              typeof frame.destinationEndpoint === 'number',
+              'Expecting destinationEndpoint to be a number'
+            );
           }
           this.buildAndSendRawFrame(frame);
           this.lastFrameSent = frame;
@@ -716,8 +759,7 @@ class ZigbeeDriver {
           let timeoutDelay = WAIT_TIMEOUT_DELAY;
           if (this.waitFrame.hasOwnProperty('waitRetryTimeout')) {
             timeoutDelay = this.waitFrame.waitRetryTimeout;
-          } else if (this.lastFrameSent &&
-                     this.lastFrameSent.hasOwnProperty('profileId')) {
+          } else if (this.lastFrameSent && this.lastFrameSent.hasOwnProperty('profileId')) {
             // Frames which don't have a profileId, aren't directed to a node
             // (i.e. AT commands or other driver specific commands.)
             const node = this.adapter.findNodeFromTxFrame(this.lastFrameSent);
@@ -726,11 +768,9 @@ class ZigbeeDriver {
             }
           }
           if (DEBUG_frameDetail || DEBUG_flow) {
-            console.log('WAIT_FRAME type:', this.waitFrame.type,
-                        'timeoutDelay =', timeoutDelay);
+            console.log('WAIT_FRAME type:', this.waitFrame.type, 'timeoutDelay =', timeoutDelay);
           }
-          this.waitTimeout = setTimeout(this.waitTimedOut.bind(this),
-                                        timeoutDelay);
+          this.waitTimeout = setTimeout(this.waitTimedOut.bind(this), timeoutDelay);
           break;
         }
         case EXEC_FUNC: {
@@ -746,9 +786,13 @@ class ZigbeeDriver {
         case RESOLVE_SET_PROPERTY: {
           const property = cmd.cmdData;
           if (DEBUG_frameDetail || DEBUG_flow) {
-            console.log('RESOLVE_SET_PROPERTY',
-                        property.device.addr64, property.name,
-                        'value:', property.value);
+            console.log(
+              'RESOLVE_SET_PROPERTY',
+              property.device.addr64,
+              property.name,
+              'value:',
+              property.value
+            );
           }
           const deferredSet = property.deferredSet;
           if (deferredSet) {
@@ -793,8 +837,12 @@ class ZigbeeDriver {
 
     if (waitFrame.waitRetryCount >= waitFrame.waitRetryMax) {
       if (DEBUG_flow) {
-        console.log('WAIT_FRAME waitRetryCount:', waitFrame.waitRetryCount,
-                    'exceeded waitRetryMax:', waitFrame.waitRetryMax);
+        console.log(
+          'WAIT_FRAME waitRetryCount:',
+          waitFrame.waitRetryCount,
+          'exceeded waitRetryMax:',
+          waitFrame.waitRetryMax
+        );
       }
       if (timeoutFunc) {
         timeoutFunc();
@@ -812,9 +860,7 @@ class ZigbeeDriver {
     if (this.lastFrameSent && waitFrame) {
       waitFrame.waitRetryCount += 1;
       if (DEBUG_frames) {
-        console.log('Resending',
-                    `(${waitFrame.waitRetryCount}/${waitFrame.waitRetryMax})`,
-                    '...');
+        console.log('Resending', `(${waitFrame.waitRetryCount}/${waitFrame.waitRetryMax})`, '...');
       }
       this.lastFrameSent.resend = true;
 
@@ -829,8 +875,7 @@ class ZigbeeDriver {
       //   waitFrame.id = this.lastFrameSent.id;
       // }
 
-      this.queueCommandsAtFront(
-        this.makeFrameWaitFrame(this.lastFrameSent, waitFrame));
+      this.queueCommandsAtFront(this.makeFrameWaitFrame(this.lastFrameSent, waitFrame));
     }
   }
 }

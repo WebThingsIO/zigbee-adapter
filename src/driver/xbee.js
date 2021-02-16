@@ -40,10 +40,10 @@ const DEVICE_TYPE = {
   0x30006: 'RS-485 Adapter',
   0x30007: 'XBee Sensor Adapter',
   0x30008: 'Wall Router',
-  0x3000A: 'Digital I/O Adapter',
-  0x3000B: 'Analog I/O Adapter',
-  0x3000C: 'XStick',
-  0x3000F: 'Smart Plug',
+  0x3000a: 'Digital I/O Adapter',
+  0x3000b: 'Analog I/O Adapter',
+  0x3000c: 'XStick',
+  0x3000f: 'Smart Plug',
   0x30011: 'XBee Large Display',
   0x30012: 'XBee Small Display',
 };
@@ -56,7 +56,6 @@ function serialWriteError(error) {
 }
 
 class XBeeDriver extends ZigbeeDriver {
-
   constructor(addonManager, config, portName, serialPort) {
     super(addonManager, config);
     this.portName = portName;
@@ -186,8 +185,7 @@ class XBeeDriver extends ZigbeeDriver {
     }
     const configCommands = [];
     if (this.apiMode != 1) {
-      configCommands.push(this.AT(AT_CMD.API_MODE,
-                                  { apiMode: 1 }));
+      configCommands.push(this.AT(AT_CMD.API_MODE, { apiMode: 1 }));
       configCommands.push(this.AT(AT_CMD.API_MODE));
 
       console.log('Setting API mode to 1');
@@ -204,13 +202,13 @@ class XBeeDriver extends ZigbeeDriver {
     }
     const configCommands = [];
     if (this.configuredPanId64 === '0000000000000000') {
-      configCommands.push(this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID,
-                                  { configuredPanId: this.operatingPanId64 }));
+      configCommands.push(
+        this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID, { configuredPanId: this.operatingPanId64 })
+      );
       configCommands.push(this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID));
     }
     if (this.zigBeeStackProfile != 2) {
-      configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE,
-                                  { zigBeeStackProfile: 2 }));
+      configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE, { zigBeeStackProfile: 2 }));
       configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE));
     }
     // API Options = 1 allows Explicit Rx frames to be rcvd
@@ -219,18 +217,15 @@ class XBeeDriver extends ZigbeeDriver {
     //      and Match Descriptor Requests which come from an
     //      endpoint will be passed through (received).
     if (this.apiOptions != 3) {
-      configCommands.push(this.AT(AT_CMD.API_OPTIONS,
-                                  { apiOptions: 3 }));
+      configCommands.push(this.AT(AT_CMD.API_OPTIONS, { apiOptions: 3 }));
       configCommands.push(this.AT(AT_CMD.API_OPTIONS));
     }
     if (this.encryptionEnabled != 1) {
-      configCommands.push(this.AT(AT_CMD.ENCRYPTION_ENABLED,
-                                  { encryptionEnabled: 1 }));
+      configCommands.push(this.AT(AT_CMD.ENCRYPTION_ENABLED, { encryptionEnabled: 1 }));
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_ENABLED));
     }
     if (this.encryptionOptions != 2) {
-      configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS,
-                                  { encryptionOptions: 2 }));
+      configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS, { encryptionOptions: 2 }));
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS));
     }
     let configScanChannels = this.config.scanChannels;
@@ -244,15 +239,13 @@ class XBeeDriver extends ZigbeeDriver {
       // would be channels 15 and 20, which sit between the Wifi channels.
       // Channel 15 corresponds to a mask of 0x0010
       // Channel 20 corresponds to a mask of 0x0200
-      configCommands.push(this.AT(AT_CMD.SCAN_CHANNELS,
-                                  { scanChannels: configScanChannels }));
+      configCommands.push(this.AT(AT_CMD.SCAN_CHANNELS, { scanChannels: configScanChannels }));
       configCommands.push(this.AT(AT_CMD.SCAN_CHANNELS));
     }
     if (configCommands.length > 0) {
       // We're going to change something, so we might as well set the link
       // key, since it's write only and we can't tell if its been set before.
-      configCommands.push(this.AT(AT_CMD.LINK_KEY,
-                                  { linkKey: 'ZigBeeAlliance09' }));
+      configCommands.push(this.AT(AT_CMD.LINK_KEY, { linkKey: 'ZigBeeAlliance09' }));
       configCommands.push(this.AT(AT_CMD.WRITE_PARAMETERS));
 
       // TODO: It sends a modem status, but only the first time after the
@@ -320,20 +313,30 @@ class XBeeDriver extends ZigbeeDriver {
 
       case C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS:
         if (dumpFrameDetail || frame.deliveryStatus !== 0) {
-          console.log(label, frameTypeStr,
-                      'id:', frame.id,
-                      'Remote16:', frame.remote16,
-                      'Retries:', frame.transmitRetryCount,
-                      'Delivery:',
-                      this.getDeliveryStatusAsString(frame.deliveryStatus),
-                      'Discovery:',
-                      this.getDiscoveryStatusAsString(frame.discoveryStatus));
+          console.log(
+            label,
+            frameTypeStr,
+            'id:',
+            frame.id,
+            'Remote16:',
+            frame.remote16,
+            'Retries:',
+            frame.transmitRetryCount,
+            'Delivery:',
+            this.getDeliveryStatusAsString(frame.deliveryStatus),
+            'Discovery:',
+            this.getDiscoveryStatusAsString(frame.discoveryStatus)
+          );
         }
         break;
 
       case C.FRAME_TYPE.MODEM_STATUS:
-        console.log(label, frameTypeStr, 'modemStatus:',
-                    this.getModemStatusAsString(frame.modemStatus));
+        console.log(
+          label,
+          frameTypeStr,
+          'modemStatus:',
+          this.getModemStatusAsString(frame.modemStatus)
+        );
         break;
 
       case C.FRAME_TYPE.ROUTE_RECORD:
@@ -346,8 +349,7 @@ class XBeeDriver extends ZigbeeDriver {
         console.log(label, frameTypeStr);
     }
     if (dumpFrameDetail) {
-      const frameStr = util.inspect(frame, { depth: null })
-        .replace(/\n/g, `\n${label} `);
+      const frameStr = util.inspect(frame, { depth: null }).replace(/\n/g, `\n${label} `);
       console.log(label, frameStr);
     }
   }
@@ -358,14 +360,14 @@ class XBeeDriver extends ZigbeeDriver {
       deviceTypeString = '??? Unknown ???';
     }
     console.log(
-      '       Device Type:', `0x${this.deviceTypeIdentifier.toString(16)} -`,
-      this.deviceTypeString(this.deviceTypeIdentifier));
-    console.log('   Network Address:', this.serialNumber,
-                this.networkAddr16);
+      '       Device Type:',
+      `0x${this.deviceTypeIdentifier.toString(16)} -`,
+      this.deviceTypeString(this.deviceTypeIdentifier)
+    );
+    console.log('   Network Address:', this.serialNumber, this.networkAddr16);
     console.log('   Node Identifier:', this.nodeIdentifier);
     console.log(' Configured PAN Id:', this.configuredPanId64);
-    console.log('  Operating PAN Id:', this.operatingPanId64,
-                this.operatingPanId16);
+    console.log('  Operating PAN Id:', this.operatingPanId64, this.operatingPanId16);
     console.log(' Operating Channel:', this.operatingChannel);
     console.log(' Channel Scan Mask:', this.scanChannels.toString(16));
     console.log('         Join Time:', this.networkJoinTime);
@@ -425,14 +427,16 @@ class XBeeDriver extends ZigbeeDriver {
       // Note: For failed transmissions, the remote16 will always be set
       // to 0xfffd so there isn't any point in reporting it.
       if (DEBUG_frames) {
-        console.log('Transmit Status ERROR:',
-                    this.getDeliveryStatusAsString(frame.deliveryStatus),
-                    'id:', frame.id);
+        console.log(
+          'Transmit Status ERROR:',
+          this.getDeliveryStatusAsString(frame.deliveryStatus),
+          'id:',
+          frame.id
+        );
         console.log(frame);
       }
     }
-    if (frame.discoveryStatus ==
-        C.DISCOVERY_STATUS.EXTENDED_TIMEOUT_DISCOVERY) {
+    if (frame.discoveryStatus == C.DISCOVERY_STATUS.EXTENDED_TIMEOUT_DISCOVERY) {
       const node = this.adapter.findNodeByAddr16(frame.remote16);
       if (node) {
         node.extendedTimeout = true;
@@ -464,15 +468,13 @@ class XBeeDriver extends ZigbeeDriver {
   }
 
   handleAtSerialNumberHigh(frame) {
-    this.serialNumber =
-      frame.serialNumberHigh + this.serialNumber.slice(8, 8);
+    this.serialNumber = frame.serialNumberHigh + this.serialNumber.slice(8, 8);
     this.adapter.networkAddr64 = this.serialNumber;
     this.adapter.networkAddr16 = '0000';
   }
 
   handleAtSerialNumberLow(frame) {
-    this.serialNumber =
-      this.serialNumber.slice(0, 8) + frame.serialNumberLow;
+    this.serialNumber = this.serialNumber.slice(0, 8) + frame.serialNumberLow;
     this.adapter.networkAddr64 = this.serialNumber;
     this.adapter.networkAddr16 = '0000';
   }
@@ -484,9 +486,7 @@ class XBeeDriver extends ZigbeeDriver {
   }
 
   permitJoinCommands(duration) {
-    return this.AT(AT_CMD.NODE_JOIN_TIME,
-                   { networkJoinTime: duration },
-                   PERMIT_JOIN_PRIORITY);
+    return this.AT(AT_CMD.NODE_JOIN_TIME, { networkJoinTime: duration }, PERMIT_JOIN_PRIORITY);
   }
 }
 
@@ -516,8 +516,7 @@ XBeeDriver.atResponseHandler = {
 XBeeDriver.frameHandler = {
   [C.FRAME_TYPE.AT_COMMAND_RESPONSE]: XBeeDriver.prototype.handleAtResponse,
   [C.FRAME_TYPE.ZIGBEE_EXPLICIT_RX]: ZigbeeDriver.prototype.handleExplicitRx,
-  [C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS]:
-    XBeeDriver.prototype.handleTransmitStatus,
+  [C.FRAME_TYPE.ZIGBEE_TRANSMIT_STATUS]: XBeeDriver.prototype.handleTransmitStatus,
   [C.FRAME_TYPE.ROUTE_RECORD]: XBeeDriver.prototype.handleRouteRecord,
 };
 

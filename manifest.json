@@ -25,10 +25,7 @@
     },
     "schema": {
       "type": "object",
-      "required": [
-        "scanChannels",
-        "allowFTDISerial"
-      ],
+      "required": ["scanChannels", "allowFTDISerial"],
       "properties": {
         "scanChannels": {
           "type": "integer",

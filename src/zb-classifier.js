@@ -7,7 +7,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-
 'use strict';
 
 const {
@@ -36,7 +35,8 @@ const ZONE_TYPE_SWITCH = 0x0015;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
-  [ZONE_TYPE_MOTION]: { // 0x000d
+  [ZONE_TYPE_MOTION]: {
+    // 0x000d
     type: 'motion-sensor',
     '@type': ['MotionSensor'],
     propertyName: 'motion',
@@ -48,7 +48,8 @@ const ZONE_TYPE_NAME = {
       readOnly: true,
     },
   },
-  [ZONE_TYPE_SWITCH]: { // 0x0015
+  [ZONE_TYPE_SWITCH]: {
+    // 0x0015
     type: 'door-sensor',
     '@type': ['DoorSensor'],
     propertyName: 'open',
@@ -185,61 +186,60 @@ function jsonEqual(a, b) {
 }
 
 const CONFIG_REPORT_INTEGER = {
-  minRepInterval: 1,    // seconds
-  maxRepInterval: 120,  // seconds
+  minRepInterval: 1, // seconds
+  maxRepInterval: 120, // seconds
   repChange: 1,
 };
 
 const CONFIG_REPORT_CURRENT = {
-  minRepInterval: 5,    // seconds
-  maxRepInterval: 120,  // seconds
+  minRepInterval: 5, // seconds
+  maxRepInterval: 120, // seconds
   repChange: 10,
 };
 
 const CONFIG_REPORT_VOLTAGE = {
-  minRepInterval: 5,    // seconds
-  maxRepInterval: 120,  // seconds
+  minRepInterval: 5, // seconds
+  maxRepInterval: 120, // seconds
   repChange: 10,
 };
 
 const CONFIG_REPORT_POWER = {
-  minRepInterval: 5,    // seconds
-  maxRepInterval: 120,  // seconds
+  minRepInterval: 5, // seconds
+  maxRepInterval: 120, // seconds
   repChange: 10,
 };
 
 const CONFIG_REPORT_FREQUENCY = {
-  minRepInterval: 5,    // seconds
-  maxRepInterval: 120,  // seconds
+  minRepInterval: 5, // seconds
+  maxRepInterval: 120, // seconds
   repChange: 2,
 };
 
 const CONFIG_REPORT_BATTERY = {
-  minRepInterval: 10 * 60,  // 10 minutes
-  maxRepInterval: 30 * 60,  // 30 minutes
-  repChange: 2,             // 0.2 V
+  minRepInterval: 10 * 60, // 10 minutes
+  maxRepInterval: 30 * 60, // 30 minutes
+  repChange: 2, // 0.2 V
 };
 
 const CONFIG_REPORT_ILLUMINANCE = {
   minRepInterval: 0,
-  maxRepInterval: 10 * 60,  // 10 minutes
-  repChange: 0xffff,        // disabled
+  maxRepInterval: 10 * 60, // 10 minutes
+  repChange: 0xffff, // disabled
 };
 
 const CONFIG_REPORT_TEMPERATURE = {
-  minRepInterval: 1 * 60,   // 1 minute
-  maxRepInterval: 10 * 60,  // 10 minutes
-  repChange: 50,            // 0.5 C
+  minRepInterval: 1 * 60, // 1 minute
+  maxRepInterval: 10 * 60, // 10 minutes
+  repChange: 50, // 0.5 C
 };
 
 const CONFIG_REPORT_MODE = {
-  minRepInterval: 1,        // 1 second
-  maxRepInterval: 10 * 60,  // 10 minutes
-  repChange: 1,             // any change in value
+  minRepInterval: 1, // 1 second
+  maxRepInterval: 10 * 60, // 10 minutes
+  repChange: 1, // any change in value
 };
 
 class ZigbeeClassifier {
-
   constructor() {
     this.frames = [];
   }
@@ -255,123 +255,130 @@ class ZigbeeClassifier {
   addColorProperty(node, lightingColorCtrlEndpoint) {
     const endpoint = node.activeEndpoints[lightingColorCtrlEndpoint];
     this.addProperty(
-      node,                           // device
-      '_level',                       // name
-      { // property description
+      node, // device
+      '_level', // name
+      {
+        // property description
         type: 'number',
         unit: 'percent',
         minimum: 0,
         maximum: 100,
         multipleOf: 0.1,
       },
-      endpoint.profileId,             // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.GENLEVELCTRL,        // clusterId
-      'currentLevel',                 // attr
-      'setLevelValue',                // setAttrFromValue
-      'parseLevelAttr'                // parseValueFromAttr
+      endpoint.profileId, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.GENLEVELCTRL, // clusterId
+      'currentLevel', // attr
+      'setLevelValue', // setAttrFromValue
+      'parseLevelAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'color',                        // name
-      { // property description
+      node, // device
+      'color', // name
+      {
+        // property description
         '@type': 'ColorProperty',
         label: 'Color',
         type: 'string',
       },
-      endpoint.profileId,             // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
+      endpoint.profileId, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.LIGHTINGCOLORCTRL, // clusterId
       'currentHue,currentSaturation', // attr
-      'setColorValue',                // setAttrFromValue
-      'parseColorAttr'                // parseValueFromAttr
+      'setColorValue', // setAttrFromValue
+      'parseColorAttr' // parseValueFromAttr
     );
   }
 
   addColorXYProperty(node, lightingColorCtrlEndpoint) {
     const endpoint = node.activeEndpoints[lightingColorCtrlEndpoint];
     this.addProperty(
-      node,                           // device
-      '_level',                       // name
-      { // property description
+      node, // device
+      '_level', // name
+      {
+        // property description
         type: 'number',
         unit: 'percent',
         minimum: 0,
         maximum: 100,
         multipleOf: 0.1,
       },
-      endpoint.profileId,             // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.GENLEVELCTRL,        // clusterId
-      'currentLevel',                 // attr
-      'setLevelValue',                // setAttrFromValue
-      'parseLevelAttr'                // parseValueFromAttr
+      endpoint.profileId, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.GENLEVELCTRL, // clusterId
+      'currentLevel', // attr
+      'setLevelValue', // setAttrFromValue
+      'parseLevelAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'color',                        // name
-      { // property description
+      node, // device
+      'color', // name
+      {
+        // property description
         '@type': 'ColorProperty',
         label: 'Color',
         type: 'string',
       },
-      endpoint.profileId,             // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
-      'currentX,currentY',            // attr
-      'setColorXYValue',              // setAttrFromValue
-      'parseColorXYAttr'              // parseValueFromAttr
+      endpoint.profileId, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.LIGHTINGCOLORCTRL, // clusterId
+      'currentX,currentY', // attr
+      'setColorXYValue', // setAttrFromValue
+      'parseColorXYAttr' // parseValueFromAttr
     );
   }
 
   addColorTemperatureProperty(node, lightingColorCtrlEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_minTemperature',              // name
-      { // property description
+      node, // device
+      '_minTemperature', // name
+      {
+        // property description
         type: 'number',
       },
-      PROFILE_ID.ZHA,                 // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
-      'colorTempPhysicalMin',         // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      153                             // defaultValue (153 = 6535K)
+      PROFILE_ID.ZHA, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.LIGHTINGCOLORCTRL, // clusterId
+      'colorTempPhysicalMin', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      153 // defaultValue (153 = 6535K)
     );
     this.addProperty(
-      node,                           // device
-      '_maxTemperature',              // name
-      { // property description
+      node, // device
+      '_maxTemperature', // name
+      {
+        // property description
         type: 'number',
       },
-      PROFILE_ID.ZHA,                 // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
-      'colorTempPhysicalMax',         // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      370                             // defaultValue (370 = 2700K)
+      PROFILE_ID.ZHA, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.LIGHTINGCOLORCTRL, // clusterId
+      'colorTempPhysicalMax', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      370 // defaultValue (370 = 2700K)
     );
     this.addProperty(
-      node,                           // device
-      'colorTemperature',             // name
-      { // property description
+      node, // device
+      'colorTemperature', // name
+      {
+        // property description
         '@type': 'ColorTemperatureProperty',
         label: 'Color Temperature',
         type: 'number',
         unit: 'kelvin',
       },
-      PROFILE_ID.ZHA,                 // profileId
-      lightingColorCtrlEndpoint,      // endpoint
-      CLUSTER_ID.LIGHTINGCOLORCTRL,   // clusterId
-      'colorTemperature',             // attr
-      'setColorTemperatureValue',     // setAttrFromValue
-      'parseColorTemperatureAttr',    // parseValueFromAttr
-      null,                           // configReport
-      370                             // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      lightingColorCtrlEndpoint, // endpoint
+      CLUSTER_ID.LIGHTINGCOLORCTRL, // clusterId
+      'colorTemperature', // attr
+      'setColorTemperatureValue', // setAttrFromValue
+      'parseColorTemperatureAttr', // parseValueFromAttr
+      null, // configReport
+      370 // defaultValue
     );
     // IKEA color temperature bulbs return an unsupportedAttribute error
     // when trying to read the current color temperature. We set the
@@ -382,9 +389,10 @@ class ZigbeeClassifier {
   addBrightnessProperty(node, genLevelCtrlEndpoint) {
     const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
     this.addProperty(
-      node,                           // device
-      'level',                        // name
-      { // property description
+      node, // device
+      'level', // name
+      {
+        // property description
         '@type': 'BrightnessProperty',
         label: 'Brightness',
         type: 'number',
@@ -393,33 +401,34 @@ class ZigbeeClassifier {
         maximum: 100,
         multipleOf: 0.1,
       },
-      endpoint.profileId,             // profileId
-      genLevelCtrlEndpoint,           // endpoint
-      CLUSTER_ID.GENLEVELCTRL,        // clusterId
-      'currentLevel',                 // attr
-      'setLevelValue',                // setAttrFromValue
-      'parseLevelAttr',               // parseValueFromAttr
+      endpoint.profileId, // profileId
+      genLevelCtrlEndpoint, // endpoint
+      CLUSTER_ID.GENLEVELCTRL, // clusterId
+      'currentLevel', // attr
+      'setLevelValue', // setAttrFromValue
+      'parseLevelAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
   }
 
   addDeviceTemperatureProperty(node, genDeviceTempCfgEndpoint) {
     this.addProperty(
-      node,                           // device
-      'temperature',                  // name
-      { // property description
+      node, // device
+      'temperature', // name
+      {
+        // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genDeviceTempCfgEndpoint,       // endpoint
-      CLUSTER_ID.GENDEVICETEMPCFG,    // clusterId
-      'currentTemperature',           // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genDeviceTempCfgEndpoint, // endpoint
+      CLUSTER_ID.GENDEVICETEMPCFG, // clusterId
+      'currentTemperature', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
 
@@ -431,9 +440,10 @@ class ZigbeeClassifier {
   addLevelProperty(node, genLevelCtrlEndpoint) {
     const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
     this.addProperty(
-      node,                           // device
-      'level',                        // name
-      { // property description
+      node, // device
+      'level', // name
+      {
+        // property description
         '@type': 'LevelProperty',
         label: 'Level',
         type: 'number',
@@ -442,12 +452,12 @@ class ZigbeeClassifier {
         maximum: 100,
         multipleOf: 0.1,
       },
-      endpoint.profileId,             // profileId
-      genLevelCtrlEndpoint,           // endpoint
-      CLUSTER_ID.GENLEVELCTRL,        // clusterId
-      'currentLevel',                 // attr
-      'setLevelValue',                // setAttrFromValue
-      'parseLevelAttr',               // parseValueFromAttr
+      endpoint.profileId, // profileId
+      genLevelCtrlEndpoint, // endpoint
+      CLUSTER_ID.GENLEVELCTRL, // clusterId
+      'currentLevel', // attr
+      'setLevelValue', // setAttrFromValue
+      'parseLevelAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
   }
@@ -458,19 +468,20 @@ class ZigbeeClassifier {
     }
     const endpoint = node.activeEndpoints[genOnOffEndpoint];
     const property = this.addProperty(
-      node,                           // device
-      `on${suffix}`,                  // name
-      { // property description
+      node, // device
+      `on${suffix}`, // name
+      {
+        // property description
         '@type': suffix ? 'BooleanProperty' : 'OnOffProperty',
         label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
       },
-      endpoint.profileId,             // profileId
-      genOnOffEndpoint,               // endpoint
-      CLUSTER_ID.GENONOFF,            // clusterId
-      'onOff',                        // attr
-      'setOnOffValue',                // setAttrFromValue
-      'parseOnOffAttr',               // parseValueFromAttr
+      endpoint.profileId, // profileId
+      genOnOffEndpoint, // endpoint
+      CLUSTER_ID.GENONOFF, // clusterId
+      'onOff', // attr
+      'setOnOffValue', // setAttrFromValue
+      'parseOnOffAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
     if (endpoint.deviceId === '000b') {
@@ -498,20 +509,21 @@ class ZigbeeClassifier {
       suffix = '';
     }
     const property = this.addProperty(
-      node,                           // device
-      `on${suffix}`,                  // name
-      { // property description
+      node, // device
+      `on${suffix}`, // name
+      {
+        // property description
         '@type': 'BooleanProperty',
         label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genOnOffOutputEndpoint,         // endpoint
-      CLUSTER_ID.GENONOFF,            // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genOnOffOutputEndpoint, // endpoint
+      CLUSTER_ID.GENONOFF, // clusterId
+      '', // attr
+      '', // setAttrFromValue
+      '' // parseValueFromAttr
     );
     property.bindNeeded = true;
     if (typeof property.value === 'undefined') {
@@ -520,9 +532,8 @@ class ZigbeeClassifier {
     if (!node.onOffProperty) {
       node.onOffProperty = property;
     }
-    DEBUG && console.log('addProperty:',
-                         '  bindNeeded:', property.bindNeeded,
-                         'value:', property.value);
+    DEBUG &&
+      console.log('addProperty:', '  bindNeeded:', property.bindNeeded, 'value:', property.value);
     return property;
   }
 
@@ -531,9 +542,10 @@ class ZigbeeClassifier {
       suffix = '';
     }
     const property = this.addProperty(
-      node,                           // device
-      `level${suffix}`,               // name
-      { // property description
+      node, // device
+      `level${suffix}`, // name
+      {
+        // property description
         '@type': 'LevelProperty',
         label: suffix ? `Level (${suffix})` : 'Level',
         type: 'number',
@@ -543,20 +555,19 @@ class ZigbeeClassifier {
         multipleOf: 0.1,
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genLevelCtrlOutputEndpoint,     // endpoint
-      CLUSTER_ID.GENLEVELCTRL,        // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genLevelCtrlOutputEndpoint, // endpoint
+      CLUSTER_ID.GENLEVELCTRL, // clusterId
+      '', // attr
+      '', // setAttrFromValue
+      '' // parseValueFromAttr
     );
     property.bindNeeded = true;
     if (typeof property.value === 'undefined') {
       property.value = 0;
     }
-    DEBUG && console.log('addProperty:',
-                         '  bindNeeded:', property.bindNeeded,
-                         'value:', property.value);
+    DEBUG &&
+      console.log('addProperty:', '  bindNeeded:', property.bindNeeded, 'value:', property.value);
     return property;
   }
 
@@ -565,37 +576,38 @@ class ZigbeeClassifier {
       suffix = '';
     }
     const property = this.addProperty(
-      node,                           // device
-      `motion${suffix}`,              // name
-      { // property description
+      node, // device
+      `motion${suffix}`, // name
+      {
+        // property description
         '@type': 'MotionProperty',
         type: 'boolean',
         label: suffix ? `Motion (${suffix})` : 'Motion',
         description: 'Motion Sensor',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genOnOffOutputEndpoint,         // endpoint
-      CLUSTER_ID.GENONOFF,            // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genOnOffOutputEndpoint, // endpoint
+      CLUSTER_ID.GENONOFF, // clusterId
+      '', // attr
+      '', // setAttrFromValue
+      '' // parseValueFromAttr
     );
     property.bindNeeded = true;
     if (typeof property.value === 'undefined') {
       property.value = false;
     }
-    DEBUG && console.log('addProperty:',
-                         '  bindNeeded:', property.bindNeeded,
-                         'value:', property.value);
+    DEBUG &&
+      console.log('addProperty:', '  bindNeeded:', property.bindNeeded, 'value:', property.value);
     return property;
   }
 
   addButtonSceneProperty(node, genScenesOutputEndpoint) {
     const property = this.addProperty(
-      node,                           // device
-      'scene',                        // name
-      { // property description
+      node, // device
+      'scene', // name
+      {
+        // property description
         '@type': 'LevelProperty',
         label: 'Scene',
         type: 'integer',
@@ -603,21 +615,20 @@ class ZigbeeClassifier {
         maximum: 15,
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genScenesOutputEndpoint,        // endpoint
-      CLUSTER_ID.GENSCENES,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genScenesOutputEndpoint, // endpoint
+      CLUSTER_ID.GENSCENES, // clusterId
+      '', // attr
+      '', // setAttrFromValue
+      '' // parseValueFromAttr
     );
     property.bindNeeded = false;
     if (typeof property.value !== 'number') {
       property.value = 0;
     }
     console.log('addButtonSceneProperty: scene value:', property.value);
-    DEBUG && console.log('addProperty:',
-                         '  bindNeeded:', property.bindNeeded,
-                         'value:', property.value);
+    DEBUG &&
+      console.log('addProperty:', '  bindNeeded:', property.bindNeeded, 'value:', property.value);
     return property;
   }
 
@@ -626,19 +637,20 @@ class ZigbeeClassifier {
     // a hidden property which is a boolean, and have the visible
     // state be an enumeration.
     node.doorLockProperty = this.addProperty(
-      node,                           // device
-      '_lockedInterntal',             // name
-      { // property description
+      node, // device
+      '_lockedInterntal', // name
+      {
+        // property description
         '@type': 'BooleanProperty',
         label: 'Locked',
         type: 'boolean',
       },
-      PROFILE_ID.ZHA,                 // profileId
-      doorLockEndpoint,               // endpoint
-      CLUSTER_ID.DOORLOCK,            // clusterId
-      'lockState',                    // attr
-      'setDoorLockedValue',           // setAttrFromValue
-      'parseDoorLockedAttr',          // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      doorLockEndpoint, // endpoint
+      CLUSTER_ID.DOORLOCK, // clusterId
+      'lockState', // attr
+      'setDoorLockedValue', // setAttrFromValue
+      'parseDoorLockedAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
     node.doorLockState = this.addProperty(
@@ -651,10 +663,10 @@ class ZigbeeClassifier {
         enum: ['locked', 'unlocked', 'jammed', 'unknown'],
         readOnly: true,
       },
-      0,  // profileId
-      0,  // endpoint
-      0,  // clusterId
-      ''  // attr
+      0, // profileId
+      0, // endpoint
+      0, // clusterId
+      '' // attr
     );
 
     // When the internal state changes, then we update the visible state.
@@ -695,151 +707,159 @@ class ZigbeeClassifier {
 
     // Set the checkin interval for door locks to be faster since we
     // may need to talk to them.
-    node.slowCheckinInterval = 1 * 60 * 4;  // 1 minute (quarterseconds)
+    node.slowCheckinInterval = 1 * 60 * 4; // 1 minute (quarterseconds)
   }
 
   addPresentValueProperty(node, genBinaryInputEndpoint) {
     this.addProperty(
-      node,                           // device
-      'on',                           // name
-      { // property description
+      node, // device
+      'on', // name
+      {
+        // property description
         '@type': 'BooleanProperty',
         label: 'Present',
         type: 'boolean',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      genBinaryInputEndpoint,         // endpoint
-      CLUSTER_ID.GENBINARYINPUT,      // clusterId
-      'presentValue',                 // attr
-      'setOnOffValue',                // setAttrFromValue
-      'parseOnOffAttr',               // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      genBinaryInputEndpoint, // endpoint
+      CLUSTER_ID.GENBINARYINPUT, // clusterId
+      'presentValue', // attr
+      'setOnOffValue', // setAttrFromValue
+      'parseOnOffAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
   }
 
   addHaCurrentProperty(node, haElectricalEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_currentMul',                  // name
-      { // property description
+      node, // device
+      '_currentMul', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acCurrentMultiplier',          // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acCurrentMultiplier', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      '_currentDiv',                  // name
-      { // property description
+      node, // device
+      '_currentDiv', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acCurrentDivisor',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acCurrentDivisor', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      'current',                      // name
-      { // property description
+      node, // device
+      'current', // name
+      {
+        // property description
         '@type': 'CurrentProperty',
         label: 'Current',
         type: 'number',
         unit: 'ampere',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'rmsCurrent',                   // attr
-      '',                             // setAttrFromValue
-      'parseHaCurrentAttr',           // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'rmsCurrent', // attr
+      '', // setAttrFromValue
+      'parseHaCurrentAttr', // parseValueFromAttr
       CONFIG_REPORT_CURRENT
     );
   }
 
   addHaFrequencyProperty(node, haElectricalEndpoint) {
     this.addProperty(
-      node,                           // device
-      'frequency',                    // name
-      { // property description
+      node, // device
+      'frequency', // name
+      {
+        // property description
         '@type': 'FrequencyProperty',
         label: 'Frequency',
         type: 'number',
         unit: 'hertz',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acFrequency',                  // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acFrequency', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
       CONFIG_REPORT_FREQUENCY
     );
   }
 
   addHaInstantaneousPowerProperty(node, haElectricalEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_powerMul',                    // name
-      { // property description
+      node, // device
+      '_powerMul', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acPowerMultiplier',            // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acPowerMultiplier', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      '_powerDiv',                    // name
-      { // property description
+      node, // device
+      '_powerDiv', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acPowerDivisor',               // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acPowerDivisor', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      'instantaneousPower',           // name
-      { // property description
+      node, // device
+      'instantaneousPower', // name
+      {
+        // property description
         '@type': 'InstantaneousPowerProperty',
         label: 'Power',
         type: 'number',
         unit: 'watt',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'activePower',                  // attr
-      '',                             // setAttrFromValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'activePower', // attr
+      '', // setAttrFromValue
       'parseHaInstantaneousPowerAttr', // parseValueFromAttr
       CONFIG_REPORT_POWER
     );
@@ -847,155 +867,164 @@ class ZigbeeClassifier {
 
   addHaVoltageProperty(node, haElectricalEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_voltageMul',                  // name
-      { // property description
+      node, // device
+      '_voltageMul', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acVoltageMultiplier',          // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acVoltageMultiplier', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      '_voltageDiv',                  // name
-      { // property description
+      node, // device
+      '_voltageDiv', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'acVoltageDivisor',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
-      1                               // defaultValue
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'acVoltageDivisor', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      'voltage',                      // name
-      { // property description
+      node, // device
+      'voltage', // name
+      {
+        // property description
         '@type': 'VoltageProperty',
         label: 'Voltage',
         type: 'number',
         unit: 'volt',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      haElectricalEndpoint,           // endpoint
-      CLUSTER_ID.HAELECTRICAL,        // clusterId
-      'rmsVoltage',                   // attr
-      '',                             // setAttrFromValue
-      'parseHaVoltageAttr',           // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      haElectricalEndpoint, // endpoint
+      CLUSTER_ID.HAELECTRICAL, // clusterId
+      'rmsVoltage', // attr
+      '', // setAttrFromValue
+      'parseHaVoltageAttr', // parseValueFromAttr
       CONFIG_REPORT_VOLTAGE
     );
   }
 
   addSeCurrentSummDeliveredProperty(node, seMeteringEndpoint) {
     this.addProperty(
-      node,                             // device
-      '_counterMul',                    // name
-      { // property description
+      node, // device
+      '_counterMul', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      seMeteringEndpoint,               // endpoint
-      CLUSTER_ID.SEMETERING,            // clusterId
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
       'currentSummDeliveredMultiplier', // attr
-      '',                               // setAttrFromValue
-      'parseNumericAttr',               // parseValueFromAttr
-      null,                             // configReport
-      1                                 // defaultValue
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
+      1 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      '_counterDiv',                  // name
-      { // property description
+      node, // device
+      '_counterDiv', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      seMeteringEndpoint,             // endpoint
-      CLUSTER_ID.SEMETERING,          // clusterId
-      'currentSummDeliveredDivisor',  // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr',             // parseValueFromAttr
-      null,                           // configReport
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
+      'currentSummDeliveredDivisor', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr', // parseValueFromAttr
+      null, // configReport
       // use a default of 1000 for now until
       // new attribute definitions are available
-      1000                            // defaultValue
+      1000 // defaultValue
     );
     this.addProperty(
-      node,                           // device
-      'counter',                      // name
-      { // property description
+      node, // device
+      'counter', // name
+      {
+        // property description
         label: 'Total Energy',
         type: 'number',
         unit: 'watt',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                     // profileId
-      seMeteringEndpoint,                 // endpoint
-      CLUSTER_ID.SEMETERING,              // clusterId
-      'currentSummDelivered',             // attr
-      '',                                 // setAttrFromValue
-      'parseSeCurrentSummDeliveredAttr',  // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
+      'currentSummDelivered', // attr
+      '', // setAttrFromValue
+      'parseSeCurrentSummDeliveredAttr', // parseValueFromAttr
       CONFIG_REPORT_MODE
     );
   }
 
   addSeInstantaneousPowerProperty(node, seMeteringEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_multiplier',                  // name
-      { // property description
+      node, // device
+      '_multiplier', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      seMeteringEndpoint,             // endpoint
-      CLUSTER_ID.SEMETERING,          // clusterId
-      'multiplier',                   // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
+      'multiplier', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      '_divisor',                     // name
-      { // property description
+      node, // device
+      '_divisor', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      seMeteringEndpoint,             // endpoint
-      CLUSTER_ID.SEMETERING,          // clusterId
-      'divisor',                      // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
+      'divisor', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'instantaneousPower',           // name
-      { // property description
+      node, // device
+      'instantaneousPower', // name
+      {
+        // property description
         '@type': 'InstantaneousPowerProperty',
         label: 'Power',
         type: 'number',
         unit: 'watt',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      seMeteringEndpoint,             // endpoint
-      CLUSTER_ID.SEMETERING,          // clusterId
-      'instantaneousDemand',          // attr
-      '',                             // setAttrFromValue
+      PROFILE_ID.ZHA, // profileId
+      seMeteringEndpoint, // endpoint
+      CLUSTER_ID.SEMETERING, // clusterId
+      'instantaneousDemand', // attr
+      '', // setAttrFromValue
       'parseSeInstantaneousPowerAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
@@ -1003,84 +1032,89 @@ class ZigbeeClassifier {
 
   addOccupancySensorProperty(node, msOccupancySensingEndpoint) {
     this.addProperty(
-      node,                           // device
-      'occupied',                     // name
-      { // property description
+      node, // device
+      'occupied', // name
+      {
+        // property description
         '@type': 'BooleanProperty',
         type: 'boolean',
         label: 'Occupied',
         description: 'Occupancy Sensor',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msOccupancySensingEndpoint,     // endpoint
-      CLUSTER_ID.OCCUPANCY_SENSOR,    // clusterId
-      'occupancy',                    // attr
-      '',                             // setAttrFromValue
-      'parseOccupiedAttr',            // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      msOccupancySensingEndpoint, // endpoint
+      CLUSTER_ID.OCCUPANCY_SENSOR, // clusterId
+      'occupancy', // attr
+      '', // setAttrFromValue
+      'parseOccupiedAttr', // parseValueFromAttr
       CONFIG_REPORT_INTEGER
     );
     this.addProperty(
-      node,                           // device
-      'sensorType',                   // name
-      { // property description
+      node, // device
+      'sensorType', // name
+      {
+        // property description
         label: 'Sensor Type',
         type: 'string',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msOccupancySensingEndpoint,     // endpoint
-      CLUSTER_ID.OCCUPANCY_SENSOR,    // clusterId
-      'occupancySensorType',          // attr
-      '',                             // setAttrFromValue
-      'parseOccupancySensorTypeAttr'  // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      msOccupancySensingEndpoint, // endpoint
+      CLUSTER_ID.OCCUPANCY_SENSOR, // clusterId
+      'occupancySensorType', // attr
+      '', // setAttrFromValue
+      'parseOccupancySensorTypeAttr' // parseValueFromAttr
     );
   }
 
   addIlluminanceMeasurementProperty(node, msMeasurementEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_minIlluminance',              // name
-      { // property description
+      node, // device
+      '_minIlluminance', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msMeasurementEndpoint,          // endpoint
+      PROFILE_ID.ZHA, // profileId
+      msMeasurementEndpoint, // endpoint
       CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
-      'minMeasuredValue',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'minMeasuredValue', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      '_maxIlluminance',              // name
-      { // property description
+      node, // device
+      '_maxIlluminance', // name
+      {
+        // property description
         type: 'number',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msMeasurementEndpoint,          // endpoint
+      PROFILE_ID.ZHA, // profileId
+      msMeasurementEndpoint, // endpoint
       CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
-      'maxMeasuredValue',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      'maxMeasuredValue', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'illuminance',                  // name
-      { // property description
+      node, // device
+      'illuminance', // name
+      {
+        // property description
         '@type': 'IlluminanceProperty',
         label: 'Illuminance',
         type: 'number',
         unit: 'lux',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msMeasurementEndpoint,          // endpoint
+      PROFILE_ID.ZHA, // profileId
+      msMeasurementEndpoint, // endpoint
       CLUSTER_ID.ILLUMINANCE_MEASUREMENT, // clusterId
-      'measuredValue',                // attr
-      '',                             // setAttrFromValue
+      'measuredValue', // attr
+      '', // setAttrFromValue
       'parseIlluminanceMeasurementAttr', // parseValueFromAttr
       CONFIG_REPORT_ILLUMINANCE
     );
@@ -1089,9 +1123,10 @@ class ZigbeeClassifier {
   addPowerCfgVoltageProperty(node, genPowerCfgEndpoint) {
     if (node.isMainsPowered()) {
       this.addProperty(
-        node,                           // device
-        'mainsVoltage',                 // name
-        { // property description
+        node, // device
+        'mainsVoltage', // name
+        {
+          // property description
           '@type': 'VoltageProperty',
           label: 'Mains Voltage',
           type: 'number',
@@ -1099,12 +1134,12 @@ class ZigbeeClassifier {
           multipleOf: 0.1,
           readOnly: true,
         },
-        PROFILE_ID.ZHA,                 // profileId
-        genPowerCfgEndpoint,            // endpoint
-        CLUSTER_ID.GENPOWERCFG,         // clusterId
-        'mainsVoltage',                 // attr
-        '',                             // setAttrFromValue
-        'parseNumericTenthsAttr',       // parseValueFromAttr
+        PROFILE_ID.ZHA, // profileId
+        genPowerCfgEndpoint, // endpoint
+        CLUSTER_ID.GENPOWERCFG, // clusterId
+        'mainsVoltage', // attr
+        '', // setAttrFromValue
+        'parseNumericTenthsAttr', // parseValueFromAttr
         CONFIG_REPORT_BATTERY
       );
     }
@@ -1112,20 +1147,24 @@ class ZigbeeClassifier {
     // Some devices report that they have a power source of "unknown" but are
     // actually battery powered.
     const hasBattery = [
-      '1116-S',   // Iris V3 Contact Sensor
+      '1116-S', // Iris V3 Contact Sensor
       'motionv4', // SmartThings V4 Motion Sensor
       'motionv5', // SmartThings V5 Motion Sensor
-      'multiv4',  // SmartThings V4 Multi Sensor
-      'tagv4',    // SmartThings V4 Arrival Sensor
+      'multiv4', // SmartThings V4 Multi Sensor
+      'tagv4', // SmartThings V4 Arrival Sensor
     ];
 
     // Bit 7 indicates the backup power source, i.e. battery
-    if (node.isBatteryPowered() || node.powerSource & 0x80 !== 0 ||
-        hasBattery.includes(node.modelId)) {
+    if (
+      node.isBatteryPowered() ||
+      node.powerSource & (0x80 !== 0) ||
+      hasBattery.includes(node.modelId)
+    ) {
       this.addProperty(
-        node,                           // device
-        'batteryVoltage',               // name
-        { // property description
+        node, // device
+        'batteryVoltage', // name
+        {
+          // property description
           '@type': 'VoltageProperty',
           label: 'Battery Voltage',
           type: 'number',
@@ -1133,12 +1172,12 @@ class ZigbeeClassifier {
           multipleOf: 0.1,
           readOnly: true,
         },
-        PROFILE_ID.ZHA,                 // profileId
-        genPowerCfgEndpoint,            // endpoint
-        CLUSTER_ID.GENPOWERCFG,         // clusterId
-        'batteryVoltage',               // attr
-        '',                             // setAttrFromValue
-        'parseNumericTenthsAttr',       // parseValueFromAttr
+        PROFILE_ID.ZHA, // profileId
+        genPowerCfgEndpoint, // endpoint
+        CLUSTER_ID.GENPOWERCFG, // clusterId
+        'batteryVoltage', // attr
+        '', // setAttrFromValue
+        'parseNumericTenthsAttr', // parseValueFromAttr
         CONFIG_REPORT_BATTERY
       );
     }
@@ -1146,9 +1185,10 @@ class ZigbeeClassifier {
     if (node.isBatteryPowered()) {
       const attrBP = 'batteryPercentageRemaining';
       this.addProperty(
-        node,                     // device
-        attrBP,                   // name
-        { // property description
+        node, // device
+        attrBP, // name
+        {
+          // property description
           label: 'Battery Percentage Remaining',
           type: 'number',
           unit: 'percent',
@@ -1158,64 +1198,67 @@ class ZigbeeClassifier {
           readOnly: true,
           visible: !!node.driver.config.showBattery,
         },
-        PROFILE_ID.ZHA,           // profileId
-        genPowerCfgEndpoint,      // endpoint
-        CLUSTER_ID.GENPOWERCFG,   // clusterId
-        attrBP,                   // attr
-        '',                       // setAttrFromValue
-        'parseHalfPercentAttr',   // parseValueFromAttr
-        null,                     // configReport - use device internal settings
-        null                      // defaultValue
+        PROFILE_ID.ZHA, // profileId
+        genPowerCfgEndpoint, // endpoint
+        CLUSTER_ID.GENPOWERCFG, // clusterId
+        attrBP, // attr
+        '', // setAttrFromValue
+        'parseHalfPercentAttr', // parseValueFromAttr
+        null, // configReport - use device internal settings
+        null // defaultValue
       );
     }
   }
 
   addTemperatureSensorProperty(node, msTemperatureEndpoint) {
     this.addProperty(
-      node,                           // device
-      '_minTemp',                     // name
-      { // property description
+      node, // device
+      '_minTemp', // name
+      {
+        // property description
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID.TEMPERATURE,         // clusterId
-      'minMeasuredValue',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      msTemperatureEndpoint, // endpoint
+      CLUSTER_ID.TEMPERATURE, // clusterId
+      'minMeasuredValue', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      '_maxTemp',                     // name
-      { // property description
+      node, // device
+      '_maxTemp', // name
+      {
+        // property description
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID.TEMPERATURE,         // clusterId
-      'maxMeasuredValue',             // attr
-      '',                             // setAttrFromValue
-      'parseNumericAttr'              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      msTemperatureEndpoint, // endpoint
+      CLUSTER_ID.TEMPERATURE, // clusterId
+      'maxMeasuredValue', // attr
+      '', // setAttrFromValue
+      'parseNumericAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'temperature',                  // name
-      { // property description
+      node, // device
+      'temperature', // name
+      {
+        // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      msTemperatureEndpoint,          // endpoint
-      CLUSTER_ID.TEMPERATURE,         // clusterId
-      'measuredValue',                // attr
-      '',                             // setAttrFromValue
+      PROFILE_ID.ZHA, // profileId
+      msTemperatureEndpoint, // endpoint
+      CLUSTER_ID.TEMPERATURE, // clusterId
+      'measuredValue', // attr
+      '', // setAttrFromValue
       'parseTemperatureMeasurementAttr', // parseValueFromAttr
       CONFIG_REPORT_TEMPERATURE
     );
@@ -1225,12 +1268,12 @@ class ZigbeeClassifier {
     }
   }
 
-  addThermostatProperties(node, hvacThermostatEndpoint,
-                          hvacFanControlEndpoint) {
+  addThermostatProperties(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     this.addProperty(
-      node,                           // device
-      'temperature',                  // name
-      { // property description
+      node, // device
+      'temperature', // name
+      {
+        // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
@@ -1240,52 +1283,55 @@ class ZigbeeClassifier {
         maximum: 40,
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'localTemp',                    // attr
-      '',                             // setAttrFromValue
-      'parseNumericHundredthsAttr',   // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'localTemp', // attr
+      '', // setAttrFromValue
+      'parseNumericHundredthsAttr', // parseValueFromAttr
       CONFIG_REPORT_TEMPERATURE
     );
     this.addProperty(
-      node,                           // device
-      'mode',                         // name
-      { // property description
+      node, // device
+      'mode', // name
+      {
+        // property description
         '@type': 'ThermostatModeProperty',
         label: 'Mode',
         type: 'string',
         enum: THERMOSTAT_SYSTEM_MODE.filter((x) => x),
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'systemMode',                   // attr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'systemMode', // attr
       'setThermostatSystemModeValue', // setAttrFromValue
       'parseThermostatSystemModeAttr' // parseValueFromAttr
     );
     this.addProperty(
-      node,                           // device
-      'runMode',                      // name
-      { // property description
+      node, // device
+      'runMode', // name
+      {
+        // property description
         '@type': 'HeatingCoolingProperty',
         label: 'Run Mode',
         type: 'string',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'runningMode',                  // attr
-      '',                             // setAttrFromValue
-      'parseThermostatRunModeAttr',   // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'runningMode', // attr
+      '', // setAttrFromValue
+      'parseThermostatRunModeAttr', // parseValueFromAttr
       CONFIG_REPORT_MODE
     );
 
     const deadbandProperty = this.addProperty(
-      node,                           // device
-      '_deadband',                    // name
-      { // property description
+      node, // device
+      '_deadband', // name
+      {
+        // property description
         label: 'DeadBand',
         type: 'number',
         unit: 'degree celsius',
@@ -1293,176 +1339,186 @@ class ZigbeeClassifier {
         maximum: 2.5,
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'minSetpointDeadBand',          // attr
-      '',                             // setAttrFromValue
-      'parseNumericTenthsAttr'        // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'minSetpointDeadBand', // attr
+      '', // setAttrFromValue
+      'parseNumericTenthsAttr' // parseValueFromAttr
     );
 
     const absMaxHeatTargetProperty = this.addProperty(
-      node,                           // device
-      '_absMaxHeatTarget',             // name
-      { // property description
+      node, // device
+      '_absMaxHeatTarget', // name
+      {
+        // property description
         label: 'Abs Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'absMaxHeatSetpointLimit',      // attr
-      '',                             // setAttrFromValue
-      'parseNumericHundredthsAttr'    // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'absMaxHeatSetpointLimit', // attr
+      '', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const absMinHeatTargetProperty = this.addProperty(
-      node,                           // device
-      '_absMinHeatTarget',             // name
-      { // property description
+      node, // device
+      '_absMinHeatTarget', // name
+      {
+        // property description
         label: 'Abs Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'absMinHeatSetpointLimit',      // attr
-      '',                             // setAttrFromValue
-      'parseNumericHundredthsAttr'    // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'absMinHeatSetpointLimit', // attr
+      '', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const maxHeatTargetProperty = this.addProperty(
-      node,                             // device
-      '_maxHeatTarget',                 // name
-      { // property description
+      node, // device
+      '_maxHeatTarget', // name
+      {
+        // property description
         label: 'Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'maxHeatSetpointLimit',           // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'maxHeatSetpointLimit', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const minHeatTargetProperty = this.addProperty(
-      node,                             // device
-      '_minHeatTarget',                 // name
-      { // property description
+      node, // device
+      '_minHeatTarget', // name
+      {
+        // property description
         label: 'Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'minHeatSetpointLimit',           // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'minHeatSetpointLimit', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const heatTargetProperty = this.addProperty(
-      node,                             // device
-      'heatTarget',                     // name
-      { // property description
+      node, // device
+      'heatTarget', // name
+      {
+        // property description
         '@type': 'TargetTemperatureProperty',
         label: 'Heat Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'occupiedHeatingSetpoint',        // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'occupiedHeatingSetpoint', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
 
     const absMaxCoolTargetProperty = this.addProperty(
-      node,                           // device
-      '_absMaxCoolTarget',             // name
-      { // property description
+      node, // device
+      '_absMaxCoolTarget', // name
+      {
+        // property description
         label: 'Abs Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'absMaxCoolSetpointLimit',      // attr
-      '',                             // setAttrFromValue
-      'parseNumericHundredthsAttr'    // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'absMaxCoolSetpointLimit', // attr
+      '', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const absMinCoolTargetProperty = this.addProperty(
-      node,                           // device
-      '_absMinCoolTarget',             // name
-      { // property description
+      node, // device
+      '_absMinCoolTarget', // name
+      {
+        // property description
         label: 'Abs Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      hvacThermostatEndpoint,         // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,      // clusterId
-      'absMinCoolSetpointLimit',      // attr
-      '',                             // setAttrFromValue
-      'parseNumericHundredthsAttr'    // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'absMinCoolSetpointLimit', // attr
+      '', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const maxCoolTargetProperty = this.addProperty(
-      node,                             // device
-      '_maxCoolTarget',                 // name
-      { // property description
+      node, // device
+      '_maxCoolTarget', // name
+      {
+        // property description
         label: 'Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'maxCoolSetpointLimit',           // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'maxCoolSetpointLimit', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const minCoolTargetProperty = this.addProperty(
-      node,                             // device
-      '_minCoolTarget',                 // name
-      { // property description
+      node, // device
+      '_minCoolTarget', // name
+      {
+        // property description
         label: 'Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'minCoolSetpointLimit',           // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'minCoolSetpointLimit', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
     const coolTargetProperty = this.addProperty(
-      node,                             // device
-      'coolTarget',                     // name
-      { // property description
+      node, // device
+      'coolTarget', // name
+      {
+        // property description
         '@type': 'TargetTemperatureProperty',
         label: 'Cool Target',
         type: 'number',
         unit: 'degree celsius',
         multipleOf: 0.5,
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'occupiedCoolingSetpoint',        // attr
-      'setThermostatTemperatureValue',  // setAttrFromValue
-      'parseNumericHundredthsAttr'      // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'occupiedCoolingSetpoint', // attr
+      'setThermostatTemperatureValue', // setAttrFromValue
+      'parseNumericHundredthsAttr' // parseValueFromAttr
     );
 
     // The abs Min/Max Heat/Cool limits are the hardware defined
@@ -1493,16 +1549,19 @@ class ZigbeeClassifier {
         return;
       }
 
-      if ((!deadbandProperty.hasOwnProperty('value') &&
-           !coolTargetProperty.hasOwnProperty('value')) ||
-          (deadbandProperty.value === null &&
-           coolTargetProperty.value === null)) {
+      if (
+        (!deadbandProperty.hasOwnProperty('value') &&
+          !coolTargetProperty.hasOwnProperty('value')) ||
+        (deadbandProperty.value === null && coolTargetProperty.value === null)
+      ) {
         // it looks like there's no cool target or deadband, so set based on
         // max heat target
         heatTargetProperty.setMaximum(maxHeatTargetProperty.value);
         return;
-      } else if (!deadbandProperty.hasOwnProperty('value') ||
-                 !coolTargetProperty.hasOwnProperty('value')) {
+      } else if (
+        !deadbandProperty.hasOwnProperty('value') ||
+        !coolTargetProperty.hasOwnProperty('value')
+      ) {
         // We don't have enough information yet
         return;
       }
@@ -1540,16 +1599,19 @@ class ZigbeeClassifier {
         return;
       }
 
-      if ((!deadbandProperty.hasOwnProperty('value') &&
-           !heatTargetProperty.hasOwnProperty('value')) ||
-          (deadbandProperty.value === null &&
-           heatTargetProperty.value === null)) {
+      if (
+        (!deadbandProperty.hasOwnProperty('value') &&
+          !heatTargetProperty.hasOwnProperty('value')) ||
+        (deadbandProperty.value === null && heatTargetProperty.value === null)
+      ) {
         // it looks like there's no heat target or deadband, so set based on
         // min cool target
         coolTargetProperty.setMinimum(minCoolTargetProperty.value);
         return;
-      } else if (!deadbandProperty.hasOwnProperty('value') ||
-                 !heatTargetProperty.hasOwnProperty('value')) {
+      } else if (
+        !deadbandProperty.hasOwnProperty('value') ||
+        !heatTargetProperty.hasOwnProperty('value')
+      ) {
         // We don't have enough information yet
         return;
       }
@@ -1587,76 +1649,80 @@ class ZigbeeClassifier {
     }
 
     this.addProperty(
-      node,                             // device
-      'hold',                           // name
-      { // property description
+      node, // device
+      'hold', // name
+      {
+        // property description
         '@type': 'BooleanProperty',
         label: 'Hold',
         type: 'boolean',
       },
-      PROFILE_ID.ZHA,                   // profileId
-      hvacThermostatEndpoint,           // endpoint
-      CLUSTER_ID.HVACTHERMOSTAT,        // clusterId
-      'tempSetpointHold',               // attr
-      'setOnOffWriteValue',             // setAttrFromValue
-      'parseOnOffAttr',                 // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      hvacThermostatEndpoint, // endpoint
+      CLUSTER_ID.HVACTHERMOSTAT, // clusterId
+      'tempSetpointHold', // attr
+      'setOnOffWriteValue', // setAttrFromValue
+      'parseOnOffAttr', // parseValueFromAttr
       CONFIG_REPORT_MODE
     );
 
-    const uiCfgEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID.HVACUSERINTERFACECFG_HEX);
+    const uiCfgEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.HVACUSERINTERFACECFG_HEX
+    );
 
     if (uiCfgEndpoint) {
       this.addProperty(
-        node,                             // device
-        'units',                          // name
-        { // property description
+        node, // device
+        'units', // name
+        {
+          // property description
           label: 'Units',
           type: 'string',
           enum: ['C', 'F'],
         },
-        PROFILE_ID.ZHA,                   // profileId
-        uiCfgEndpoint,                    // endpoint
-        CLUSTER_ID.HVACUSERINTERFACECFG,  // clusterId
-        'tempDisplayMode',                // attr
-        'setWriteEnumValue',              // setAttrFromValue
-        'parseEnumAttr'                   // parseValueFromAttr
+        PROFILE_ID.ZHA, // profileId
+        uiCfgEndpoint, // endpoint
+        CLUSTER_ID.HVACUSERINTERFACECFG, // clusterId
+        'tempDisplayMode', // attr
+        'setWriteEnumValue', // setAttrFromValue
+        'parseEnumAttr' // parseValueFromAttr
       );
     }
 
     if (hvacFanControlEndpoint) {
       const fanModeSeqProperty = this.addProperty(
-        node,                             // device
-        '_fanModeSeq',                    // name
-        { // property description
+        node, // device
+        '_fanModeSeq', // name
+        {
+          // property description
           label: 'Fan Sequence',
           type: 'string',
           enum: HVAC_FAN_SEQ,
           readOnly: true,
         },
-        PROFILE_ID.ZHA,                   // profileId
-        hvacFanControlEndpoint,           // endpoint
-        CLUSTER_ID.HVACFANCTRL,           // clusterId
-        'fanModeSequence',                // attr
-        '',                               // setAttrFromValue
-        'parseEnumAttr'                   // parseValueFromAttr
+        PROFILE_ID.ZHA, // profileId
+        hvacFanControlEndpoint, // endpoint
+        CLUSTER_ID.HVACFANCTRL, // clusterId
+        'fanModeSequence', // attr
+        '', // setAttrFromValue
+        'parseEnumAttr' // parseValueFromAttr
       );
       const fanModeProperty = this.addProperty(
-        node,                             // device
-        'fanMode',                        // name
-        { // property description
+        node, // device
+        'fanMode', // name
+        {
+          // property description
           label: 'Fan',
           type: 'string',
           enum: [],
         },
-        PROFILE_ID.ZHA,                   // profileId
-        hvacFanControlEndpoint,           // endpoint
-        CLUSTER_ID.HVACFANCTRL,           // clusterId
-        'fanMode',                        // attr
-        'setFanModeValue',                // setAttrFromValue
-        'parseFanModeAttr',               // parseValueFromAttr
-        CONFIG_REPORT_MODE,
+        PROFILE_ID.ZHA, // profileId
+        hvacFanControlEndpoint, // endpoint
+        CLUSTER_ID.HVACFANCTRL, // clusterId
+        'fanMode', // attr
+        'setFanModeValue', // setAttrFromValue
+        'parseFanModeAttr', // parseValueFromAttr
+        CONFIG_REPORT_MODE
       );
 
       fanModeSeqProperty.updated = function () {
@@ -1664,8 +1730,10 @@ class ZigbeeClassifier {
         // enumeration.
         if (!this.hasOwnProperty('prevValue') || this.value != this.prevValue) {
           fanModeProperty.enum = this.value.split('/');
-          console.log('fanModeSeqProperty.updated: set fanModeProperty.enum to',
-                      fanModeProperty.enum);
+          console.log(
+            'fanModeSeqProperty.updated: set fanModeProperty.enum to',
+            fanModeProperty.enum
+          );
           this.device.handleDeviceDescriptionUpdated();
           this.prevValue = this.value;
         }
@@ -1676,50 +1744,52 @@ class ZigbeeClassifier {
   addZoneTypeProperty(node, propertyName, propertyDescr) {
     if (propertyName && propertyDescr) {
       this.addProperty(
-        node,                           // device
-        propertyName,                   // name
-        propertyDescr,                  // property description
-        PROFILE_ID.ZHA,                 // profileId
-        node.ssIasZoneEndpoint,         // endpoint
-        CLUSTER_ID.SSIASZONE,           // clusterId
-        '',                             // attr
-        '',                             // setAttrFromValue
-        ''                              // parseValueFromAttr
+        node, // device
+        propertyName, // name
+        propertyDescr, // property description
+        PROFILE_ID.ZHA, // profileId
+        node.ssIasZoneEndpoint, // endpoint
+        CLUSTER_ID.SSIASZONE, // clusterId
+        '', // attr
+        '', // setAttrFromValue
+        '' // parseValueFromAttr
       ).mask = ZONE_STATUS.ALARM_MASK;
 
       this.addProperty(
-        node,                           // device
-        'tamper',                       // name
-        { // property description
+        node, // device
+        'tamper', // name
+        {
+          // property description
           '@type': 'TamperProperty',
           type: 'boolean',
           label: 'Tamper',
           readOnly: true,
         },
-        PROFILE_ID.ZHA,                 // profileId
-        node.ssIasZoneEndpoint,         // endpoint
-        CLUSTER_ID.SSIASZONE,           // clusterId
-        '',                             // attr
-        '',                             // setAttrFromValue
-        ''                              // parseValueFromAttr
+        PROFILE_ID.ZHA, // profileId
+        node.ssIasZoneEndpoint, // endpoint
+        CLUSTER_ID.SSIASZONE, // clusterId
+        '', // attr
+        '', // setAttrFromValue
+        '' // parseValueFromAttr
       ).mask = ZONE_STATUS.TAMPER_MASK;
     }
 
     this.addProperty(
-      node,                           // device
-      'lowBattery',                   // name
-      { // property description
+      node, // device
+      'lowBattery', // name
+      {
+        // property description
         '@type': 'LowBatteryProperty',
         type: 'boolean',
         label: 'Low Battery',
         readOnly: true,
       },
-      PROFILE_ID.ZHA,                 // profileId
-      node.ssIasZoneEndpoint,         // endpoint
-      CLUSTER_ID.SSIASZONE,           // clusterId
-      '',                             // attr
-      '',                             // setAttrFromValue
-      ''                              // parseValueFromAttr
+      PROFILE_ID.ZHA, // profileId
+      node.ssIasZoneEndpoint, // endpoint
+      CLUSTER_ID.SSIASZONE, // clusterId
+      '', // attr
+      '', // setAttrFromValue
+      '' // parseValueFromAttr
     ).mask = ZONE_STATUS.LOW_BATTERY_MASK;
 
     // Remove the cieAddr so that we'll requery it from the device.
@@ -1738,9 +1808,19 @@ class ZigbeeClassifier {
     }
   }
 
-  addProperty(node, name, descr, profileId, endpoint, clusterId,
-              attr, setAttrFromValue, parseValueFromAttr, configReport,
-              defaultValue) {
+  addProperty(
+    node,
+    name,
+    descr,
+    profileId,
+    endpoint,
+    clusterId,
+    attr,
+    setAttrFromValue,
+    parseValueFromAttr,
+    configReport,
+    defaultValue
+  ) {
     if (typeof profileId === 'string') {
       profileId = parseInt(profileId, 16);
     }
@@ -1751,22 +1831,36 @@ class ZigbeeClassifier {
       isZll = true;
       profileId = PROFILE_ID.ZHA;
     }
-    const property = new ZigbeeProperty(node, name, descr, profileId,
-                                        endpoint, clusterId, attr,
-                                        setAttrFromValue, parseValueFromAttr);
+    const property = new ZigbeeProperty(
+      node,
+      name,
+      descr,
+      profileId,
+      endpoint,
+      clusterId,
+      attr,
+      setAttrFromValue,
+      parseValueFromAttr
+    );
     node.properties.set(name, property);
 
-    DEBUG && console.log('addProperty:', node.addr64, name,
-                         `EP:${property.endpoint}`,
-                         `CL:${Utils.hexStr(property.clusterId, 4)}`);
+    DEBUG &&
+      console.log(
+        'addProperty:',
+        node.addr64,
+        name,
+        `EP:${property.endpoint}`,
+        `CL:${Utils.hexStr(property.clusterId, 4)}`
+      );
 
-    if (node.hasOwnProperty('devInfoProperties') &&
-        node.devInfoProperties.hasOwnProperty(name)) {
+    if (node.hasOwnProperty('devInfoProperties') && node.devInfoProperties.hasOwnProperty(name)) {
       const devInfo = node.devInfoProperties[name];
-      if (property.endpoint == devInfo.endpoint &&
-          property.profileId == devInfo.profileId &&
-          property.clusterId == devInfo.clusterId &&
-          jsonEqual(property.attr, devInfo.attr)) {
+      if (
+        property.endpoint == devInfo.endpoint &&
+        property.profileId == devInfo.profileId &&
+        property.clusterId == devInfo.clusterId &&
+        jsonEqual(property.attr, devInfo.attr)
+      ) {
         property.fireAndForget = devInfo.fireAndForget;
         property.value = devInfo.value;
         if (devInfo.hasOwnProperty('minimum')) {
@@ -1778,9 +1872,11 @@ class ZigbeeClassifier {
         if (devInfo.hasOwnProperty('level')) {
           property.level = devInfo.level;
         }
-        if (devInfo.hasOwnProperty('enum') &&
-            property.hasOwnProperty('enum') &&
-            property.enum.length == 0) {
+        if (
+          devInfo.hasOwnProperty('enum') &&
+          property.hasOwnProperty('enum') &&
+          property.enum.length == 0
+        ) {
           property.enum = devInfo.enum;
         }
       }
@@ -1808,88 +1904,95 @@ class ZigbeeClassifier {
     property.defaultValue = defaultValue;
     property.bindNeeded = property.configReportNeeded;
 
-    DEBUG && console.log('addProperty:   ',
-                         'fireAndForget:', property.fireAndForget,
-                         'bindNeeded:', property.bindNeeded,
-                         'configReportNeeded:', property.configReportNeeded,
-                         'initialReadNeeded:', property.initialReadNeeded);
+    DEBUG &&
+      console.log(
+        'addProperty:   ',
+        'fireAndForget:',
+        property.fireAndForget,
+        'bindNeeded:',
+        property.bindNeeded,
+        'configReportNeeded:',
+        property.configReportNeeded,
+        'initialReadNeeded:',
+        property.initialReadNeeded
+      );
 
     return property;
   }
 
   // internal function allows us to use early returns.
   classifyInternal(node) {
-    const seMeteringEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SEMETERING_HEX);
-    const haElectricalEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HAELECTRICAL_HEX);
+    const seMeteringEndpoint = node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SEMETERING_HEX);
+    const haElectricalEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.HAELECTRICAL_HEX
+    );
 
     let isZhaLight = false;
     if (seMeteringEndpoint && !isZhaLight) {
-      isZhaLight = ZHA_DEVICE_ID.isLight(
-        node.activeEndpoints[seMeteringEndpoint].deviceId
-      );
+      isZhaLight = ZHA_DEVICE_ID.isLight(node.activeEndpoints[seMeteringEndpoint].deviceId);
     }
 
     if (haElectricalEndpoint && !isZhaLight) {
-      isZhaLight = ZHA_DEVICE_ID.isLight(
-        node.activeEndpoints[haElectricalEndpoint].deviceId
-      );
+      isZhaLight = ZHA_DEVICE_ID.isLight(node.activeEndpoints[haElectricalEndpoint].deviceId);
     }
 
-    const genBinaryInputEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
-    const genScenesEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
-    const genScenesOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
-    const genGroupsEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENGROUPS_HEX);
-    const genGroupsOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENGROUPS_HEX);
-    const genLevelCtrlEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
-    const genLevelCtrlOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENLEVELCTRL_HEX);
-    const genOnOffEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
-    const genOnOffOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
-    const closuresShadeCfgEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(
-        CLUSTER_ID.CLOSURESSHADECFG_HEX);
-    const closuresShadeCfgOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(
-        CLUSTER_ID.CLOSURESSHADECFG_HEX);
-    const closuresWindowCoveringEndpoints =
-      node.findZhaEndpointsWithInputClusterIdHex(
-        CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
-    const closuresWindowCoveringOutputEndpoints =
-      node.findZhaEndpointWithOutputClusterIdHex(
-        CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX);
-    const doorLockEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
-    const msOccupancySensingEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID.OCCUPANCY_SENSOR_HEX);
-    const msTemperatureEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.TEMPERATURE_HEX);
-    const hvacThermostatEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HVACTHERMOSTAT_HEX);
-    const hvacFanControlEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HVACFANCTRL_HEX);
-    const illuminanceEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID.ILLUMINANCE_MEASUREMENT_HEX);
-    const genPowerCfgEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENPOWERCFG_HEX);
-    const genDeviceTempCfgEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(
-        CLUSTER_ID.GENDEVICETEMPCFG_HEX);
-    const lightLinkEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.LIGHTLINK_HEX);
-    const ssIasZoneEndpoint =
-      node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SSIASZONE_HEX);
+    const genBinaryInputEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.GENBINARYINPUT_HEX
+    );
+    const genScenesEndpoints = node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+    const genScenesOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.GENSCENES_HEX
+    );
+    const genGroupsEndpoints = node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENGROUPS_HEX);
+    const genGroupsOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.GENGROUPS_HEX
+    );
+    const genLevelCtrlEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.GENLEVELCTRL_HEX
+    );
+    const genLevelCtrlOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.GENLEVELCTRL_HEX
+    );
+    const genOnOffEndpoints = node.findZhaEndpointsWithInputClusterIdHex(CLUSTER_ID.GENONOFF_HEX);
+    const genOnOffOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.GENONOFF_HEX
+    );
+    const closuresShadeCfgEndpoints = node.findZhaEndpointsWithInputClusterIdHex(
+      CLUSTER_ID.CLOSURESSHADECFG_HEX
+    );
+    const closuresShadeCfgOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.CLOSURESSHADECFG_HEX
+    );
+    const closuresWindowCoveringEndpoints = node.findZhaEndpointsWithInputClusterIdHex(
+      CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX
+    );
+    const closuresWindowCoveringOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+      CLUSTER_ID.CLOSURESWINDOWCOVERING_HEX
+    );
+    const doorLockEndpoint = node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.DOORLOCK_HEX);
+    const msOccupancySensingEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.OCCUPANCY_SENSOR_HEX
+    );
+    const msTemperatureEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.TEMPERATURE_HEX
+    );
+    const hvacThermostatEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.HVACTHERMOSTAT_HEX
+    );
+    const hvacFanControlEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.HVACFANCTRL_HEX
+    );
+    const illuminanceEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.ILLUMINANCE_MEASUREMENT_HEX
+    );
+    const genPowerCfgEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.GENPOWERCFG_HEX
+    );
+    const genDeviceTempCfgEndpoint = node.findZhaEndpointWithInputClusterIdHex(
+      CLUSTER_ID.GENDEVICETEMPCFG_HEX
+    );
+    const lightLinkEndpoint = node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.LIGHTLINK_HEX);
+    const ssIasZoneEndpoint = node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.SSIASZONE_HEX);
     node.ssIasZoneEndpoint = ssIasZoneEndpoint;
 
     if (DEBUG) {
@@ -1910,8 +2013,7 @@ class ZigbeeClassifier {
         closuresShadeCfgEndpoints: closuresShadeCfgEndpoints,
         closuresShadeCfgOutputEndpoints: closuresShadeCfgOutputEndpoints,
         closuresWindowCoveringEndpoints: closuresWindowCoveringEndpoints,
-        closuresWindowCoveringOutputEndpoints:
-          closuresWindowCoveringOutputEndpoints,
+        closuresWindowCoveringOutputEndpoints: closuresWindowCoveringOutputEndpoints,
         hvacFanControlEndpoint: hvacFanControlEndpoint,
         hvacThermostatEndpoint: hvacThermostatEndpoint,
         doorLockEndpoint: doorLockEndpoint,
@@ -1938,29 +2040,27 @@ class ZigbeeClassifier {
       this.initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
     } else if (seMeteringEndpoint && genLevelCtrlEndpoint) {
       // Support Ubisys dimmer D1
-      this.initLightingPowerMetering(node, seMeteringEndpoint,
-                                     genLevelCtrlEndpoint);
-    } else if (haElectricalEndpoint &&
-               !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint &&
-               !isZhaLight) {
-      this.initHaSmartPlug(node,
-                           haElectricalEndpoint,
-                           seMeteringEndpoint,
-                           genLevelCtrlEndpoint);
-    } else if (seMeteringEndpoint &&
-               !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint &&
-               !isZhaLight) {
+      this.initLightingPowerMetering(node, seMeteringEndpoint, genLevelCtrlEndpoint);
+    } else if (
+      haElectricalEndpoint &&
+      !lightLinkEndpoint &&
+      !node.lightingColorCtrlEndpoint &&
+      !isZhaLight
+    ) {
+      this.initHaSmartPlug(node, haElectricalEndpoint, seMeteringEndpoint, genLevelCtrlEndpoint);
+    } else if (
+      seMeteringEndpoint &&
+      !lightLinkEndpoint &&
+      !node.lightingColorCtrlEndpoint &&
+      !isZhaLight
+    ) {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
     } else if (genLevelCtrlEndpoint) {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);
     } else if (genOnOffEndpoints.length > 0) {
       this.initOnOffSwitches(node, genOnOffEndpoints);
-    } else if (genLevelCtrlOutputEndpoints.length > 0 &&
-               genOnOffOutputEndpoints.length > 0) {
-      this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
-                                 genOnOffOutputEndpoints);
+    } else if (genLevelCtrlOutputEndpoints.length > 0 && genOnOffOutputEndpoints.length > 0) {
+      this.initMultiLevelButtons(node, genLevelCtrlOutputEndpoints, genOnOffOutputEndpoints);
     } else if (genOnOffOutputEndpoints.length > 0) {
       this.initOnOffButtons(node, genOnOffOutputEndpoints);
     } else if (doorLockEndpoint) {
@@ -2003,9 +2103,15 @@ class ZigbeeClassifier {
     if (!node.name) {
       node.name = node.defaultName;
     }
-    DEBUG && console.log('classify: Initialized as type:', node.type,
-                         'name:', node.name,
-                         'defaultName:', node.defaultName);
+    DEBUG &&
+      console.log(
+        'classify: Initialized as type:',
+        node.type,
+        'name:',
+        node.name,
+        'defaultName:',
+        node.defaultName
+      );
   }
 
   initBinarySensor(node, endpointNum) {
@@ -2083,15 +2189,15 @@ class ZigbeeClassifier {
     console.log('genOnOffEndpoints =', genOnOffEndpoints);
     for (const idx in genOnOffEndpoints) {
       console.log('Processing endpoing', idx, '=', genOnOffEndpoints[idx]);
-      const suffix = (idx == 0) ? '' : `${idx}`;
+      const suffix = idx == 0 ? '' : `${idx}`;
       this.addOnProperty(node, genOnOffEndpoints[idx], suffix);
     }
   }
 
   initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint) {
     node.type = 'switch';
-    let colorCapabilities = (node.hasOwnProperty('colorCapabilities') &&
-                             node.colorCapabilities) || 0;
+    let colorCapabilities =
+      (node.hasOwnProperty('colorCapabilities') && node.colorCapabilities) || 0;
     let isLight = false;
     let isColorLight = false;
     let isColorTemperatureLight = false;
@@ -2159,8 +2265,7 @@ class ZigbeeClassifier {
         }
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else if (isColorTemperatureLight) {
-        this.addColorTemperatureProperty(node,
-                                         node.lightingColorCtrlEndpoint);
+        this.addColorTemperatureProperty(node, node.lightingColorCtrlEndpoint);
         this.addBrightnessProperty(node, genLevelCtrlEndpoint);
         node['@type'] = ['Light', 'ColorControl', 'OnOffSwitch'];
       } else {
@@ -2177,9 +2282,8 @@ class ZigbeeClassifier {
   initOnOffButtons(node, genOnOffOutputEndpoints) {
     node.type = 'button';
     for (const idx in genOnOffOutputEndpoints) {
-      console.log('Processing endpoint', idx, '=',
-                  genOnOffOutputEndpoints[idx]);
-      const suffix = (idx == 0) ? '' : `${idx}`;
+      console.log('Processing endpoint', idx, '=', genOnOffOutputEndpoints[idx]);
+      const suffix = idx == 0 ? '' : `${idx}`;
       const endpoint = genOnOffOutputEndpoints[idx];
 
       if (node.modelId.includes('motion')) {
@@ -2214,8 +2318,7 @@ class ZigbeeClassifier {
     }
   }
 
-  initMultiLevelButtons(node, genLevelCtrlOutputEndpoints,
-                        genOnOffOutputEndpoints) {
+  initMultiLevelButtons(node, genLevelCtrlOutputEndpoints, genOnOffOutputEndpoints) {
     if (node.modelId.includes('motion') && genOnOffOutputEndpoints) {
       // The IKEA Motion sensor has a modelId of 'TRADFRI motion sensor'
       this.initOnOffButtons(node, genOnOffOutputEndpoints);
@@ -2226,37 +2329,35 @@ class ZigbeeClassifier {
     node['@type'] = ['PushButton'];
 
     for (const idx in genLevelCtrlOutputEndpoints) {
-      DEBUG && console.log('Processing endpoint', idx, '=',
-                           genLevelCtrlOutputEndpoints[idx]);
-      const suffix = (idx == 0) ? '' : `${idx}`;
+      DEBUG && console.log('Processing endpoint', idx, '=', genLevelCtrlOutputEndpoints[idx]);
+      const suffix = idx == 0 ? '' : `${idx}`;
       const endpoint = genLevelCtrlOutputEndpoints[idx];
       const onOffProperty = this.addButtonOnProperty(node, endpoint, suffix);
       const levelProperty = this.addButtonLevelProperty(node, endpoint, suffix);
-      let eventLimit = 2;   // to generate the events for the Level buttons
+      let eventLimit = 2; // to generate the events for the Level buttons
 
       if (node.modelId === 'TRADFRI remote control') {
         // Workaround: version E1810 (deviceId 0820) is missing the GENSCENES
         // output cluster but still receives updates on that cluster
-        const t = node.findZhaEndpointWithOutputClusterIdHex(
-          CLUSTER_ID.GENSCENES_HEX);
-        if (t.length == 0 &&
-            endpoint == 1 &&
-            node.activeEndpoints['1'] &&
-            node.activeEndpoints['1'].deviceId === '0820') {
-          node.activeEndpoints['1'].outputClusters.push(
-            CLUSTER_ID.GENSCENES_HEX);
+        const t = node.findZhaEndpointWithOutputClusterIdHex(CLUSTER_ID.GENSCENES_HEX);
+        if (
+          t.length == 0 &&
+          endpoint == 1 &&
+          node.activeEndpoints['1'] &&
+          node.activeEndpoints['1'].deviceId === '0820'
+        ) {
+          node.activeEndpoints['1'].outputClusters.push(CLUSTER_ID.GENSCENES_HEX);
           node.activeEndpoints['1'].outputClusters.sort();
         }
         // end of workaround
 
-        const genScenesOutputEndpoints =
-          node.findZhaEndpointWithOutputClusterIdHex(
-            CLUSTER_ID.GENSCENES_HEX);
+        const genScenesOutputEndpoints = node.findZhaEndpointWithOutputClusterIdHex(
+          CLUSTER_ID.GENSCENES_HEX
+        );
         if (genScenesOutputEndpoints[0]) {
-          const sceneProperty =
-              this.addButtonSceneProperty(node, genScenesOutputEndpoints[0]);
-          sceneProperty.buttonIndex = 4;  // this property also covers button 5
-          eventLimit = 4;   // extend to generate the scene events
+          const sceneProperty = this.addButtonSceneProperty(node, genScenesOutputEndpoints[0]);
+          sceneProperty.buttonIndex = 4; // this property also covers button 5
+          eventLimit = 4; // extend to generate the scene events
         }
 
         // This is the IKEA remote with a center button and 4 other
@@ -2272,7 +2373,7 @@ class ZigbeeClassifier {
 
         // The remaining buttons can all generate pressed,
         // longPressed and released events.
-        levelProperty.buttonIndex = 2;  // this property also covers button 3
+        levelProperty.buttonIndex = 2; // this property also covers button 3
         const label = ['Top', 'Bottom', 'Right', 'Left'];
         for (let i = 0; i < eventLimit; i++) {
           this.addEvents(node, {
@@ -2373,17 +2474,16 @@ class ZigbeeClassifier {
     this.addEvents(node, eventMappings);
   }
 
-  initHaSmartPlug(node,
-                  haElectricalEndpoint,
-                  seMeteringEndpoint,
-                  genLevelCtrlEndpoint) {
+  initHaSmartPlug(node, haElectricalEndpoint, seMeteringEndpoint, genLevelCtrlEndpoint) {
     node.type = 'smartplug';
     node['@type'] = ['OnOffSwitch', 'SmartPlug', 'EnergyMonitor'];
     this.addOnProperty(node, haElectricalEndpoint);
     if (genLevelCtrlEndpoint) {
       const endpoint = node.activeEndpoints[genLevelCtrlEndpoint];
-      if (endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_SWITCH &&
-          endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_OUTPUT) {
+      if (
+        endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_SWITCH &&
+        endpoint.deviceId != ZHA_DEVICE_ID.ON_OFF_OUTPUT
+      ) {
         // The Samsung SmartSwitch advertises the genLevelCtrl cluster,
         // but it doesn't do anything. It also advertises itself as an
         // onOffOutput, so we use that to filter out the level control.
@@ -2426,8 +2526,7 @@ class ZigbeeClassifier {
   initThermostat(node, hvacThermostatEndpoint, hvacFanControlEndpoint) {
     node.type = 'thermostat';
     node['@type'] = ['Thermostat'];
-    this.addThermostatProperties(node, hvacThermostatEndpoint,
-                                 hvacFanControlEndpoint);
+    this.addThermostatProperties(node, hvacThermostatEndpoint, hvacFanControlEndpoint);
   }
 }
 

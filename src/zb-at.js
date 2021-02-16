@@ -20,7 +20,7 @@ const xbeeApi = require('xbee-api');
 
 const C = xbeeApi.constants;
 
-const ac = exports.AT_CMD = {};
+const ac = (exports.AT_CMD = {});
 
 ac.APPLY_CHANGES = 'AC';
 ac[ac.APPLY_CHANGES] = 'Apply Changes (AC)';
@@ -82,8 +82,8 @@ ac[ac.WRITE_PARAMETERS] = 'Write Parameters (WR)';
 ac.ZIGBEE_STACK_PROFILE = 'ZS';
 ac[ac.ZIGBEE_STACK_PROFILE] = 'Zigbee Stack Profile (ZS)';
 
-const atBuilder = module.exports.atBuilder = {};
-const atParser = module.exports.atParser = {};
+const atBuilder = (module.exports.atBuilder = {});
+const atParser = (module.exports.atParser = {});
 
 class AtApi {
   makeFrame(command, frame) {
@@ -94,9 +94,7 @@ class AtApi {
       frame.command = command;
 
       if (!(command in atBuilder)) {
-        throw new Error(
-          `This library does not implement data for the AT "${
-            command}" command.`);
+        throw new Error(`This library does not implement data for the AT "${command}" command.`);
       }
 
       const atData = Buffer.alloc(32); // AT Command Data
@@ -169,7 +167,8 @@ atBuilder[ac.NODE_IDENTIFIER] = function (builder, data) {
   // Leading spaces aren't allowed (so we remove them)
   // Embedded commas aren't allowed (so we remove them)
   // Finally, the length is limited to 20 printable ASCII characters.
-  data = data.replace(/,/g, '')
+  data = data
+    .replace(/,/g, '')
     .replace(/[^\x20-\x7e]+/g, '')
     .trim()
     .slice(0, 20);
@@ -224,8 +223,7 @@ atParser[ac.NETWORK_ADDR_16_BIT] = function (frame, reader) {
 };
 
 atParser[ac.NODE_IDENTIFIER] = function (frame, reader) {
-  frame.nodeIdentifier =
-    reader.nextString(frame.commandData.length, 'ascii').trim();
+  frame.nodeIdentifier = reader.nextString(frame.commandData.length, 'ascii').trim();
 };
 
 atParser[ac.NODE_JOIN_TIME] = function (frame, reader) {
