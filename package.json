@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint .",
     "prettier": "prettier -u -w src",
-    "build": "rm -rf lib && cp -rL src lib && find lib -name '*.ts' -delete && tsc -p ."
+    "build": "node generate-config-interfaces.js && rm -rf lib && cp -rL src lib && find lib -name '*.ts' -delete && tsc -p ."
   },
   "homepage": "https://github.com/WebThingsIO/zigbee-adapter",
   "dependencies": {
@@ -20,6 +20,7 @@
     "dissolve": "github:WebThingsIO/dissolve#moziot-changes",
     "dissolve-chunks": "github:WebThingsIO/dissolve-chunks#moziot-changes",
     "mkdirp": "^1.0.4",
+    "mqtt": "^4.2.6",
     "serial-prober": "github:WebThingsIO/serial-prober-node",
     "unpi": "github:WebThingsIO/unpi#moziot-changes",
     "xbee-api": "^0.6.0",
@@ -29,12 +30,14 @@
   },
   "devDependencies": {
     "@types/clone-deep": "^4.0.1",
+    "@types/color": "^3.0.1",
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.15.1",
     "@typescript-eslint/parser": "^4.15.1",
     "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
     "gateway-addon": "^1.0.0",
+    "json-schema-to-typescript": "^10.1.3",
     "prettier": "^2.2.1",
     "typescript": "^4.1.5"
   },
@@ -50,6 +53,10 @@
     "LICENSE",
     "README.md",
     "SHA256SUMS",
+    "lib/zigbee2mqtt/zigbee2mqtt-adapter.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-device.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-driver.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-property.js",
     "lib/driver/index.js",
     "lib/driver/conbee.js",
     "lib/driver/xbee.js",

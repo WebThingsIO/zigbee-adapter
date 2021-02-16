@@ -21,7 +21,9 @@
       "allowFTDISerial": false,
       "allowAMASerial": false,
       "showBattery": false,
-      "debug": ""
+      "debug": "",
+      "debugLogs": false,
+      "zigbee2mqttDebugLogs": false
     },
     "schema": {
       "type": "object",
@@ -47,6 +49,42 @@
         "debug": {
           "type": "string",
           "default": ""
+        },
+        "debugLogs": {
+          "title": "Enable debug logs",
+          "type": "boolean"
+        },
+        "zigbee2mqtt": {
+          "title": "Zigbee2Mqtt",
+          "type": "object",
+          "properties": {
+            "zigbee2mqttDebugLogs": {
+              "title": "Enable Zigbee2Mqtt debug logs",
+              "type": "boolean"
+            },
+            "zigbee2mqttAdapters": {
+              "title": "List of Zigbee2MQTT adapter",
+              "type": "array",
+              "items": {
+                "title": "Zigbee2MQTT adapter",
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "title": "Hostname of the mqtt broker (default localhost)"
+                  },
+                  "port": {
+                    "type": "number",
+                    "title": "Port of the mqtt broker (default 1883)"
+                  },
+                  "topicPrefix": {
+                    "type": "string",
+                    "title": "Topic prefix of the adapter (default zigbee2mqtt)"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
