@@ -10,12 +10,7 @@
 import cloneDeep from 'clone-deep';
 import ZigbeeFamily from './zb-family';
 import DEBUG_FLAG from './zb-debug';
-import {
-  CLUSTER_ID,
-  PROFILE_ID,
-  POWERSOURCE,
-  ZONE_STATUS,
-} from './zb-constants';
+import { CLUSTER_ID, PROFILE_ID, POWERSOURCE, ZONE_STATUS } from './zb-constants';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ZigbeeProperty = require('./zb-property');
@@ -36,10 +31,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.GENONOFF_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENBASIC_HEX, CLUSTER_ID.GENONOFF_HEX],
         outputClusters: [],
       },
     },
@@ -67,10 +59,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.GENONOFF_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENBASIC_HEX, CLUSTER_ID.GENONOFF_HEX],
         outputClusters: [],
       },
     },
@@ -113,10 +102,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.GENONOFF_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENBASIC_HEX, CLUSTER_ID.GENONOFF_HEX],
         outputClusters: [],
       },
     },
@@ -145,10 +131,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.GENONOFF_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENBASIC_HEX, CLUSTER_ID.GENONOFF_HEX],
         outputClusters: [],
       },
     },
@@ -178,10 +161,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENBASIC_HEX,
-          CLUSTER_ID.OCCUPANCY_SENSOR_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENBASIC_HEX, CLUSTER_ID.OCCUPANCY_SENSOR_HEX],
         outputClusters: [],
       },
     },
@@ -202,7 +182,8 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_motion.aq2': { // RTCGQ11LM
+  'lumi.sensor_motion.aq2': {
+    // RTCGQ11LM
     name: 'motion',
     '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
@@ -253,7 +234,8 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_ht': { // WSDCGQ01LM (round)
+  'lumi.sensor_ht': {
+    // WSDCGQ01LM (round)
     name: 'temperature',
     '@type': ['TemperatureSensor', 'HumiditySensor'],
     powerSource: POWERSOURCE.BATTERY,
@@ -306,13 +288,10 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.weather': { // WSDCGQ11LM (square)
+  'lumi.weather': {
+    // WSDCGQ11LM (square)
     name: 'temperature',
-    '@type': [
-      'TemperatureSensor',
-      'HumiditySensor',
-      'BarometricPressureSensor',
-    ],
+    '@type': ['TemperatureSensor', 'HumiditySensor', 'BarometricPressureSensor'],
     powerSource: POWERSOURCE.BATTERY,
     activeEndpoints: {
       1: {
@@ -397,16 +376,12 @@ const MODEL_IDS = {
       },
       2: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENMULTISTATEINPUT_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENMULTISTATEINPUT_HEX],
         outputClusters: [],
       },
       3: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENANALOGINPUT_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENANALOGINPUT_HEX],
         outputClusters: [],
       },
     },
@@ -480,11 +455,7 @@ const MODEL_IDS = {
   },
   'lumi.plug.maeu01': {
     name: 'smartplug',
-    '@type': [
-      'SmartPlug',
-      'EnergyMonitor',
-      'OnOffSwitch',
-    ],
+    '@type': ['SmartPlug', 'EnergyMonitor', 'OnOffSwitch'],
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
@@ -547,10 +518,7 @@ const MODEL_IDS = {
     activeEndpoints: {
       1: {
         profileId: PROFILE_ID.ZHA_HEX,
-        inputClusters: [
-          CLUSTER_ID.GENPOWERCFG_HEX,
-          CLUSTER_ID.SSIASZONE_HEX,
-        ],
+        inputClusters: [CLUSTER_ID.GENPOWERCFG_HEX, CLUSTER_ID.SSIASZONE_HEX],
         outputClusters: [],
       },
     },
@@ -680,8 +648,7 @@ export default class XiaomiFamily extends ZigbeeFamily {
               property.setCachedValue(xiaomiProperty.value);
             }
 
-            DEBUG && console.log('xiaomi.init: added property:',
-                                 propertyName, property.asDict());
+            DEBUG && console.log('xiaomi.init: added property:', propertyName, property.asDict());
 
             node.properties.set(propertyName, property);
           }

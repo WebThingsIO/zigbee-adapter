@@ -6,6 +6,7 @@
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint .",
+    "prettier": "prettier -u -w src",
     "build": "rm -rf lib && cp -rL src lib && find lib -name '*.ts' -delete && tsc -p ."
   },
   "homepage": "https://github.com/WebThingsIO/zigbee-adapter",

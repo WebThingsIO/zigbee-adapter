@@ -28,19 +28,23 @@ const xbeeSerialProber = new SerialProber({
   baudRate: 9600,
   // XBee Get API Mode Command
   probeCmd: [
-    0x7e,       // Start of frame
-    0x00, 0x04, // Payload Length
-    0x08,       // AT Command Request
-    0x01,       // Frame ID
-    0x41, 0x50, // AP - API Enable
-    0x65,       // Checksum
+    0x7e, // Start of frame
+    0x00,
+    0x04, // Payload Length
+    0x08, // AT Command Request
+    0x01, // Frame ID
+    0x41,
+    0x50, // AP - API Enable
+    0x65, // Checksum
   ],
   probeRsp: [
-    0x7e,       // Start of frame
-    0x00, 0x06, // Payload length
-    0x88,       // AT Command Response
-    0x01,       // Frame ID
-    0x41, 0x50, // AP
+    0x7e, // Start of frame
+    0x00,
+    0x06, // Payload length
+    0x88, // AT Command Response
+    0x01, // Frame ID
+    0x41,
+    0x50, // AP
     // This would normally be followed by the current API mode, and a
     // checksum, but since we don't know those will be, we only match on
     // the first part of the response.
@@ -62,20 +66,23 @@ const conbeeSerialProber = new SerialProber({
   baudRate: 38400,
   // conbee VERSION Command
   probeCmd: [
-    0xc0,       // END - SLIP Framing
-    0x0d,       // VERSION Command
-    0x01,       // Sequence number
-    0x00,       // Reserved - set to zero
-    0x05, 0x00, // Frame length
-    0xed, 0xff, // CRC
-    0xc0,       // END - SLIP framing
+    0xc0, // END - SLIP Framing
+    0x0d, // VERSION Command
+    0x01, // Sequence number
+    0x00, // Reserved - set to zero
+    0x05,
+    0x00, // Frame length
+    0xed,
+    0xff, // CRC
+    0xc0, // END - SLIP framing
   ],
   probeRsp: [
-    0xc0,       // END - SLIP framing
-    0x0d,       // VERSION Command
-    0x01,       // Sequence NUmber
-    0x00,       // Reserved
-    0x09, 0x00, // Frame length
+    0xc0, // END - SLIP framing
+    0x0d, // VERSION Command
+    0x01, // Sequence NUmber
+    0x00, // Reserved
+    0x09,
+    0x00, // Frame length
     // This would normally be followed a 4 byte version code, CRC, and END
     // but since we don't know what those will be we only match on the first
     // part of the response.
@@ -101,21 +108,27 @@ const conbeeNewerFirmwareSerialProber = new SerialProber({
   baudRate: 38400,
   // conbee VERSION Command
   probeCmd: [
-    0xc0,       // END - SLIP Framing
-    0x0d,       // VERSION Command
-    0x01,       // Sequence number
-    0x00,       // Reserved - set to zero
-    0x09, 0x00, // Frame length
-    0x00, 0x00, 0x00, 0x00, // additional VERSION payload / padding
-    0xe9, 0xff, // CRC
-    0xc0,       // END - SLIP framing
+    0xc0, // END - SLIP Framing
+    0x0d, // VERSION Command
+    0x01, // Sequence number
+    0x00, // Reserved - set to zero
+    0x09,
+    0x00, // Frame length
+    0x00,
+    0x00,
+    0x00,
+    0x00, // additional VERSION payload / padding
+    0xe9,
+    0xff, // CRC
+    0xc0, // END - SLIP framing
   ],
   probeRsp: [
-    0xc0,       // END - SLIP framing
-    0x0d,       // VERSION Command
-    0x01,       // Sequence NUmber
-    0x00,       // Reserved
-    0x09, 0x00, // Frame length
+    0xc0, // END - SLIP framing
+    0x0d, // VERSION Command
+    0x01, // Sequence NUmber
+    0x00, // Reserved
+    0x09,
+    0x00, // Frame length
     // This would normally be followed a 4 byte version code, CRC, and END
     // but since we don't know what those will be we only match on the first
     // part of the response.
@@ -137,16 +150,18 @@ const cc2531SerialProber = new SerialProber({
   baudRate: 115200,
   allowAMASerial: false,
   probeCmd: [
-    0xFE,       // SOF
-    0x00,       // length
-    0x21, 0x01, // CMD: PING REQ
-    0x20,       // FCS
+    0xfe, // SOF
+    0x00, // length
+    0x21,
+    0x01, // CMD: PING REQ
+    0x20, // FCS
   ],
 
   probeRsp: [
-    0xFE,
+    0xfe,
     0x02,
-    0x61, 0x01,
+    0x61,
+    0x01,
     // CAPABILITIES
   ],
 
@@ -173,29 +188,31 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
   let config = {};
   // Attempt to move to new config format
   const db = new Database(manifest.id);
-  await db.open().then(() => {
-    return db.loadConfig();
-  }).then((cfg) => {
-    config = cfg;
+  await db
+    .open()
+    .then(() => {
+      return db.loadConfig();
+    })
+    .then((cfg) => {
+      config = cfg;
 
-    if (config.hasOwnProperty('discoverAttributes')) {
-      delete config.discoverAttributes;
-    }
+      if (config.hasOwnProperty('discoverAttributes')) {
+        delete config.discoverAttributes;
+      }
 
-    if (config.hasOwnProperty('scanChannels') &&
-        typeof config.scanChannels === 'string') {
-      config.scanChannels = parseInt(config.scanChannels, 16);
-    }
-    allowFTDISerial = config.allowFTDISerial;
-    allowAMASerial = config.allowAMASerial;
+      if (config.hasOwnProperty('scanChannels') && typeof config.scanChannels === 'string') {
+        config.scanChannels = parseInt(config.scanChannels, 16);
+      }
+      allowFTDISerial = config.allowFTDISerial;
+      allowAMASerial = config.allowAMASerial;
 
-    if (config.hasOwnProperty('debug')) {
-      console.log(`DEBUG config = '${config.debug}'`);
-      require('./zb-debug').set(config.debug);
-    }
+      if (config.hasOwnProperty('debug')) {
+        console.log(`DEBUG config = '${config.debug}'`);
+        require('./zb-debug').set(config.debug);
+      }
 
-    return db.saveConfig(config);
-  });
+      return db.saveConfig(config);
+    });
 
   const { DEBUG_serialProber } = require('./zb-debug').default;
   SerialProber.debug(DEBUG_serialProber);
@@ -205,36 +222,42 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
   if (allowAMASerial) {
     conbeeSerialProber.param.allowAMASerial = true;
   }
-  SerialProber.probeAll(PROBERS).then((matches) => {
-    if (matches.length == 0) {
-      SerialProber.listAll().then(() => {
-        errorCallback(manifest.id, 'No Zigbee dongle found');
-      }).catch((err) => {
-        errorCallback(manifest.id, err);
-      });
-      return;
-    }
-    // We put the driver requires here rather than at the top of
-    // the file so that the debug config gets initialized before we
-    // import the driver class.
-    const XBeeDriver = require('./driver/xbee');
-    const ConBeeDriver = require('./driver/conbee');
-    const ZStackDriver = require('./driver/zstack');
-    const driver = {
-      [xbeeSerialProber.param.name]: XBeeDriver,
-      [conbeeSerialProber.param.name]: ConBeeDriver,
-      [cc2531SerialProber.param.name]: ZStackDriver,
-      [conbeeNewerFirmwareSerialProber.param.name]: ConBeeDriver,
-    };
-    for (const match of matches) {
-      new driver[match.prober.param.name](addonManager,
-                                          config,
-                                          match.port.path,
-                                          match.serialPort);
-    }
-  }).catch((err) => {
-    errorCallback(manifest.id, err);
-  });
+  SerialProber.probeAll(PROBERS)
+    .then((matches) => {
+      if (matches.length == 0) {
+        SerialProber.listAll()
+          .then(() => {
+            errorCallback(manifest.id, 'No Zigbee dongle found');
+          })
+          .catch((err) => {
+            errorCallback(manifest.id, err);
+          });
+        return;
+      }
+      // We put the driver requires here rather than at the top of
+      // the file so that the debug config gets initialized before we
+      // import the driver class.
+      const XBeeDriver = require('./driver/xbee');
+      const ConBeeDriver = require('./driver/conbee');
+      const ZStackDriver = require('./driver/zstack');
+      const driver = {
+        [xbeeSerialProber.param.name]: XBeeDriver,
+        [conbeeSerialProber.param.name]: ConBeeDriver,
+        [cc2531SerialProber.param.name]: ZStackDriver,
+        [conbeeNewerFirmwareSerialProber.param.name]: ConBeeDriver,
+      };
+      for (const match of matches) {
+        new driver[match.prober.param.name](
+          addonManager,
+          config,
+          match.port.path,
+          match.serialPort
+        );
+      }
+    })
+    .catch((err) => {
+      errorCallback(manifest.id, err);
+    });
 }
 
 module.exports = loadZigbeeAdapters;

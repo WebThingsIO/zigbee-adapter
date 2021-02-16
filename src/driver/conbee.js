@@ -14,11 +14,7 @@ const util = require('util');
 
 const C = deconzApi.constants;
 
-const {
-  APS_STATUS,
-  NWK_STATUS,
-  MAC_STATUS,
-} = require('../zb-constants');
+const { APS_STATUS, NWK_STATUS, MAC_STATUS } = require('../zb-constants');
 
 const {
   Command,
@@ -58,7 +54,7 @@ const PARAM = [
   C.PARAM_ID.WATCHDOG_TTL,
 ];
 
-const WATCHDOG_TIMEOUT_SECS = 3600;   // 1 hour
+const WATCHDOG_TIMEOUT_SECS = 3600; // 1 hour
 
 function serialWriteError(error) {
   if (error) {
@@ -68,7 +64,6 @@ function serialWriteError(error) {
 }
 
 class ConBeeDriver extends ZigbeeDriver {
-
   constructor(addonManager, config, portName, serialPort) {
     super(addonManager, config);
     this.portName = portName;
@@ -76,7 +71,7 @@ class ConBeeDriver extends ZigbeeDriver {
 
     this.dataConfirm = false;
     this.dataIndication = false;
-    this.dataRequest = true;  // assume we have space to send the first frame
+    this.dataRequest = true; // assume we have space to send the first frame
     this.dataIndicationInProgress = false;
     this.dataConfirmInProgress = false;
 
@@ -192,8 +187,7 @@ class ConBeeDriver extends ZigbeeDriver {
     if (this.waitingForResponseType != 0) {
       // We've sent a frame to the dongle and we're waiting for a response.
       if (DEBUG_rawFrames) {
-        console.log('processRawFrameQueue: waiting for type:',
-                    this.waitingForResponseType);
+        console.log('processRawFrameQueue: waiting for type:', this.waitingForResponseType);
       }
       return;
     }
@@ -202,19 +196,18 @@ class ConBeeDriver extends ZigbeeDriver {
     if (this.dataIndication) {
       // There is an incoming frame waiting for us
       if (DEBUG_rawFrames) {
-        console.log('Incoming Frame available -',
-                    'requesting it (via APS_DATA_INDICATION)');
+        console.log('Incoming Frame available -', 'requesting it (via APS_DATA_INDICATION)');
       }
-      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_INDICATION },
-                                    false);
+      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_INDICATION }, false);
     } else if (this.dataConfirm) {
       // There is an outgoing frame sent confirmation waiting for us
       if (DEBUG_rawFrames) {
-        console.log('Outgoing Frame confirmation available -',
-                    'requesting it (via APS_DATA_CONFIRM)');
+        console.log(
+          'Outgoing Frame confirmation available -',
+          'requesting it (via APS_DATA_CONFIRM)'
+        );
       }
-      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_CONFIRM },
-                                    false);
+      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_CONFIRM }, false);
     } else if (this.dataRequest) {
       // There is space for an outgoing frame
       if (this.rawFrameQueue.length > 0) {
@@ -293,7 +286,6 @@ class ConBeeDriver extends ZigbeeDriver {
     }
 
     switch (frame.type) {
-
       case C.FRAME_TYPE.READ_PARAMETER:
       case C.FRAME_TYPE.WRITE_PARAMETER: {
         let paramStr;
@@ -312,21 +304,27 @@ class ConBeeDriver extends ZigbeeDriver {
         break;
       }
 
-      case C.FRAME_TYPE.APS_DATA_CONFIRM: { // Query Send State
+      case C.FRAME_TYPE.APS_DATA_CONFIRM: {
+        // Query Send State
         if (dumpFrameDetail) {
           if (!frame.response) {
             console.log(label, 'Explicit Tx State (APS Data Confirm) Request');
             break;
           }
           const dstAddr = frame.destination64 || frame.destination16;
-          console.log(label, 'Explicit Tx State (APS Data Confirm) Response',
-                      dstAddr, `ID:${frame.id}`,
-                      this.deviceStateStr(frame));
+          console.log(
+            label,
+            'Explicit Tx State (APS Data Confirm) Response',
+            dstAddr,
+            `ID:${frame.id}`,
+            this.deviceStateStr(frame)
+          );
         }
         break;
       }
 
-      case C.FRAME_TYPE.APS_DATA_INDICATION: {  // Read Received Data
+      case C.FRAME_TYPE.APS_DATA_INDICATION: {
+        // Read Received Data
         if (!frame.response) {
           if (dumpFrameDetail) {
             console.log(label, 'Explicit Rx (APS Data Indication) Request');
@@ -337,11 +335,15 @@ class ConBeeDriver extends ZigbeeDriver {
         break;
       }
 
-      case C.FRAME_TYPE.APS_DATA_REQUEST: {   // Enqueue Send Data
+      case C.FRAME_TYPE.APS_DATA_REQUEST: {
+        // Enqueue Send Data
         if (frame.response) {
           if (dumpFrameDetail) {
-            console.log(label, 'Explicit Tx (APS Data Request) Response',
-                        this.deviceStateStr(frame));
+            console.log(
+              label,
+              'Explicit Tx (APS Data Request) Response',
+              this.deviceStateStr(frame)
+            );
           }
           break;
         }
@@ -372,8 +374,7 @@ class ConBeeDriver extends ZigbeeDriver {
         console.log(label, frameTypeStr);
     }
     if (dumpFrameDetail) {
-      const frameStr = util.inspect(frame, { depth: null })
-        .replace(/\n/g, `\n${label} `);
+      const frameStr = util.inspect(frame, { depth: null }).replace(/\n/g, `\n${label} `);
       console.log(label, frameStr);
     }
   }
@@ -416,8 +417,7 @@ class ConBeeDriver extends ZigbeeDriver {
 
   // Response to APS_DATA_CONFIRM request (i.e. confirm frame sent)
   handleApsDataConfirm(frame) {
-    DEBUG_flow && console.log('handleApsDataConfirm: seqNum:', frame.seqNum,
-                              'id', frame.id);
+    DEBUG_flow && console.log('handleApsDataConfirm: seqNum:', frame.seqNum, 'id', frame.id);
     this.dataConfirmInProgress = false;
     if (frame.confirmStatus != 0) {
       this.reportConfirmStatus(frame);
@@ -460,8 +460,7 @@ class ConBeeDriver extends ZigbeeDriver {
 
   // Unsolicited indication of state change
   handleDeviceStateChanged(frame) {
-    DEBUG_flow && console.log('handleDeviceStateChanged: seqNum:',
-                              frame.seqNum);
+    DEBUG_flow && console.log('handleDeviceStateChanged: seqNum:', frame.seqNum);
     if (frame.status != 0) {
       this.reportStatus(frame);
     }
@@ -469,8 +468,7 @@ class ConBeeDriver extends ZigbeeDriver {
   }
 
   handleFrame(frame) {
-    if (this.waitingForResponseType == frame.type &&
-        this.waitingForSequenceNum == frame.seqNum) {
+    if (this.waitingForResponseType == frame.type && this.waitingForSequenceNum == frame.seqNum) {
       // We got the frame we're waiting for
       this.waitingForResponseType = 0;
       this.waitingForSequenceNum = 0;
@@ -510,14 +508,14 @@ class ConBeeDriver extends ZigbeeDriver {
 
   kickWatchDog() {
     if (this.protocolVersion < C.WATCHDOG_PROTOCOL_VERSION) {
-      console.error('This version of ConBee doesn\'t support the watchdog');
+      // eslint-disable-next-line @typescript-eslint/quotes
+      console.error("This version of ConBee doesn't support the watchdog");
       return;
     }
     console.log('Kicking WatchDog for', WATCHDOG_TIMEOUT_SECS, 'seconds');
     this.queueCommandsAtFront(
-      this.writeParameterCommands(C.PARAM_ID.WATCHDOG_TTL,
-                                  WATCHDOG_TIMEOUT_SECS,
-                                  WATCHDOG_PRIORITY));
+      this.writeParameterCommands(C.PARAM_ID.WATCHDOG_TTL, WATCHDOG_TIMEOUT_SECS, WATCHDOG_PRIORITY)
+    );
     if (this.watchDogTimeout) {
       clearTimeout(this.watchDogTimeout);
       this.watchDogTimeout = null;
@@ -533,17 +531,22 @@ class ConBeeDriver extends ZigbeeDriver {
   }
 
   permitJoinCommands(duration) {
-    return this.writeParameterCommands(C.PARAM_ID.PERMIT_JOIN,
-                                       duration,
-                                       PERMIT_JOIN_PRIORITY);
+    return this.writeParameterCommands(C.PARAM_ID.PERMIT_JOIN, duration, PERMIT_JOIN_PRIORITY);
   }
 
   processDeviceState() {
-    DEBUG_flow && console.log('processDeviceState:',
-                              'dataIndication', this.dataIndication,
-                              'inProgress:', this.dataIndicationInProgress,
-                              'dataConfirm', this.dataConfirm,
-                              'inProgress:', this.dataConfirmInProgress);
+    DEBUG_flow &&
+      console.log(
+        'processDeviceState:',
+        'dataIndication',
+        this.dataIndication,
+        'inProgress:',
+        this.dataIndicationInProgress,
+        'dataConfirm',
+        this.dataConfirm,
+        'inProgress:',
+        this.dataConfirmInProgress
+      );
     if (this.dataIndication && !this.dataIndicationInProgress) {
       // There is a frame ready to be read.
       this.dataIndicationInProgress = true;
@@ -635,21 +638,16 @@ class ConBeeDriver extends ZigbeeDriver {
 
     if (APS_STATUS.hasOwnProperty(status)) {
       if (status == 0) {
-        console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
-                    `,  addr: ${addr}`);
+        console.log(`Confirm Status: ${status}: ${APS_STATUS[status]}`, `,  addr: ${addr}`);
       } else if (DEBUG_frameDetail || !noReport.includes(status)) {
-        console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`,
-                      `,  addr: ${addr}`);
+        console.error(`Confirm Status: ${status}: ${APS_STATUS[status]}`, `,  addr: ${addr}`);
       }
     } else if (NWK_STATUS.hasOwnProperty(status)) {
-      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`,
-                    `,  addr: ${addr}`);
+      console.error(`Confirm Status: ${status}: ${NWK_STATUS[status]}`, `,  addr: ${addr}`);
     } else if (MAC_STATUS.hasOwnProperty(status)) {
-      console.error(`Confirm Status: ${status}: ${MAC_STATUS[status]}`,
-                    `,  addr: ${addr}`);
+      console.error(`Confirm Status: ${status}: ${MAC_STATUS[status]}`, `,  addr: ${addr}`);
     } else {
-      console.error(`Confirm Status: ${status}: unknown`,
-                    `,  addr: ${addr}`);
+      console.error(`Confirm Status: ${status}: unknown`, `,  addr: ${addr}`);
       console.error(frame);
     }
   }
@@ -676,8 +674,7 @@ class ConBeeDriver extends ZigbeeDriver {
   }
 
   writeParameter(paramId, value, priority) {
-    this.queueCommandsAtFront(
-      this.writeParameterCommands(paramId, value, priority));
+    this.queueCommandsAtFront(this.writeParameterCommands(paramId, value, priority));
   }
 
   writeParameterCommands(paramId, value, priority) {
@@ -707,13 +704,11 @@ class ConBeeDriver extends ZigbeeDriver {
 
 ConBeeDriver.frameHandler = {
   [C.FRAME_TYPE.APS_DATA_CONFIRM]: ConBeeDriver.prototype.handleApsDataConfirm,
-  [C.FRAME_TYPE.APS_DATA_INDICATION]:
-    ConBeeDriver.prototype.handleApsDataIndication,
+  [C.FRAME_TYPE.APS_DATA_INDICATION]: ConBeeDriver.prototype.handleApsDataIndication,
   [C.FRAME_TYPE.APS_DATA_REQUEST]: ConBeeDriver.prototype.handleApsDataRequest,
   [C.FRAME_TYPE.APS_MAC_POLL]: ConBeeDriver.prototype.handleApsMacPoll,
   [C.FRAME_TYPE.DEVICE_STATE]: ConBeeDriver.prototype.handleDeviceState,
-  [C.FRAME_TYPE.DEVICE_STATE_CHANGED]:
-    ConBeeDriver.prototype.handleDeviceStateChanged,
+  [C.FRAME_TYPE.DEVICE_STATE_CHANGED]: ConBeeDriver.prototype.handleDeviceStateChanged,
   [C.FRAME_TYPE.VERSION]: ConBeeDriver.prototype.handleVersion,
   [C.FRAME_TYPE.READ_PARAMETER]: ConBeeDriver.prototype.handleReadParameter,
   [C.FRAME_TYPE.WRITE_PARAMETER]: ConBeeDriver.prototype.handleWriteParameter,
