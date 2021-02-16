@@ -32,3 +32,6 @@ jobs:
       - name: Lint with eslint
         run: |
           npm run lint
+      - name: Check build
+        run: |
+          npm run build
