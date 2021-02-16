@@ -13,7 +13,7 @@
 const Color = require('color');
 const zclId = require('zcl-id');
 
-const {Deferred, Property, Utils} = require('gateway-addon');
+const { Deferred, Property, Utils } = require('gateway-addon');
 const {
   ATTR_ID,
   HVAC_FAN_MODE,
@@ -22,7 +22,7 @@ const {
   THERMOSTAT_STATE,
 } = require('./zb-constants');
 
-const {DEBUG_property} = require('./zb-debug');
+const { DEBUG_property } = require('./zb-debug').default;
 const DEBUG = DEBUG_property;
 
 /**
@@ -180,7 +180,7 @@ class ZigbeeProperty extends Property {
     if (levelProperty) {
       level = levelProperty.value;
     }
-    const color = new Color({h: hue, s: sat, v: level});
+    const color = new Color({ h: hue, s: sat, v: level });
     const colorStr = color.rgb().hex();
     console.log(`parseColorAttr: colorStr: ${colorStr}`,
                 `hue:${hue} sat:${sat}, level:${level}`);
@@ -892,7 +892,7 @@ class ZigbeeProperty extends Property {
                 `attrSat:${attrSat}`);
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: 'moveToHueAndSaturation',
         payload: [attrHue,
                   attrSat,
@@ -944,7 +944,7 @@ class ZigbeeProperty extends Property {
     // Return the zigbee currentX and currentY
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: 'moveToColor',
         payload: [currentX, currentY],
       },
@@ -991,7 +991,7 @@ class ZigbeeProperty extends Property {
     }
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: 'moveToColorTemp',
         payload: [colorTempMireds],
       },
@@ -1010,7 +1010,7 @@ class ZigbeeProperty extends Property {
     const attr = propertyValue ? 'lockDoor' : 'unlockDoor';
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: attr,
         payload: [''],
       },
@@ -1059,7 +1059,7 @@ class ZigbeeProperty extends Property {
     this.level = percentToLevel(propertyValue);
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: 'moveToLevel',
         payload: [this.level],
       },
@@ -1078,7 +1078,7 @@ class ZigbeeProperty extends Property {
     const attr = propertyValue ? 'on' : 'off';
     return [
       {
-        frameCntl: {frameType: 1},
+        frameCntl: { frameType: 1 },
         cmd: attr,
       },
       attr,
@@ -1240,7 +1240,7 @@ if (DEBUG) {
     if (method === 'constructor' || typeof baseMethod !== 'function') {
       return;
     }
-    ZigbeeProperty.prototype[method] = function() {
+    ZigbeeProperty.prototype[method] = function () {
       console.log(`ZigbeeProperty:${method} arguments: `, arguments);
       const result = baseMethod.apply(this, arguments);
       console.log(`ZigbeeProperty:${method} result: `, result);

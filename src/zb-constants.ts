@@ -7,30 +7,36 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
+import { Utils } from 'gateway-addon';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const zclId = require('zcl-id');
 
-const {Utils} = require('gateway-addon');
-
-function addHexValues(dict) {
-  for (const key in dict) {
-    dict[`${key}_HEX`] = Utils.hexStr(dict[key], 4);
+function addHexValues(dict: Record<string, number>): Record<string, number | string> {
+  const obj: Record<string, number | string> = {};
+  for (const [key, value] of Object.entries(dict)) {
+    obj[key] = value;
+    obj[`${key}_HEX`] = Utils.hexStr(value, 4);
   }
+
+  return obj;
 }
 
 // For each key/value pair, add an entry where the key is the value and
 // vice-versa.
-function addInverseMap(dict) {
-  const entries = Object.entries(dict);
-  for (const [key, value] of entries) {
-    dict[value] = parseInt(key);
+function addInverseMap(dict: Record<number, string>): Record<number | string, number | string> {
+  const obj: Record<number | string, number | string> = {};
+  for (const [key, value] of Object.entries(dict)) {
+    obj[key] = value;
+    obj[value] = parseInt(key);
   }
+
+  return obj;
 }
 
 // The following come from the Zigbee Specification,
 // section 2.2.9 APS Sub-Layer Status values
-const APS_STATUS = {
+export const APS_STATUS = addInverseMap({
   0x00: 'SUCCESS',
   0xa0: 'ASDU_TOO_LONG',
   0xa1: 'DEFRAG_DEFERRED',
@@ -49,12 +55,11 @@ const APS_STATUS = {
   0xae: 'TABLE_FULL',
   0xaf: 'UNSECURED',
   0xb0: 'UNSUPPORTED_ATTRIBUTE',
-};
-addInverseMap(APS_STATUS);
+});
 
 // The following come from the Zigbee Specification,
 // section 3.7 NWK Layer Status Values
-const NWK_STATUS = {
+export const NWK_STATUS = addInverseMap({
   0x00: 'SUCCESS',
   0xc1: 'INVALID_PARAMETER',
   0xc2: 'INVALID_REQUEST',
@@ -75,14 +80,13 @@ const NWK_STATUS = {
   0xd1: 'ROUTE_ERROR',
   0xd2: 'BT_TABLE_FULL',
   0xd3: 'FRAME_NOT_BUFFERED',
-};
-addInverseMap(NWK_STATUS);
+});
 
 // The following came from the Zigbee PRO Stack User Guide published by NXP.
 // https://www.nxp.com/docs/en/user-guide/JN-UG-3048.pdf
 
 /* eslint-disable max-len */
-const MAC_STATUS = {
+export const MAC_STATUS = addInverseMap({
   0x00: 'MAC_SUCCESS',                // Success
   0xE0: 'MAC_BEACON_LOSS',            // Beacon loss after synchronisation request
   0xE1: 'MAC_CHANNEL_ACCESS_FAILURE', // CSMA/CA channel access failure
@@ -105,20 +109,19 @@ const MAC_STATUS = {
   0xF2: 'MAC_TX_ACTIVE',              // Receiver-enable request could not be executed, as in transmit state
   0xF3: 'MAC_UNAVAILABLE_KEY',        // Appropriate key is not available in ACL
   0xF4: 'MAC_UNSUPPORTED_ATTRIBUTE',  // PIB Set/Get on unsupported attribute
-};
-addInverseMap(MAC_STATUS);
+});
 /* eslint-enable max-len */
 
-const BROADCAST_ADDR = {
+export const BROADCAST_ADDR = {
   ALL: 'ffff',
   NON_SLEEPING: 'fffd', // i.e. rxOnWhenIdle = true
   ROUTERS: 'fffc',
   LOW_POWER_ROUTERS: 'fffb',
 };
 
-const UNKNOWN_ADDR_16 = 'fffe';
+export const UNKNOWN_ADDR_16 = 'fffe';
 
-const CLUSTER_ID = {
+export const CLUSTER_ID = addHexValues({
   CLOSURESSHADECFG: zclId.cluster('closuresShadeCfg').value,
   CLOSURESWINDOWCOVERING: zclId.cluster('closuresWindowCovering').value,
   DOORLOCK: zclId.cluster('closuresDoorLock').value,
@@ -147,13 +150,12 @@ const CLUSTER_ID = {
   SEMETERING: zclId.cluster('seMetering').value,
   SSIASZONE: zclId.cluster('ssIasZone').value,
   TEMPERATURE: zclId.cluster('msTemperatureMeasurement').value,
-};
-addHexValues(CLUSTER_ID);
+});
 
-const ATTR_ID = {};
-function makeAttrIds(clusterName, attrNames) {
+export const ATTR_ID: Record<string, Record<string, number>> = {};
+function makeAttrIds(clusterName: string, attrNames: string[]): void {
   const clusterId = CLUSTER_ID[clusterName];
-  const attrIdDict = {};
+  const attrIdDict: Record<string, number> = {};
   for (const attrName of attrNames) {
     attrIdDict[attrName.toUpperCase()] = zclId.attr(clusterId, attrName).value;
   }
@@ -193,31 +195,30 @@ makeAttrIds('SSIASZONE', [
 
 // COLOR_CAPABILITY describes values for the colorCapability attribute from
 // the lightingColorCtrl cluster.
-const COLOR_CAPABILITY = {
+export const COLOR_CAPABILITY = {
   HUE_SAT: (1 << 0),
   ENHANCED_HUE_SAT: (1 << 1),
   XY: (1 << 3),
+  COLOR: (1 << 0) | (1 << 1) | (1 << 3),
+
   TEMPERATURE: (1 << 4),
 };
-COLOR_CAPABILITY.COLOR = COLOR_CAPABILITY.HUE_SAT |
-                         COLOR_CAPABILITY.ENHANCED_HUE_SAT |
-                         COLOR_CAPABILITY.XY;
 
 // COLOR_MODE describes values for the colorMode attribute from
 // the lightingColorCtrl cluster.
-const COLOR_MODE = {
+export const COLOR_MODE = {
   HUE_SAT: 0,
   XY: 1,
   TEMPERATURE: 2,
 };
 
 // Server in this context means "server of the cluster"
-const DIR = {
+export const DIR = {
   CLIENT_TO_SERVER: 0,
   SERVER_TO_CLIENT: 1,
 };
 
-const DOORLOCK_EVENT_CODES = [
+export const DOORLOCK_EVENT_CODES = [
   'Unknown',                      // 0
   'Lock',                         // 1
   'Unlock',                       // 2
@@ -238,7 +239,7 @@ const DOORLOCK_EVENT_CODES = [
 
 // POWERSOURCE describes the values for the powerSource attribute from
 // the genBasic cluster
-const POWERSOURCE = {
+export const POWERSOURCE = {
   UNKNOWN: 0,
   MAINS_SINGLE_PHASE: 1,
   MAINS_3_PHASE: 2,
@@ -248,15 +249,14 @@ const POWERSOURCE = {
   EMERGENCY_MAINS_AND_TRANSFER_SWITCH: 6,
 };
 
-const PROFILE_ID = {
+export const PROFILE_ID = addHexValues({
   ZDO: 0,
   ZHA: zclId.profile('HA').value,
   ZLL: zclId.profile('LL').value,
   GREEN: 0xa1e0,
-};
-addHexValues(PROFILE_ID);
+});
 
-const STATUS = {
+export const STATUS = {
   SUCCESS: zclId.status('success').value,
   UNSUPPORTED_ATTRIB: zclId.status('unsupAttribute').value,
   INSUFFICIENT_SPACE: zclId.status('insufficientSpace').value,
@@ -264,7 +264,7 @@ const STATUS = {
 
 // THERMOSTAT_MODE is used for the systemMode attribute
 // for the hvacThermostat cluster.
-const THERMOSTAT_SYSTEM_MODE = [
+export const THERMOSTAT_SYSTEM_MODE = [
   'off',    // 0
   'auto',   // 1
   null,     // 2 - not used in the spec
@@ -276,7 +276,7 @@ const THERMOSTAT_SYSTEM_MODE = [
 
 // THERMOSTAT_MODE is used for the runningMode attribute
 // for the hvacThermostat cluster.
-const THERMOSTAT_RUN_MODE = [
+export const THERMOSTAT_RUN_MODE = [
   'off',      // 0
   null,       // 1 - not used in the spec
   null,       // 2 - not used in the spec
@@ -288,7 +288,7 @@ const THERMOSTAT_RUN_MODE = [
 
 // THERMOSTAT_STATE is used for the runningState attribute from the
 // hvacThermostat cluster.
-const THERMOSTAT_STATE = [
+export const THERMOSTAT_STATE = [
   'heating',  // 0  Heat 1st stage State On
   'cooling',  // 1  Cool 1st stage State On
   'fan',      // 2  Fan  1st stage State On
@@ -300,7 +300,7 @@ const THERMOSTAT_STATE = [
 
 // HVAC_FAN_MODE describes the fanMode attribute from the hvacFanCtrl
 // cluster
-const HVAC_FAN_MODE = [
+export const HVAC_FAN_MODE = [
   'Off',    // 0
   'Low',    // 1
   'Medium', // 2
@@ -313,7 +313,7 @@ const HVAC_FAN_MODE = [
 // HVAC_FAN_SEQ describes options available for the fanModeSequence
 // attribute from the hvacFanCtrl cluster. Each of the labels
 // separated by slashes must appear in the fan mode above.
-const HVAC_FAN_SEQ = [
+export const HVAC_FAN_SEQ = [
   'Low/Medium/High',      // 0
   'Low/High',             // 1
   'Low/Medium/High/Auto', // 2
@@ -326,7 +326,7 @@ const HVAC_FAN_SEQ = [
 // docs-15-0014-05-0plo-Lighting-OccupancyDevice-Specification-V1.0.pdf
 //
 // Zigbee Lighting & Occupancy Device Specification Version 1.0
-const ZHA_DEVICE_ID = {
+export const ZHA_DEVICE_ID = {
   ON_OFF_SWITCH: '0000',
   ON_OFF_OUTPUT: '0002',
   SMART_PLUG: '0051',
@@ -350,7 +350,7 @@ const ZHA_DEVICE_ID = {
   CONTROL_BRIDGE: '0840',
   ON_OFF_SENSOR: '0850',
 
-  isLight: function isLight(deviceId) {
+  isLight: function isLight(deviceId: string): boolean {
     return deviceId == ZHA_DEVICE_ID.ON_OFF_LIGHT ||
            deviceId == ZHA_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT ||
@@ -358,17 +358,17 @@ const ZHA_DEVICE_ID = {
            deviceId == ZHA_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
 
-  isColorLight: function isColorLight(deviceId) {
+  isColorLight: function isColorLight(deviceId: string): boolean {
     return deviceId == ZHA_DEVICE_ID.COLORED_DIMMABLE_LIGHT ||
            deviceId == ZHA_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
-  isColorTemperatureLight: function isColorTemperatureLight(deviceId) {
+  isColorTemperatureLight: function isColorTemperatureLight(deviceId: string): boolean {
     return deviceId == ZHA_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
   },
 };
 
 // ZLL Device Id describes device IDs from the ZLL spec.
-const ZLL_DEVICE_ID = {
+export const ZLL_DEVICE_ID = {
   ON_OFF_LIGHT: '0000',
   ON_OFF_SWITCH: '0010',
   DIMMABLE_LIGHT: '0100',
@@ -383,7 +383,7 @@ const ZLL_DEVICE_ID = {
   CONTROL_BRIDGE: '0840',
   ON_OFF_SENSOR: '0850',
 
-  isLight: function isLight(deviceId) {
+  isLight: function isLight(deviceId: string): boolean {
     return deviceId == ZLL_DEVICE_ID.ON_OFF_LIGHT ||
            deviceId == ZLL_DEVICE_ID.DIMMABLE_LIGHT ||
            deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
@@ -391,45 +391,20 @@ const ZLL_DEVICE_ID = {
            deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
   },
 
-  isColorLight: function isColorLight(deviceId) {
+  isColorLight: function isColorLight(deviceId: string): boolean {
     return deviceId == ZLL_DEVICE_ID.COLOR_LIGHT ||
            deviceId == ZLL_DEVICE_ID.EXTENDED_COLOR_LIGHT;
   },
 
-  isColorTemperatureLight: function isColorTemperatureLight(deviceId) {
+  isColorTemperatureLight: function isColorTemperatureLight(deviceId: string): boolean {
     return deviceId == ZLL_DEVICE_ID.COLOR_TEMPERATURE_LIGHT;
   },
 };
 
 // ZONE_STATUS describes values for the zoneStatus attribute from
 // the ssIasZone cluster.
-const ZONE_STATUS = {
+export const ZONE_STATUS = {
   ALARM_MASK: 0x03,
   TAMPER_MASK: 0x04,
   LOW_BATTERY_MASK: 0x08,
-};
-
-module.exports = {
-  APS_STATUS,
-  ATTR_ID,
-  BROADCAST_ADDR,
-  CLUSTER_ID,
-  COLOR_CAPABILITY,
-  COLOR_MODE,
-  DIR,
-  DOORLOCK_EVENT_CODES,
-  HVAC_FAN_MODE,
-  HVAC_FAN_SEQ,
-  MAC_STATUS,
-  NWK_STATUS,
-  POWERSOURCE,
-  PROFILE_ID,
-  STATUS,
-  THERMOSTAT_RUN_MODE,
-  THERMOSTAT_SYSTEM_MODE,
-  THERMOSTAT_STATE,
-  UNKNOWN_ADDR_16,
-  ZHA_DEVICE_ID,
-  ZLL_DEVICE_ID,
-  ZONE_STATUS,
 };

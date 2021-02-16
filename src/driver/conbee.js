@@ -1,6 +1,6 @@
 /**
  *
- * deconz-driver - Driver to support the RaspBee and ConBee.
+ * conbee-driver - Driver to support the RaspBee and ConBee.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,7 +18,7 @@ const {
   APS_STATUS,
   NWK_STATUS,
   MAC_STATUS,
-} = require('./zb-constants');
+} = require('../zb-constants');
 
 const {
   Command,
@@ -28,7 +28,7 @@ const {
   SEND_FRAME,
   WAIT_FRAME,
   ZigbeeDriver,
-} = require('./zb-driver');
+} = require('./index');
 
 const {
   DEBUG_flow,
@@ -36,9 +36,9 @@ const {
   // DEBUG_frames,
   DEBUG_rawFrames,
   DEBUG_slip,
-} = require('./zb-debug');
+} = require('../zb-debug').default;
 
-const {Utils} = require('gateway-addon');
+const { Utils } = require('gateway-addon');
 
 const PARAM = [
   C.PARAM_ID.MAC_ADDRESS,
@@ -67,7 +67,7 @@ function serialWriteError(error) {
   }
 }
 
-class DeconzDriver extends ZigbeeDriver {
+class ConBeeDriver extends ZigbeeDriver {
 
   constructor(addonManager, config, portName, serialPort) {
     super(addonManager, config);
@@ -84,7 +84,7 @@ class DeconzDriver extends ZigbeeDriver {
     this.waitingForResponseType = 0;
     this.waitingForSequenceNum = 0;
 
-    this.dc = new deconzApi.DeconzAPI({raw_frames: DEBUG_rawFrames});
+    this.dc = new deconzApi.DeconzAPI({ raw_frames: DEBUG_rawFrames });
 
     this.dc.on('error', (err) => {
       console.error('deConz error:', err);
@@ -101,7 +101,7 @@ class DeconzDriver extends ZigbeeDriver {
             } catch (e) {
               console.error('Error handling frame_raw');
               console.error(e);
-              console.error(util.inspect(frame, {depth: null}));
+              console.error(util.inspect(frame, { depth: null }));
             }
           } catch (e) {
             console.error('Error parsing frame_raw');
@@ -120,12 +120,12 @@ class DeconzDriver extends ZigbeeDriver {
         } catch (e) {
           console.error('Error handling frame_object');
           console.error(e);
-          console.error(util.inspect(frame, {depth: null}));
+          console.error(util.inspect(frame, { depth: null }));
         }
       });
     }
 
-    console.log(`DeconzDriver: Using serial port ${portName}`);
+    console.log(`ConBeeDriver: Using serial port ${portName}`);
     this.serialPort.on('data', (chunk) => {
       if (DEBUG_slip) {
         console.log('Rcvd Chunk:', chunk);
@@ -176,7 +176,7 @@ class DeconzDriver extends ZigbeeDriver {
     this.processRawFrameQueue();
   }
 
-  // All requests to the DeConz dongle get a response using the same frame
+  // All requests to the ConBee dongle get a response using the same frame
   // type. See deconzApi.constants.FRAME_TYPE for the valid frame types.
   // I discovered that the comms seem to flow much more smoothly if we wait
   // for the corresponding response before proceeding to the send the next
@@ -205,7 +205,7 @@ class DeconzDriver extends ZigbeeDriver {
         console.log('Incoming Frame available -',
                     'requesting it (via APS_DATA_INDICATION)');
       }
-      rawFrame = this.dc.buildFrame({type: C.FRAME_TYPE.APS_DATA_INDICATION},
+      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_INDICATION },
                                     false);
     } else if (this.dataConfirm) {
       // There is an outgoing frame sent confirmation waiting for us
@@ -213,7 +213,7 @@ class DeconzDriver extends ZigbeeDriver {
         console.log('Outgoing Frame confirmation available -',
                     'requesting it (via APS_DATA_CONFIRM)');
       }
-      rawFrame = this.dc.buildFrame({type: C.FRAME_TYPE.APS_DATA_CONFIRM},
+      rawFrame = this.dc.buildFrame({ type: C.FRAME_TYPE.APS_DATA_CONFIRM },
                                     false);
     } else if (this.dataRequest) {
       // There is space for an outgoing frame
@@ -277,7 +277,7 @@ class DeconzDriver extends ZigbeeDriver {
     } catch (e) {
       console.error('Error dumping frame');
       console.error(e);
-      console.error(util.inspect(frame, {depth: null}));
+      console.error(util.inspect(frame, { depth: null }));
     }
   }
 
@@ -372,7 +372,7 @@ class DeconzDriver extends ZigbeeDriver {
         console.log(label, frameTypeStr);
     }
     if (dumpFrameDetail) {
-      const frameStr = util.inspect(frame, {depth: null})
+      const frameStr = util.inspect(frame, { depth: null })
         .replace(/\n/g, `\n${label} `);
       console.log(label, frameStr);
     }
@@ -399,7 +399,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   getFrameHandler(frame) {
-    return DeconzDriver.frameHandler[frame.type];
+    return ConBeeDriver.frameHandler[frame.type];
   }
 
   getExplicitRxFrameType() {
@@ -449,6 +449,7 @@ class DeconzDriver extends ZigbeeDriver {
   // APS_MAC_POLL - this seems to be sent by the ConBee II and not the ConBee
   // We just ignore the frame for now.
   handleApsMacPoll(_frame) {
+    // pass
   }
 
   // Response to DEVICE_STATE request
@@ -504,7 +505,7 @@ class DeconzDriver extends ZigbeeDriver {
   }
 
   handleVersion(frame) {
-    console.log('DeConz Firmware version:', Utils.hexStr(frame.version, 8));
+    console.log('ConBee Firmware version:', Utils.hexStr(frame.version, 8));
   }
 
   kickWatchDog() {
@@ -546,12 +547,12 @@ class DeconzDriver extends ZigbeeDriver {
     if (this.dataIndication && !this.dataIndicationInProgress) {
       // There is a frame ready to be read.
       this.dataIndicationInProgress = true;
-      this.sendFrameNow({type: C.FRAME_TYPE.APS_DATA_INDICATION});
+      this.sendFrameNow({ type: C.FRAME_TYPE.APS_DATA_INDICATION });
     }
     if (this.dataConfirm && !this.dataConfirmInProgress) {
       // There is a data confirm ready to be read.
       this.dataConfirmInProgress = true;
-      this.sendFrameNow({type: C.FRAME_TYPE.APS_DATA_CONFIRM});
+      this.sendFrameNow({ type: C.FRAME_TYPE.APS_DATA_CONFIRM });
     }
   }
 
@@ -704,18 +705,18 @@ class DeconzDriver extends ZigbeeDriver {
   }
 }
 
-DeconzDriver.frameHandler = {
-  [C.FRAME_TYPE.APS_DATA_CONFIRM]: DeconzDriver.prototype.handleApsDataConfirm,
+ConBeeDriver.frameHandler = {
+  [C.FRAME_TYPE.APS_DATA_CONFIRM]: ConBeeDriver.prototype.handleApsDataConfirm,
   [C.FRAME_TYPE.APS_DATA_INDICATION]:
-    DeconzDriver.prototype.handleApsDataIndication,
-  [C.FRAME_TYPE.APS_DATA_REQUEST]: DeconzDriver.prototype.handleApsDataRequest,
-  [C.FRAME_TYPE.APS_MAC_POLL]: DeconzDriver.prototype.handleApsMacPoll,
-  [C.FRAME_TYPE.DEVICE_STATE]: DeconzDriver.prototype.handleDeviceState,
+    ConBeeDriver.prototype.handleApsDataIndication,
+  [C.FRAME_TYPE.APS_DATA_REQUEST]: ConBeeDriver.prototype.handleApsDataRequest,
+  [C.FRAME_TYPE.APS_MAC_POLL]: ConBeeDriver.prototype.handleApsMacPoll,
+  [C.FRAME_TYPE.DEVICE_STATE]: ConBeeDriver.prototype.handleDeviceState,
   [C.FRAME_TYPE.DEVICE_STATE_CHANGED]:
-    DeconzDriver.prototype.handleDeviceStateChanged,
-  [C.FRAME_TYPE.VERSION]: DeconzDriver.prototype.handleVersion,
-  [C.FRAME_TYPE.READ_PARAMETER]: DeconzDriver.prototype.handleReadParameter,
-  [C.FRAME_TYPE.WRITE_PARAMETER]: DeconzDriver.prototype.handleWriteParameter,
+    ConBeeDriver.prototype.handleDeviceStateChanged,
+  [C.FRAME_TYPE.VERSION]: ConBeeDriver.prototype.handleVersion,
+  [C.FRAME_TYPE.READ_PARAMETER]: ConBeeDriver.prototype.handleReadParameter,
+  [C.FRAME_TYPE.WRITE_PARAMETER]: ConBeeDriver.prototype.handleWriteParameter,
 };
 
-module.exports = DeconzDriver;
+module.exports = ConBeeDriver;

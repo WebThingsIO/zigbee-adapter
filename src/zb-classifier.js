@@ -24,9 +24,9 @@ const {
 
 const ZigbeeProperty = require('./zb-property');
 
-const {Utils} = require('gateway-addon');
+const { Utils } = require('gateway-addon');
 
-const {DEBUG_classifier} = require('./zb-debug');
+const { DEBUG_classifier } = require('./zb-debug').default;
 const DEBUG = DEBUG_classifier;
 
 const ZONE_TYPE_MOTION = 0x000d;
@@ -36,7 +36,7 @@ const ZONE_TYPE_SWITCH = 0x0015;
 // Revision 6, Draft Version 1.0.
 // Table 8-5 - Values of the ZoneType Attribute
 const ZONE_TYPE_NAME = {
-  [ZONE_TYPE_MOTION]: {// 0x000d
+  [ZONE_TYPE_MOTION]: { // 0x000d
     type: 'motion-sensor',
     '@type': ['MotionSensor'],
     propertyName: 'motion',
@@ -48,7 +48,7 @@ const ZONE_TYPE_NAME = {
       readOnly: true,
     },
   },
-  [ZONE_TYPE_SWITCH]: {// 0x0015
+  [ZONE_TYPE_SWITCH]: { // 0x0015
     type: 'door-sensor',
     '@type': ['DoorSensor'],
     propertyName: 'open',
@@ -257,7 +257,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_level',                       // name
-      {// property description
+      { // property description
         type: 'number',
         unit: 'percent',
         minimum: 0,
@@ -274,7 +274,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'color',                        // name
-      {// property description
+      { // property description
         '@type': 'ColorProperty',
         label: 'Color',
         type: 'string',
@@ -293,7 +293,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_level',                       // name
-      {// property description
+      { // property description
         type: 'number',
         unit: 'percent',
         minimum: 0,
@@ -310,7 +310,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'color',                        // name
-      {// property description
+      { // property description
         '@type': 'ColorProperty',
         label: 'Color',
         type: 'string',
@@ -328,7 +328,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_minTemperature',              // name
-      {// property description
+      { // property description
         type: 'number',
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -343,7 +343,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_maxTemperature',              // name
-      {// property description
+      { // property description
         type: 'number',
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -358,7 +358,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'colorTemperature',             // name
-      {// property description
+      { // property description
         '@type': 'ColorTemperatureProperty',
         label: 'Color Temperature',
         type: 'number',
@@ -384,7 +384,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'level',                        // name
-      {// property description
+      { // property description
         '@type': 'BrightnessProperty',
         label: 'Brightness',
         type: 'number',
@@ -407,7 +407,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'temperature',                  // name
-      {// property description
+      { // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
@@ -433,7 +433,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'level',                        // name
-      {// property description
+      { // property description
         '@type': 'LevelProperty',
         label: 'Level',
         type: 'number',
@@ -460,7 +460,7 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `on${suffix}`,                  // name
-      {// property description
+      { // property description
         '@type': suffix ? 'BooleanProperty' : 'OnOffProperty',
         label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
@@ -500,7 +500,7 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `on${suffix}`,                  // name
-      {// property description
+      { // property description
         '@type': 'BooleanProperty',
         label: suffix ? `On/Off (${suffix})` : 'On/Off',
         type: 'boolean',
@@ -533,7 +533,7 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `level${suffix}`,               // name
-      {// property description
+      { // property description
         '@type': 'LevelProperty',
         label: suffix ? `Level (${suffix})` : 'Level',
         type: 'number',
@@ -567,7 +567,7 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       `motion${suffix}`,              // name
-      {// property description
+      { // property description
         '@type': 'MotionProperty',
         type: 'boolean',
         label: suffix ? `Motion (${suffix})` : 'Motion',
@@ -595,7 +595,7 @@ class ZigbeeClassifier {
     const property = this.addProperty(
       node,                           // device
       'scene',                        // name
-      {// property description
+      { // property description
         '@type': 'LevelProperty',
         label: 'Scene',
         type: 'integer',
@@ -628,7 +628,7 @@ class ZigbeeClassifier {
     node.doorLockProperty = this.addProperty(
       node,                           // device
       '_lockedInterntal',             // name
-      {// property description
+      { // property description
         '@type': 'BooleanProperty',
         label: 'Locked',
         type: 'boolean',
@@ -658,7 +658,7 @@ class ZigbeeClassifier {
     );
 
     // When the internal state changes, then we update the visible state.
-    node.doorLockProperty.updated = function() {
+    node.doorLockProperty.updated = function () {
       const state = node.doorLockProperty.value ? 'locked' : 'unlocked';
       node.setPropertyValue(node.doorLockState, state);
       if (node.doorLockTimeout) {
@@ -676,7 +676,7 @@ class ZigbeeClassifier {
 
     const doorLockEvents = {};
     for (const eventCode of DOORLOCK_EVENT_CODES) {
-      doorLockEvents[eventCode] = {'@type': 'DoorLockEvent'};
+      doorLockEvents[eventCode] = { '@type': 'DoorLockEvent' };
     }
     this.addEvents(node, doorLockEvents);
 
@@ -702,7 +702,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'on',                           // name
-      {// property description
+      { // property description
         '@type': 'BooleanProperty',
         label: 'Present',
         type: 'boolean',
@@ -722,7 +722,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_currentMul',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -738,7 +738,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_currentDiv',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -754,7 +754,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'current',                      // name
-      {// property description
+      { // property description
         '@type': 'CurrentProperty',
         label: 'Current',
         type: 'number',
@@ -775,7 +775,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'frequency',                    // name
-      {// property description
+      { // property description
         '@type': 'FrequencyProperty',
         label: 'Frequency',
         type: 'number',
@@ -796,7 +796,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_powerMul',                    // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -812,7 +812,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_powerDiv',                    // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -828,7 +828,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'instantaneousPower',           // name
-      {// property description
+      { // property description
         '@type': 'InstantaneousPowerProperty',
         label: 'Power',
         type: 'number',
@@ -849,7 +849,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_voltageMul',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -865,7 +865,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_voltageDiv',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -881,7 +881,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'voltage',                      // name
-      {// property description
+      { // property description
         '@type': 'VoltageProperty',
         label: 'Voltage',
         type: 'number',
@@ -902,7 +902,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                             // device
       '_counterMul',                    // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -918,7 +918,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_counterDiv',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -936,7 +936,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'counter',                      // name
-      {// property description
+      { // property description
         label: 'Total Energy',
         type: 'number',
         unit: 'watt',
@@ -956,7 +956,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_multiplier',                  // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -970,7 +970,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_divisor',                     // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -984,7 +984,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'instantaneousPower',           // name
-      {// property description
+      { // property description
         '@type': 'InstantaneousPowerProperty',
         label: 'Power',
         type: 'number',
@@ -1005,7 +1005,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'occupied',                     // name
-      {// property description
+      { // property description
         '@type': 'BooleanProperty',
         type: 'boolean',
         label: 'Occupied',
@@ -1023,7 +1023,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'sensorType',                   // name
-      {// property description
+      { // property description
         label: 'Sensor Type',
         type: 'string',
         readOnly: true,
@@ -1041,7 +1041,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_minIlluminance',              // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -1055,7 +1055,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_maxIlluminance',              // name
-      {// property description
+      { // property description
         type: 'number',
         readOnly: true,
       },
@@ -1069,7 +1069,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'illuminance',                  // name
-      {// property description
+      { // property description
         '@type': 'IlluminanceProperty',
         label: 'Illuminance',
         type: 'number',
@@ -1091,7 +1091,7 @@ class ZigbeeClassifier {
       this.addProperty(
         node,                           // device
         'mainsVoltage',                 // name
-        {// property description
+        { // property description
           '@type': 'VoltageProperty',
           label: 'Mains Voltage',
           type: 'number',
@@ -1125,7 +1125,7 @@ class ZigbeeClassifier {
       this.addProperty(
         node,                           // device
         'batteryVoltage',               // name
-        {// property description
+        { // property description
           '@type': 'VoltageProperty',
           label: 'Battery Voltage',
           type: 'number',
@@ -1148,7 +1148,7 @@ class ZigbeeClassifier {
       this.addProperty(
         node,                     // device
         attrBP,                   // name
-        {// property description
+        { // property description
           label: 'Battery Percentage Remaining',
           type: 'number',
           unit: 'percent',
@@ -1174,7 +1174,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_minTemp',                     // name
-      {// property description
+      { // property description
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
@@ -1189,7 +1189,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       '_maxTemp',                     // name
-      {// property description
+      { // property description
         type: 'number',
         unit: 'degree celsius',
         readOnly: true,
@@ -1204,7 +1204,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'temperature',                  // name
-      {// property description
+      { // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
@@ -1230,7 +1230,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'temperature',                  // name
-      {// property description
+      { // property description
         '@type': 'TemperatureProperty',
         label: 'Temperature',
         type: 'number',
@@ -1251,7 +1251,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'mode',                         // name
-      {// property description
+      { // property description
         '@type': 'ThermostatModeProperty',
         label: 'Mode',
         type: 'string',
@@ -1267,7 +1267,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'runMode',                      // name
-      {// property description
+      { // property description
         '@type': 'HeatingCoolingProperty',
         label: 'Run Mode',
         type: 'string',
@@ -1285,7 +1285,7 @@ class ZigbeeClassifier {
     const deadbandProperty = this.addProperty(
       node,                           // device
       '_deadband',                    // name
-      {// property description
+      { // property description
         label: 'DeadBand',
         type: 'number',
         unit: 'degree celsius',
@@ -1304,7 +1304,7 @@ class ZigbeeClassifier {
     const absMaxHeatTargetProperty = this.addProperty(
       node,                           // device
       '_absMaxHeatTarget',             // name
-      {// property description
+      { // property description
         label: 'Abs Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1320,7 +1320,7 @@ class ZigbeeClassifier {
     const absMinHeatTargetProperty = this.addProperty(
       node,                           // device
       '_absMinHeatTarget',             // name
-      {// property description
+      { // property description
         label: 'Abs Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1336,7 +1336,7 @@ class ZigbeeClassifier {
     const maxHeatTargetProperty = this.addProperty(
       node,                             // device
       '_maxHeatTarget',                 // name
-      {// property description
+      { // property description
         label: 'Max Heat Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1352,7 +1352,7 @@ class ZigbeeClassifier {
     const minHeatTargetProperty = this.addProperty(
       node,                             // device
       '_minHeatTarget',                 // name
-      {// property description
+      { // property description
         label: 'Min Heat Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1368,7 +1368,7 @@ class ZigbeeClassifier {
     const heatTargetProperty = this.addProperty(
       node,                             // device
       'heatTarget',                     // name
-      {// property description
+      { // property description
         '@type': 'TargetTemperatureProperty',
         label: 'Heat Target',
         type: 'number',
@@ -1386,7 +1386,7 @@ class ZigbeeClassifier {
     const absMaxCoolTargetProperty = this.addProperty(
       node,                           // device
       '_absMaxCoolTarget',             // name
-      {// property description
+      { // property description
         label: 'Abs Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1402,7 +1402,7 @@ class ZigbeeClassifier {
     const absMinCoolTargetProperty = this.addProperty(
       node,                           // device
       '_absMinCoolTarget',             // name
-      {// property description
+      { // property description
         label: 'Abs Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1418,7 +1418,7 @@ class ZigbeeClassifier {
     const maxCoolTargetProperty = this.addProperty(
       node,                             // device
       '_maxCoolTarget',                 // name
-      {// property description
+      { // property description
         label: 'Max Cool Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1434,7 +1434,7 @@ class ZigbeeClassifier {
     const minCoolTargetProperty = this.addProperty(
       node,                             // device
       '_minCoolTarget',                 // name
-      {// property description
+      { // property description
         label: 'Min Cool Target',
         type: 'number',
         unit: 'degree celsius',
@@ -1450,7 +1450,7 @@ class ZigbeeClassifier {
     const coolTargetProperty = this.addProperty(
       node,                             // device
       'coolTarget',                     // name
-      {// property description
+      { // property description
         '@type': 'TargetTemperatureProperty',
         label: 'Cool Target',
         type: 'number',
@@ -1473,21 +1473,21 @@ class ZigbeeClassifier {
     // The heating target and cooling target need to be separated by the
     // deadband amount.
 
-    absMaxHeatTargetProperty.updated = function() {
+    absMaxHeatTargetProperty.updated = function () {
       maxHeatTargetProperty.setMaximum(this.value);
     };
 
-    maxHeatTargetProperty.updated = function() {
+    maxHeatTargetProperty.updated = function () {
       heatTargetProperty.updateMaximum();
     };
 
-    heatTargetProperty.updated = function() {
+    heatTargetProperty.updated = function () {
       maxHeatTargetProperty.setMinimum(this.value);
       minHeatTargetProperty.setMaximum(this.value);
       coolTargetProperty.updateMinimum();
     };
 
-    heatTargetProperty.updateMaximum = function() {
+    heatTargetProperty.updateMaximum = function () {
       if (!maxHeatTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
@@ -1512,29 +1512,29 @@ class ZigbeeClassifier {
       heatTargetProperty.setMaximum(Math.min(max1, max2));
     };
 
-    minHeatTargetProperty.updated = function() {
+    minHeatTargetProperty.updated = function () {
       heatTargetProperty.setMinimum(this.value);
     };
 
-    absMinHeatTargetProperty.updated = function() {
+    absMinHeatTargetProperty.updated = function () {
       minHeatTargetProperty.setMinimum(this.value);
     };
 
-    absMaxCoolTargetProperty.updated = function() {
+    absMaxCoolTargetProperty.updated = function () {
       maxCoolTargetProperty.setMaximum(this.value);
     };
 
-    maxCoolTargetProperty.updated = function() {
+    maxCoolTargetProperty.updated = function () {
       coolTargetProperty.setMaximum(this.value);
     };
 
-    coolTargetProperty.updated = function() {
+    coolTargetProperty.updated = function () {
       maxCoolTargetProperty.setMinimum(this.value);
       minCoolTargetProperty.setMaximum(this.value);
       heatTargetProperty.updateMaximum();
     };
 
-    coolTargetProperty.updateMinimum = function() {
+    coolTargetProperty.updateMinimum = function () {
       if (!minCoolTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
@@ -1559,15 +1559,15 @@ class ZigbeeClassifier {
       coolTargetProperty.setMinimum(Math.max(min1, min2));
     };
 
-    minCoolTargetProperty.updated = function() {
+    minCoolTargetProperty.updated = function () {
       coolTargetProperty.updateMinimum();
     };
 
-    absMinCoolTargetProperty.updated = function() {
+    absMinCoolTargetProperty.updated = function () {
       minCoolTargetProperty.setMinimum(this.value);
     };
 
-    deadbandProperty.updated = function() {
+    deadbandProperty.updated = function () {
       heatTargetProperty.updateMaximum();
       coolTargetProperty.updateMinimum();
     };
@@ -1589,7 +1589,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                             // device
       'hold',                           // name
-      {// property description
+      { // property description
         '@type': 'BooleanProperty',
         label: 'Hold',
         type: 'boolean',
@@ -1611,7 +1611,7 @@ class ZigbeeClassifier {
       this.addProperty(
         node,                             // device
         'units',                          // name
-        {// property description
+        { // property description
           label: 'Units',
           type: 'string',
           enum: ['C', 'F'],
@@ -1629,7 +1629,7 @@ class ZigbeeClassifier {
       const fanModeSeqProperty = this.addProperty(
         node,                             // device
         '_fanModeSeq',                    // name
-        {// property description
+        { // property description
           label: 'Fan Sequence',
           type: 'string',
           enum: HVAC_FAN_SEQ,
@@ -1645,7 +1645,7 @@ class ZigbeeClassifier {
       const fanModeProperty = this.addProperty(
         node,                             // device
         'fanMode',                        // name
-        {// property description
+        { // property description
           label: 'Fan',
           type: 'string',
           enum: [],
@@ -1659,7 +1659,7 @@ class ZigbeeClassifier {
         CONFIG_REPORT_MODE,
       );
 
-      fanModeSeqProperty.updated = function() {
+      fanModeSeqProperty.updated = function () {
         // Now that we know the allowed sequence, update the fan mode
         // enumeration.
         if (!this.hasOwnProperty('prevValue') || this.value != this.prevValue) {
@@ -1690,7 +1690,7 @@ class ZigbeeClassifier {
       this.addProperty(
         node,                           // device
         'tamper',                       // name
-        {// property description
+        { // property description
           '@type': 'TamperProperty',
           type: 'boolean',
           label: 'Tamper',
@@ -1708,7 +1708,7 @@ class ZigbeeClassifier {
     this.addProperty(
       node,                           // device
       'lowBattery',                   // name
-      {// property description
+      { // property description
         '@type': 'LowBatteryProperty',
         type: 'boolean',
         label: 'Low Battery',

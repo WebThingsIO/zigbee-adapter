@@ -9,7 +9,7 @@
 
 'use strict';
 
-const {Database} = require('gateway-addon');
+const { Database } = require('gateway-addon');
 const manifest = require('./manifest.json');
 const SerialProber = require('serial-prober');
 
@@ -56,11 +56,11 @@ const xbeeSerialProber = new SerialProber({
   ],
 });
 
-const deconzSerialProber = new SerialProber({
-  name: 'deConz',
+const conbeeSerialProber = new SerialProber({
+  name: 'conbee',
   allowAMASerial: false,
   baudRate: 38400,
-  // deConz VERSION Command
+  // conbee VERSION Command
   probeCmd: [
     0xc0,       // END - SLIP Framing
     0x0d,       // VERSION Command
@@ -92,14 +92,14 @@ const deconzSerialProber = new SerialProber({
   ],
 });
 
-// cloned from deconzSerialProber, just changing the probeCmd sequence
+// cloned from conbeeSerialProber, just changing the probeCmd sequence
 // Assumes that if both probes could succeed, the first will have taken
 // ownership of the serial port before the 2nd is instantiated
-const deconzNewerFirmwareSerialProber = new SerialProber({
-  name: 'deConz',
+const conbeeNewerFirmwareSerialProber = new SerialProber({
+  name: 'conbee',
   allowAMASerial: false,
   baudRate: 38400,
-  // deConz VERSION Command
+  // conbee VERSION Command
   probeCmd: [
     0xc0,       // END - SLIP Framing
     0x0d,       // VERSION Command
@@ -160,9 +160,9 @@ const cc2531SerialProber = new SerialProber({
 
 const PROBERS = [
   xbeeSerialProber,
-  deconzSerialProber,
+  conbeeSerialProber,
   cc2531SerialProber,
-  deconzNewerFirmwareSerialProber,
+  conbeeNewerFirmwareSerialProber,
 ];
 
 // Scan the serial ports looking for an XBee adapter.
@@ -197,13 +197,13 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     return db.saveConfig(config);
   });
 
-  const {DEBUG_serialProber} = require('./zb-debug');
+  const { DEBUG_serialProber } = require('./zb-debug').default;
   SerialProber.debug(DEBUG_serialProber);
   if (allowFTDISerial) {
     xbeeSerialProber.param.filter.push(XBEE_FTDI_FILTER);
   }
   if (allowAMASerial) {
-    deconzSerialProber.param.allowAMASerial = true;
+    conbeeSerialProber.param.allowAMASerial = true;
   }
   SerialProber.probeAll(PROBERS).then((matches) => {
     if (matches.length == 0) {
@@ -217,14 +217,14 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     // We put the driver requires here rather than at the top of
     // the file so that the debug config gets initialized before we
     // import the driver class.
-    const XBeeDriver = require('./xbee-driver');
-    const DeconzDriver = require('./deconz-driver');
-    const ZStackDriver = require('./zstack-driver.js');
+    const XBeeDriver = require('./driver/xbee');
+    const ConBeeDriver = require('./driver/conbee');
+    const ZStackDriver = require('./driver/zstack');
     const driver = {
       [xbeeSerialProber.param.name]: XBeeDriver,
-      [deconzSerialProber.param.name]: DeconzDriver,
+      [conbeeSerialProber.param.name]: ConBeeDriver,
       [cc2531SerialProber.param.name]: ZStackDriver,
-      [deconzNewerFirmwareSerialProber.param.name]: DeconzDriver,
+      [conbeeNewerFirmwareSerialProber.param.name]: ConBeeDriver,
     };
     for (const match of matches) {
       new driver[match.prober.param.name](addonManager,

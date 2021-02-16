@@ -7,8 +7,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
-
 const DEBUG_FLAG = {
   // Use DEBUG_classifier for debugging the behaviour of the classifier.
   DEBUG_classifier: false,
@@ -53,22 +51,22 @@ const DEBUG_FLAG = {
   // DEBUG_xiaomi causes additional debug information to be printed
   // from zb-xiaomi.js
   DEBUG_xiaomi: false,
-
-  set: function(names) {
-    for (const name of names.split(/[, ]+/)) {
-      if (name === '') {
-        // If names is empty then split returns ['']
-        continue;
-      }
-      const debugName = `DEBUG_${name}`;
-      if (DEBUG_FLAG.hasOwnProperty(debugName)) {
-        console.log(`Enabling ${debugName}`);
-        DEBUG_FLAG[debugName] = true;
-      } else {
-        console.log(`DEBUG: Unrecognized flag: '${debugName}' (ignored)`);
-      }
-    }
-  },
 };
 
-module.exports = DEBUG_FLAG;
+export function set(names: string): void {
+  for (const name of names.split(/[, ]+/)) {
+    if (name === '') {
+      // If names is empty then split returns ['']
+      continue;
+    }
+    const debugName = `DEBUG_${name}`;
+    if (DEBUG_FLAG.hasOwnProperty(debugName)) {
+      console.log(`Enabling ${debugName}`);
+      DEBUG_FLAG[<keyof typeof DEBUG_FLAG>debugName] = true;
+    } else {
+      console.log(`DEBUG: Unrecognized flag: '${debugName}' (ignored)`);
+    }
+  }
+}
+
+export default DEBUG_FLAG;

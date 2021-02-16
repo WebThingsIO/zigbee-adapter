@@ -7,13 +7,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
+import ZigbeeFamily from './zb-family';
+import XiaomiFamily from './zb-xiaomi';
 
-const XiaomiFamily = require('./zb-xiaomi');
-const ZigbeeFamily = require('./zb-family');
-
-function registerFamilies() {
+export default function registerFamilies(): void {
   ZigbeeFamily.register(new XiaomiFamily());
 }
-
-module.exports = registerFamilies;

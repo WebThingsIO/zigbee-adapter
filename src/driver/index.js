@@ -14,18 +14,18 @@ const util = require('util');
 const zcl = require('zcl-packet');
 const zclId = require('zcl-id');
 const zdo = require('zigbee-zdo');
-const {Utils} = require('gateway-addon');
+const { Utils } = require('gateway-addon');
 
 const {
   PROFILE_ID,
-} = require('./zb-constants');
+} = require('../zb-constants');
 
 const {
   DEBUG_flow,
   DEBUG_frames,
   DEBUG_frameDetail,
   DEBUG_frameParsing,
-} = require('./zb-debug');
+} = require('../zb-debug').default;
 
 const WAIT_TIMEOUT_DELAY = 1 * 1000;
 const EXTENDED_TIMEOUT_DELAY = 10 * 1000;
@@ -88,7 +88,7 @@ class ZigbeeDriver {
     // This is the only place that we need to reference ZigbeeAdapter.
     // To avoid circular dependency problems, we put the require
     // statement here as well.
-    const ZigbeeAdapter = require('./zb-adapter');
+    const ZigbeeAdapter = require('../zb-adapter');
     this.adapter = new ZigbeeAdapter(addonManager, config, this);
 
     this.config = config;
@@ -354,7 +354,7 @@ class ZigbeeDriver {
         console.error('handleExplicitRx:',
                       'Caught an exception parsing ZDO frame');
         console.error(e);
-        console.error(util.inspect(frame, {depth: null}));
+        console.error(util.inspect(frame, { depth: null }));
       }
     } else if (this.isZclFrame(frame)) {
       try {
@@ -363,11 +363,11 @@ class ZigbeeDriver {
         console.error('handleExplicitRx:',
                       'Caught an exception parsing ZCL frame');
         console.error(e);
-        console.error(util.inspect(frame, {depth: null}));
+        console.error(util.inspect(frame, { depth: null }));
       }
     } else {
       console.error('handleExplicitRx: Unrecognize frame received');
-      console.error(util.inspect(frame, {depth: null}));
+      console.error(util.inspect(frame, { depth: null }));
     }
   }
 
@@ -375,7 +375,7 @@ class ZigbeeDriver {
   handleFrame(frame) {
     if (DEBUG_frameParsing) {
       console.log('Rcvd (before parsing):');
-      console.log(util.inspect(frame, {depth: null}));
+      console.log(util.inspect(frame, { depth: null }));
     }
     if (zdo.isZdoFrame(frame)) {
       zdo.parseZdoFrame(frame);
@@ -386,7 +386,7 @@ class ZigbeeDriver {
       }).catch((error) => {
         console.error('Error parsing ZCL frame');
         console.error(error);
-        console.error(util.inspect(frame, {depth: null}));
+        console.error(util.inspect(frame, { depth: null }));
       });
     } else {
       this.handleParsedFrame(frame);

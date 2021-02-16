@@ -18,7 +18,7 @@ const zdo = require('zigbee-zdo');
 const zigbeeClassifier = require('./zb-classifier');
 const ZigbeeFamily = require('./zb-family');
 
-const {Device, Event, Utils} = require('gateway-addon');
+const { Device, Event, Utils } = require('gateway-addon');
 const {
   ATTR_ID,
   BROADCAST_ADDR,
@@ -31,7 +31,7 @@ const {
   UNKNOWN_ADDR_16,
 } = require('./zb-constants');
 
-const {DEBUG_node} = require('./zb-debug');
+const { DEBUG_node } = require('./zb-debug').default;
 const DEBUG = DEBUG_node;
 
 const FAST_CHECKIN_INTERVAL = 20 * 4;       // 20 seconds (quarter seconds)
@@ -600,9 +600,9 @@ class ZigbeeNode extends Device {
           // If the configReport was successful, then only a single status
           // is returned and no attrId's are included.
           const status =
-          (frame.extraParams.length == frame.zcl.payload.length) ?
-            frame.zcl.payload[attrIdx].status :
-            frame.zcl.payload[0].status;
+          (frame.extraParams.length == frame.zcl.payload.length)
+            ? frame.zcl.payload[attrIdx].status
+            : frame.zcl.payload[0].status;
           if (status != STATUS.SUCCESS && status != STATUS.INSUFFICIENT_SPACE) {
             // If the device doesn't support configReports, then treat it as
             // 'fire and forget'.
@@ -621,7 +621,7 @@ class ZigbeeNode extends Device {
       } else {
         console.log('##### handleConfigReportRsp:',
                     'Property not found for attrId:', attrId, 'frame:');
-        console.log(util.inspect(frame, {depth: null}));
+        console.log(util.inspect(frame, { depth: null }));
       }
     }
   }
@@ -727,7 +727,7 @@ class ZigbeeNode extends Device {
     );
     rspFrame.sourceEndpoint = parseInt(frame.destinationEndpoint, 16);
     DEBUG && console.log('handleQueryNextImageReq: rspFrame =',
-                         util.inspect(frame, {depth: null}));
+                         util.inspect(frame, { depth: null }));
     this.adapter.sendFrameNow(rspFrame);
   }
 
@@ -1936,7 +1936,7 @@ class ZigbeeNode extends Device {
       {
         cmd: 'read',
         payload: attrIds.map((attrId) => {
-          return {direction: DIR.CLIENT_TO_SERVER, attrId: attrId};
+          return { direction: DIR.CLIENT_TO_SERVER, attrId: attrId };
         }),
       }
     );
@@ -2102,16 +2102,16 @@ class ZigbeeNode extends Device {
           attrEntry.status != STATUS.SUCCESS) {
         let status = zclId.status(attrEntry.status);
         if (!status) {
-          status = {key: 'unknown', value: attrEntry.status};
+          status = { key: 'unknown', value: attrEntry.status };
         }
         const clusterId = zdo.getClusterIdAsInt(frame.clusterId);
         let cluster = zclId.cluster(clusterId);
         if (!cluster) {
-          cluster = {key: 'unknown', value: frame.clusterId};
+          cluster = { key: 'unknown', value: frame.clusterId };
         }
         let attr = zclId.attr(clusterId, attrEntry.attrId);
         if (!attr) {
-          attr = {key: 'unknown', value: attrEntry.attrId};
+          attr = { key: 'unknown', value: attrEntry.attrId };
         }
         console.error('Response:', frame.zcl.cmdId,
                       'got status:', status.key, `(${status.value}) node:`,
