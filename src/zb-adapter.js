@@ -17,9 +17,9 @@ const path = require('path');
 const ZigbeeNode = require('./zb-node');
 const zdo = require('zigbee-zdo');
 const zclId = require('zcl-id');
-const registerFamilies = require('./zb-families');
+const registerFamilies = require('./zb-families').default;
 
-const {Adapter, Utils} = require('gateway-addon');
+const { Adapter, Utils } = require('gateway-addon');
 const {
   ATTR_ID,
   BROADCAST_ADDR,
@@ -31,7 +31,7 @@ const {
 const {
   DEBUG_flow,
   DEBUG_frames,
-} = require('./zb-debug');
+} = require('./zb-debug').default;
 
 const {
   Command,
@@ -39,11 +39,11 @@ const {
   RESOLVE_SET_PROPERTY,
   SEND_FRAME,
   WAIT_FRAME,
-} = require('./zb-driver');
+} = require('./driver/index');
 
 // Function which will convert endianess of hex strings.
 // i.e. '12345678'.swapHex() returns '78563412'
-String.prototype.swapHex = function() {
+String.prototype.swapHex = function () {
   return this.match(/.{2}/g).reverse().join('');
 };
 
@@ -89,7 +89,7 @@ class ZigbeeAdapter extends Adapter {
 
     this.configDir = getDataPath(this.userProfile.dataDir);
     if (!fs.existsSync(this.configDir)) {
-      mkdirp.sync(this.configDir, {mode: 0o755});
+      mkdirp.sync(this.configDir, { mode: 0o755 });
     }
 
     // move any old config files to the new directory
@@ -983,7 +983,7 @@ class ZigbeeAdapter extends Adapter {
   }
 
   // eslint-disable-next-line no-unused-vars
-  cancelRemoveThing(node) {
+  cancelRemoveThing(_node) {
     // Nothing to do. We've either sent the leave request or not.
   }
 
@@ -1303,7 +1303,7 @@ class ZigbeeAdapter extends Adapter {
     const profileId = 260;
     const clusterId = 0x0300;
     this.sendFrameNow(node.makeZclFrame(endpoint, profileId, clusterId, {
-      frameCntl: {frameType: 1},
+      frameCntl: { frameType: 1 },
       cmd: 'moveToHueAndSaturation',
       payload: [hue, saturation, 0],
     }));

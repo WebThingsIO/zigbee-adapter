@@ -133,27 +133,27 @@ exports.AtApi = AtApi;
 //
 // ---------------------------------------------------------------------------
 
-atBuilder[ac.API_MODE] = function(frame, builder) {
+atBuilder[ac.API_MODE] = function (frame, builder) {
   builder.appendUInt8(frame.apiMode);
 };
 
-atBuilder[ac.API_OPTIONS] = function(frame, builder) {
+atBuilder[ac.API_OPTIONS] = function (frame, builder) {
   builder.appendUInt8(frame.apiOptions);
 };
 
-atBuilder[ac.CONFIGURED_64_BIT_PAN_ID] = function(frame, builder) {
+atBuilder[ac.CONFIGURED_64_BIT_PAN_ID] = function (frame, builder) {
   builder.appendString(frame.configuredPanId, 'hex');
 };
 
-atBuilder[ac.ENCRYPTION_ENABLED] = function(frame, builder) {
+atBuilder[ac.ENCRYPTION_ENABLED] = function (frame, builder) {
   builder.appendUInt8(frame.encryptionEnabled);
 };
 
-atBuilder[ac.ENCRYPTION_OPTIONS] = function(frame, builder) {
+atBuilder[ac.ENCRYPTION_OPTIONS] = function (frame, builder) {
   builder.appendUInt8(frame.encryptionOptions);
 };
 
-atBuilder[ac.LINK_KEY] = function(frame, builder) {
+atBuilder[ac.LINK_KEY] = function (frame, builder) {
   let data;
   if (Array.isArray(frame.linkKey) || Buffer.isBuffer(frame.linkKey)) {
     data = Buffer.from(frame.linkKey);
@@ -163,7 +163,7 @@ atBuilder[ac.LINK_KEY] = function(frame, builder) {
   builder.appendBuffer(data);
 };
 
-atBuilder[ac.NODE_IDENTIFIER] = function(builder, data) {
+atBuilder[ac.NODE_IDENTIFIER] = function (builder, data) {
   assert(typeof data === 'string', 'data must be a string');
 
   // Leading spaces aren't allowed (so we remove them)
@@ -177,15 +177,15 @@ atBuilder[ac.NODE_IDENTIFIER] = function(builder, data) {
   builder.appendString(data, 'ascii');
 };
 
-atBuilder[ac.NODE_JOIN_TIME] = function(frame, builder) {
+atBuilder[ac.NODE_JOIN_TIME] = function (frame, builder) {
   builder.appendUInt8(frame.nodeJoinTime);
 };
 
-atBuilder[ac.SCAN_CHANNELS] = function(frame, builder) {
+atBuilder[ac.SCAN_CHANNELS] = function (frame, builder) {
   builder.appendUInt16BE(frame.scanChannels);
 };
 
-atBuilder[ac.ZIGBEE_STACK_PROFILE] = function(frame, builder) {
+atBuilder[ac.ZIGBEE_STACK_PROFILE] = function (frame, builder) {
   builder.appendUInt8(frame.zigBeeStackProfile);
 };
 
@@ -195,71 +195,71 @@ atBuilder[ac.ZIGBEE_STACK_PROFILE] = function(frame, builder) {
 //
 // ---------------------------------------------------------------------------
 
-atParser[ac.API_MODE] = function(frame, reader) {
+atParser[ac.API_MODE] = function (frame, reader) {
   frame.apiMode = reader.nextUInt8();
 };
 
-atParser[ac.API_OPTIONS] = function(frame, reader) {
+atParser[ac.API_OPTIONS] = function (frame, reader) {
   frame.apiOptions = reader.nextUInt8();
 };
 
-atParser[ac.CONFIGURED_64_BIT_PAN_ID] = function(frame, reader) {
+atParser[ac.CONFIGURED_64_BIT_PAN_ID] = function (frame, reader) {
   frame.configuredPanId64 = reader.nextString(8, 'hex');
 };
 
-atParser[ac.DEVICE_TYPE_IDENTIFIER] = function(frame, reader) {
+atParser[ac.DEVICE_TYPE_IDENTIFIER] = function (frame, reader) {
   frame.deviceTypeIdentifier = reader.nextUInt32BE();
 };
 
-atParser[ac.ENCRYPTION_ENABLED] = function(frame, reader) {
+atParser[ac.ENCRYPTION_ENABLED] = function (frame, reader) {
   frame.encryptionEnabled = reader.nextUInt8();
 };
 
-atParser[ac.ENCRYPTION_OPTIONS] = function(frame, reader) {
+atParser[ac.ENCRYPTION_OPTIONS] = function (frame, reader) {
   frame.encryptionOptions = reader.nextUInt8();
 };
 
-atParser[ac.NETWORK_ADDR_16_BIT] = function(frame, reader) {
+atParser[ac.NETWORK_ADDR_16_BIT] = function (frame, reader) {
   frame.networkAddr16 = reader.nextString(2, 'hex');
 };
 
-atParser[ac.NODE_IDENTIFIER] = function(frame, reader) {
+atParser[ac.NODE_IDENTIFIER] = function (frame, reader) {
   frame.nodeIdentifier =
     reader.nextString(frame.commandData.length, 'ascii').trim();
 };
 
-atParser[ac.NODE_JOIN_TIME] = function(frame, reader) {
+atParser[ac.NODE_JOIN_TIME] = function (frame, reader) {
   frame.networkJoinTime = reader.nextUInt8();
 };
 
-atParser[ac.NUM_REMAINING_CHILDREN] = function(frame, reader) {
+atParser[ac.NUM_REMAINING_CHILDREN] = function (frame, reader) {
   frame.numRemainingChildren = reader.nextUInt8();
 };
 
-atParser[ac.OPERATING_16_BIT_PAN_ID] = function(frame, reader) {
+atParser[ac.OPERATING_16_BIT_PAN_ID] = function (frame, reader) {
   frame.operatingPanId16 = reader.nextString(2, 'hex');
 };
 
-atParser[ac.OPERATING_64_BIT_PAN_ID] = function(frame, reader) {
+atParser[ac.OPERATING_64_BIT_PAN_ID] = function (frame, reader) {
   frame.operatingPanId64 = reader.nextString(8, 'hex');
 };
 
-atParser[ac.OPERATING_CHANNEL] = function(frame, reader) {
+atParser[ac.OPERATING_CHANNEL] = function (frame, reader) {
   frame.operatingChannel = reader.nextUInt8();
 };
 
-atParser[ac.SCAN_CHANNELS] = function(frame, reader) {
+atParser[ac.SCAN_CHANNELS] = function (frame, reader) {
   frame.scanChannels = reader.nextUInt16BE();
 };
 
-atParser[ac.SERIAL_NUMBER_HIGH] = function(frame, reader) {
+atParser[ac.SERIAL_NUMBER_HIGH] = function (frame, reader) {
   frame.serialNumberHigh = reader.nextString(4, 'hex');
 };
 
-atParser[ac.SERIAL_NUMBER_LOW] = function(frame, reader) {
+atParser[ac.SERIAL_NUMBER_LOW] = function (frame, reader) {
   frame.serialNumberLow = reader.nextString(4, 'hex');
 };
 
-atParser[ac.ZIGBEE_STACK_PROFILE] = function(frame, reader) {
+atParser[ac.ZIGBEE_STACK_PROFILE] = function (frame, reader) {
   frame.zigBeeStackProfile = reader.nextUInt8();
 };

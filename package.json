@@ -3,9 +3,10 @@
   "version": "0.15.8",
   "description": "Zigbee adapter plugin for WebThings Gateway",
   "author": "WebThingsIO",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build": "rm -rf lib && cp -rL src lib && find lib -name '*.ts' -delete && tsc -p ."
   },
   "homepage": "https://github.com/WebThingsIO/zigbee-adapter",
   "dependencies": {
@@ -26,9 +27,15 @@
     "zigbee-zdo": "github:WebThingsIO/zigbee-zdo"
   },
   "devDependencies": {
-    "babel-eslint": "^10.1.0",
+    "@types/clone-deep": "^4.0.1",
+    "@types/ws": "^7.4.0",
+    "@typescript-eslint/eslint-plugin": "^4.15.1",
+    "@typescript-eslint/parser": "^4.15.1",
     "eslint": "^7.20.0",
-    "gateway-addon": "^1.0.0"
+    "eslint-config-prettier": "^7.2.0",
+    "gateway-addon": "^1.0.0",
+    "prettier": "^2.2.1",
+    "typescript": "^4.1.5"
   },
   "license": "MPL-2.0",
   "repository": {
@@ -42,22 +49,23 @@
     "LICENSE",
     "README.md",
     "SHA256SUMS",
-    "index.js",
-    "deconz-driver.js",
+    "lib/driver/index.js",
+    "lib/driver/conbee.js",
+    "lib/driver/xbee.js",
+    "lib/driver/zstack.js",
+    "lib/index.js",
+    "lib/manifest.json",
+    "lib/zb-adapter.js",
+    "lib/zb-at.js",
+    "lib/zb-classifier.js",
+    "lib/zb-constants.js",
+    "lib/zb-debug.js",
+    "lib/zb-families.js",
+    "lib/zb-family.js",
+    "lib/zb-node.js",
+    "lib/zb-property.js",
+    "lib/zb-xiaomi.js",
     "manifest.json",
-    "xbee-driver.js",
-    "zb-adapter.js",
-    "zb-at.js",
-    "zb-classifier.js",
-    "zb-constants.js",
-    "zb-debug.js",
-    "zb-driver.js",
-    "zb-families.js",
-    "zb-family.js",
-    "zb-node.js",
-    "zb-property.js",
-    "zb-xiaomi.js",
-    "zstack-driver.js",
     "node_modules"
   ]
 }

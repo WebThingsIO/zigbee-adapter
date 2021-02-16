@@ -7,21 +7,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
-
-const cloneDeep = require('clone-deep');
-const ZigbeeFamily = require('./zb-family');
-const ZigbeeProperty = require('./zb-property');
-
-const {DEBUG_xiaomi} = require('./zb-debug');
-const DEBUG = DEBUG_xiaomi;
-
-const {
+import cloneDeep from 'clone-deep';
+import ZigbeeFamily from './zb-family';
+import DEBUG_FLAG from './zb-debug';
+import {
   CLUSTER_ID,
   PROFILE_ID,
   POWERSOURCE,
   ZONE_STATUS,
-} = require('./zb-constants');
+} from './zb-constants';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ZigbeeProperty = require('./zb-property');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ZigbeeNode = require('./zb-node');
+
+const DEBUG = DEBUG_FLAG.DEBUG_xiaomi;
 
 // The following github repository has a bunch of useful information
 // for each of the xiaomi sensors.
@@ -201,7 +202,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_motion.aq2': {// RTCGQ11LM
+  'lumi.sensor_motion.aq2': { // RTCGQ11LM
     name: 'motion',
     '@type': ['MotionSensor'],
     powerSource: POWERSOURCE.BATTERY,
@@ -252,7 +253,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.sensor_ht': {// WSDCGQ01LM (round)
+  'lumi.sensor_ht': { // WSDCGQ01LM (round)
     name: 'temperature',
     '@type': ['TemperatureSensor', 'HumiditySensor'],
     powerSource: POWERSOURCE.BATTERY,
@@ -305,7 +306,7 @@ const MODEL_IDS = {
       },
     },
   },
-  'lumi.weather': {// WSDCGQ11LM (square)
+  'lumi.weather': { // WSDCGQ11LM (square)
     name: 'temperature',
     '@type': [
       'TemperatureSensor',
@@ -605,17 +606,17 @@ const MODEL_IDS_MAP = {
   'lumi.sensor_cube.aqgl01': 'lumi.sensor_cube',
 };
 
-class XiaomiFamily extends ZigbeeFamily {
+export default class XiaomiFamily extends ZigbeeFamily {
   constructor() {
     super('xiaomi');
   }
 
-  classify(_node) {
+  classify(_node: typeof ZigbeeNode): void {
     // The xiaomi fmaily does the classification as part of the init
     // function, so we don't need to do anything here.
   }
 
-  identify(node) {
+  identify(node: typeof ZigbeeNode): boolean {
     if (MODEL_IDS.hasOwnProperty(this.mapModelID(node))) {
       this.init(node);
       return true;
@@ -623,27 +624,28 @@ class XiaomiFamily extends ZigbeeFamily {
     return false;
   }
 
-  mapModelID(node) {
+  mapModelID(node: typeof ZigbeeNode): string {
     if (MODEL_IDS_MAP.hasOwnProperty(node.modelId)) {
-      return MODEL_IDS_MAP[node.modelId];
+      return MODEL_IDS_MAP[<keyof typeof MODEL_IDS_MAP>node.modelId];
     }
     return node.modelId;
   }
 
-  init(node) {
-    const attribs = MODEL_IDS[this.mapModelID(node)];
-    if (!attribs) {
+  init(node: typeof ZigbeeNode): void {
+    const modelId = this.mapModelID(node);
+    if (!MODEL_IDS.hasOwnProperty(modelId)) {
       console.log('xiaomi.classify: Unknown modelId:', node.modelId);
       return;
     }
+
+    const attribs = MODEL_IDS[<keyof typeof MODEL_IDS>modelId];
     if (node.inited) {
       return;
     }
     node.inited = true;
 
     DEBUG && console.log('xiaomi.init: modelId:', node.modelId);
-    for (const attribName in attribs) {
-      const attrib = attribs[attribName];
+    for (const [attribName, attrib] of Object.entries(attribs)) {
       switch (attribName) {
         case 'name':
           node.name = `${node.id}-${attrib}`;
@@ -707,7 +709,5 @@ class XiaomiFamily extends ZigbeeFamily {
     node.adapter.handleDeviceAdded(node);
   }
 }
-
-module.exports = XiaomiFamily;
 
 ZigbeeFamily.register(new XiaomiFamily());

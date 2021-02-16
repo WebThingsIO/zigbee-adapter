@@ -9,7 +9,7 @@
 
 'use strict';
 
-const at = require('./zb-at');
+const at = require('../zb-at');
 const util = require('util');
 const xbeeApi = require('xbee-api');
 
@@ -20,14 +20,14 @@ const {
   SEND_FRAME,
   WAIT_FRAME,
   ZigbeeDriver,
-} = require('./zb-driver');
+} = require('./index');
 
 const {
   DEBUG_flow,
   DEBUG_frameDetail,
   DEBUG_frames,
   DEBUG_rawFrames,
-} = require('./zb-debug');
+} = require('../zb-debug').default;
 
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;
@@ -81,7 +81,7 @@ class XBeeDriver extends ZigbeeDriver {
             } catch (e) {
               console.error('Error handling frame_raw');
               console.error(e);
-              console.error(util.inspect(frame, {depth: null}));
+              console.error(util.inspect(frame, { depth: null }));
             }
           } catch (e) {
             console.error('Error parsing raw frame_raw');
@@ -97,7 +97,7 @@ class XBeeDriver extends ZigbeeDriver {
         } catch (e) {
           console.error('Error handling frame_object');
           console.error(e);
-          console.error(util.inspect(frame, {depth: null}));
+          console.error(util.inspect(frame, { depth: null }));
         }
       });
     }
@@ -187,7 +187,7 @@ class XBeeDriver extends ZigbeeDriver {
     const configCommands = [];
     if (this.apiMode != 1) {
       configCommands.push(this.AT(AT_CMD.API_MODE,
-                                  {apiMode: 1}));
+                                  { apiMode: 1 }));
       configCommands.push(this.AT(AT_CMD.API_MODE));
 
       console.log('Setting API mode to 1');
@@ -205,12 +205,12 @@ class XBeeDriver extends ZigbeeDriver {
     const configCommands = [];
     if (this.configuredPanId64 === '0000000000000000') {
       configCommands.push(this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID,
-                                  {configuredPanId: this.operatingPanId64}));
+                                  { configuredPanId: this.operatingPanId64 }));
       configCommands.push(this.AT(AT_CMD.CONFIGURED_64_BIT_PAN_ID));
     }
     if (this.zigBeeStackProfile != 2) {
       configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE,
-                                  {zigBeeStackProfile: 2}));
+                                  { zigBeeStackProfile: 2 }));
       configCommands.push(this.AT(AT_CMD.ZIGBEE_STACK_PROFILE));
     }
     // API Options = 1 allows Explicit Rx frames to be rcvd
@@ -220,17 +220,17 @@ class XBeeDriver extends ZigbeeDriver {
     //      endpoint will be passed through (received).
     if (this.apiOptions != 3) {
       configCommands.push(this.AT(AT_CMD.API_OPTIONS,
-                                  {apiOptions: 3}));
+                                  { apiOptions: 3 }));
       configCommands.push(this.AT(AT_CMD.API_OPTIONS));
     }
     if (this.encryptionEnabled != 1) {
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_ENABLED,
-                                  {encryptionEnabled: 1}));
+                                  { encryptionEnabled: 1 }));
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_ENABLED));
     }
     if (this.encryptionOptions != 2) {
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS,
-                                  {encryptionOptions: 2}));
+                                  { encryptionOptions: 2 }));
       configCommands.push(this.AT(AT_CMD.ENCRYPTION_OPTIONS));
     }
     let configScanChannels = this.config.scanChannels;
@@ -245,14 +245,14 @@ class XBeeDriver extends ZigbeeDriver {
       // Channel 15 corresponds to a mask of 0x0010
       // Channel 20 corresponds to a mask of 0x0200
       configCommands.push(this.AT(AT_CMD.SCAN_CHANNELS,
-                                  {scanChannels: configScanChannels}));
+                                  { scanChannels: configScanChannels }));
       configCommands.push(this.AT(AT_CMD.SCAN_CHANNELS));
     }
     if (configCommands.length > 0) {
       // We're going to change something, so we might as well set the link
       // key, since it's write only and we can't tell if its been set before.
       configCommands.push(this.AT(AT_CMD.LINK_KEY,
-                                  {linkKey: 'ZigBeeAlliance09'}));
+                                  { linkKey: 'ZigBeeAlliance09' }));
       configCommands.push(this.AT(AT_CMD.WRITE_PARAMETERS));
 
       // TODO: It sends a modem status, but only the first time after the
@@ -346,7 +346,7 @@ class XBeeDriver extends ZigbeeDriver {
         console.log(label, frameTypeStr);
     }
     if (dumpFrameDetail) {
-      const frameStr = util.inspect(frame, {depth: null})
+      const frameStr = util.inspect(frame, { depth: null })
         .replace(/\n/g, `\n${label} `);
       console.log(label, frameStr);
     }
@@ -485,7 +485,7 @@ class XBeeDriver extends ZigbeeDriver {
 
   permitJoinCommands(duration) {
     return this.AT(AT_CMD.NODE_JOIN_TIME,
-                   {networkJoinTime: duration},
+                   { networkJoinTime: duration },
                    PERMIT_JOIN_PRIORITY);
   }
 }

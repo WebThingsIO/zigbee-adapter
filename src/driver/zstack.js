@@ -20,19 +20,19 @@ const {
   SEND_FRAME,
   WAIT_FRAME,
   ZigbeeDriver,
-} = require('./zb-driver');
+} = require('./index');
 
 // const {
-//     DEBUG_flow,
-//     DEBUG_frameDetail,
-//     DEBUG_frames,
-//     DEBUG_rawFrames,
-//     DEBUG_slip,
-//   } = require('./zb-debug');
+//   DEBUG_flow,
+//   DEBUG_frameDetail,
+//   DEBUG_frames,
+//   DEBUG_rawFrames,
+//   DEBUG_slip,
+// } = require('../zb-debug').default;
 
 const {
   PROFILE_ID,
-} = require('./zb-constants');
+} = require('../zb-constants');
 
 const cmdType = {
   POLL: 0,
@@ -102,7 +102,7 @@ class ZStackDriver extends ZigbeeDriver {
     this.idSeq = 0;
 
     this.serialPort = serialPort;
-    this.unpi = new Unpi({lenBytes: 1, phy: serialPort});
+    this.unpi = new Unpi({ lenBytes: 1, phy: serialPort });
 
     this.unpi.on('data', this.onZStackFrame);
 
@@ -128,10 +128,10 @@ class ZStackDriver extends ZigbeeDriver {
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
       new Command(WAIT_FRAME,
-                  {type: cmdType.AREQ,
-                   subsys: subSys.SYS,
-                   cmd: 0x80,
-                   waitRetryTimeout: 5000}), // SYS_RESET_IND
+                  { type: cmdType.AREQ,
+                    subsys: subSys.SYS,
+                    cmd: 0x80,
+                    waitRetryTimeout: 5000 }), // SYS_RESET_IND
     ]);
   }
 
@@ -153,7 +153,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -165,7 +165,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -177,7 +177,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommands([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -189,7 +189,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommands([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP, cmd: 0x50}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP, cmd: 0x50 }),
     ]);
   }
 
@@ -202,7 +202,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -214,7 +214,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -227,7 +227,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -240,7 +240,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -253,7 +253,7 @@ class ZStackDriver extends ZigbeeDriver {
     };
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -270,7 +270,7 @@ class ZStackDriver extends ZigbeeDriver {
 
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP, cmd: 0x08}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP, cmd: 0x08 }),
     ]);
   }
 
@@ -292,7 +292,7 @@ class ZStackDriver extends ZigbeeDriver {
 
     this.queueCommandsAtFront([
       new Command(SEND_FRAME, frame),
-      new Command(WAIT_FRAME, {type: cmdType.SRSP}),
+      new Command(WAIT_FRAME, { type: cmdType.SRSP }),
     ]);
   }
 
@@ -304,7 +304,7 @@ class ZStackDriver extends ZigbeeDriver {
       this.lastIDSeq = frame.id;
       this.unpi.send(frame.type, frame.subsys, frame.cmd, frame.payload);
     } else {
-      const zsf = {type: frame.type};
+      const zsf = { type: frame.type };
 
       if (frame.profileId === PROFILE_ID.ZDO) {
         zsf.subsys = 'ZDO';
@@ -538,7 +538,9 @@ class ZStackDriver extends ZigbeeDriver {
           frame.payload[5].toString(16)}`;
 
         console.log('ZStack reset. Reason ', frame.payload[0]);
-        console.log(`ZStack dongle ${this.transportRev}, product: ${this.product}, version: ${this.version}`);
+        console.log(
+          `ZStack dongle ${this.transportRev}, product: ${this.product}, version: ${this.version}`
+        );
       } else {
         console.warn(`SYS AREQ, cmd ${frame.cmd} not handled!`);
       }
@@ -676,7 +678,7 @@ class ZStackDriver extends ZigbeeDriver {
   }
 
   handleSRSP(_frame) {
-
+    // pass
   }
 
   getFrameHandler(frame) {

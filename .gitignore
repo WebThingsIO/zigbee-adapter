@@ -3,4 +3,6 @@
 *.tgz
 *~
 SHA256SUMS
+lib
 node_modules
+src/config.d.ts

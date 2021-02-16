@@ -5,7 +5,7 @@ export NVM_DIR="${HOME}/.nvm"
 [ -s "${NVM_DIR}/nvm.sh" ] && source "${NVM_DIR}/nvm.sh"
 [ $(id -u) = 0 ] && umask 0
 
-rm -rf node_modules
+rm -rf lib node_modules
 
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
@@ -14,9 +14,11 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-${NODE_VERSION/\.*/}"
 fi
 
-npm ci --production
+npm ci
+npm run build
+npm prune --production
 
-shasum --algorithm 256 manifest.json package.json *.js LICENSE README.md > SHA256SUMS
+shasum --algorithm 256 manifest.json package.json lib/*.js lib/driver/*.js lib/*.json LICENSE README.md > SHA256SUMS
 
 find node_modules \( -type f -o -type l \) -exec shasum --algorithm 256 {} \; >> SHA256SUMS
 

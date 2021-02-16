@@ -7,11 +7,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
  */
 
-'use strict';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ZigbeeNode = require('./zb-node');
 
-class ZigbeeFamily {
+export default class ZigbeeFamily {
+  static families: Record<string, ZigbeeFamily> = {};
 
-  constructor(name) {
+  name: string;
+
+  constructor(name: string) {
     this.name = name;
   }
 
@@ -25,15 +29,18 @@ class ZigbeeFamily {
    *
    * @param {ZigbeeNode} node
    */
-  classify(_node) {
+  classify(_node: typeof ZigbeeNode): void {
+    // pass
   }
 
-  static findFamily(findFamilyName) {
+  static findFamily(findFamilyName: string): ZigbeeFamily | null {
     for (const familyName in ZigbeeFamily.families) {
       if (familyName == findFamilyName) {
         return ZigbeeFamily.families[familyName];
       }
     }
+
+    return null;
   }
 
   /**
@@ -45,7 +52,7 @@ class ZigbeeFamily {
    * @return Returns true to indicate that the indicated node is
    *         an instance of this family.
    */
-  identify(_node) {
+  identify(_node: typeof ZigbeeNode): boolean {
     return false;
   }
 
@@ -59,7 +66,7 @@ class ZigbeeFamily {
    * @return Returns true to indicate that the indicated node is
    *         an instance of this family.
    */
-  static identifyFamily(node) {
+  static identifyFamily(node: typeof ZigbeeNode): boolean {
     for (const familyName in ZigbeeFamily.families) {
       const family = ZigbeeFamily.families[familyName];
       if (family.identify(node)) {
@@ -77,11 +84,7 @@ class ZigbeeFamily {
    *
    * @param {ZigbeeFamily} family - An instance of this class.
    */
-  static register(family) {
+  static register(family: ZigbeeFamily): void {
     ZigbeeFamily.families[family.name] = family;
   }
 }
-
-ZigbeeFamily.families = {};
-
-module.exports = ZigbeeFamily;
