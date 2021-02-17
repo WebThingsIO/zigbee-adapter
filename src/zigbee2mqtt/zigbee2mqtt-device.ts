@@ -8,7 +8,7 @@
  */
 
 import { Action, Device, Event } from 'gateway-addon';
-import { PropertyValue, PropertyValueType } from 'gateway-addon/lib/schema';
+import { PropertyValue } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
   OnOffProperty,
@@ -17,6 +17,7 @@ import {
   ColorProperty,
   Zigbee2MqttProperty,
   WRITE_BIT,
+  parseType,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
@@ -182,7 +183,7 @@ export class Zigbee2MqttDevice extends Device {
       this.addAction(expose.name, {
         description: expose.description,
         input: {
-          type: this.parseType(expose.type),
+          type: parseType(expose.type),
           unit: expose.unit,
           enum: expose.values,
           minimum: expose.value_min,
@@ -252,16 +253,5 @@ export class Zigbee2MqttDevice extends Device {
         }
       });
     });
-  }
-
-  private parseType(type?: string): PropertyValueType {
-    switch (type) {
-      case 'numeric':
-        return 'number';
-      case 'enum':
-        return 'string';
-    }
-
-    return 'string';
   }
 }
