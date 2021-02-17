@@ -248,10 +248,11 @@ export class Zigbee2MqttDevice extends Device {
       }
 
       this.client.publish(writeTopic, JSON.stringify(json), (error) => {
+        action.finish();
+
         if (error) {
           reject(error);
         } else {
-          action.finish();
           resolve();
         }
       });
