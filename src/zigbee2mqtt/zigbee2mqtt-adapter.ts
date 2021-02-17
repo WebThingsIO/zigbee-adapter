@@ -15,8 +15,7 @@ import DEBUG_FLAG from '../zb-debug';
 
 const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const manifest = require('../../manifest.json');
+import manifest from '../manifest.json';
 
 interface Response {
   data?: {
