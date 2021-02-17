@@ -8,6 +8,9 @@ import {
 import { Expos } from './zigbee2mqtt-adapter';
 import { Zigbee2MqttDevice } from './zigbee2mqtt-device';
 import mqtt from 'mqtt';
+import DEBUG_FLAG from '../zb-debug';
+
+const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
 export const WRITE_BIT = 0b010;
 
@@ -35,7 +38,6 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
     expose: Expos,
     private client: mqtt.Client,
     private deviceTopic: string,
-    private debug: boolean,
     additionalProperties?: PropertySchema
   ) {
     super(device, name, {
@@ -67,7 +69,7 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       const writeTopic = `${this.deviceTopic}/set`;
       const json = { [this.getName()]: value };
 
-      if (this.debug) {
+      if (debug) {
         console.log(`Sending ${JSON.stringify(json)} to ${writeTopic}`);
       }
 
@@ -88,10 +90,9 @@ export class OnOffProperty extends Zigbee2MqttProperty<boolean> {
     name: string,
     expose: Expos,
     client: mqtt.Client,
-    deviceTopic: string,
-    debug: boolean
+    deviceTopic: string
   ) {
-    super(device, name, expose, client, deviceTopic, debug, {
+    super(device, name, expose, client, deviceTopic, {
       '@type': 'OnOffProperty',
       title: 'On',
       type: parseType(expose.type),
@@ -113,10 +114,9 @@ export class BrightnessProperty extends Zigbee2MqttProperty<number> {
     name: string,
     private expose: Expos,
     client: mqtt.Client,
-    deviceTopic: string,
-    debug: boolean
+    deviceTopic: string
   ) {
-    super(device, name, expose, client, deviceTopic, debug, {
+    super(device, name, expose, client, deviceTopic, {
       '@type': 'BrightnessProperty',
       title: 'Brightness',
       minimum: 0,
@@ -149,10 +149,9 @@ export class ColorTemperatureProperty extends Zigbee2MqttProperty<number> {
     name: string,
     expose: Expos,
     client: mqtt.Client,
-    deviceTopic: string,
-    debug: boolean
+    deviceTopic: string
   ) {
-    super(device, name, expose, client, deviceTopic, debug, {
+    super(device, name, expose, client, deviceTopic, {
       '@type': 'ColorTemperatureProperty',
       title: 'Color temperature',
       type: 'number',
@@ -177,10 +176,9 @@ export class ColorProperty extends Zigbee2MqttProperty<string> {
     name: string,
     expose: Expos,
     client: mqtt.Client,
-    deviceTopic: string,
-    debug: boolean
+    deviceTopic: string
   ) {
-    super(device, name, expose, client, deviceTopic, debug, {
+    super(device, name, expose, client, deviceTopic, {
       '@type': 'ColorProperty',
       title: 'Color',
       type: 'string',

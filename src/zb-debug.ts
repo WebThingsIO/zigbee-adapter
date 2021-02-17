@@ -51,6 +51,10 @@ const DEBUG_FLAG = {
   // DEBUG_xiaomi causes additional debug information to be printed
   // from zb-xiaomi.js
   DEBUG_xiaomi: false,
+
+  // DEBUG_zigbee2mqtt causes additional debug information to be printed
+  // from zigbee2mqtt classes
+  DEBUG_zigbee2mqtt: false,
 };
 
 export function set(names: string): void {

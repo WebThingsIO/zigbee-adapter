@@ -10,6 +10,9 @@ import {
   WRITE_BIT,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
+import DEBUG_FLAG from '../zb-debug';
+
+const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
 export class Zigbee2MqttDevice extends Device {
   private deviceTopic: string;
@@ -19,8 +22,7 @@ export class Zigbee2MqttDevice extends Device {
     id: string,
     deviceDefinition: DeviceDefinition,
     private client: mqtt.Client,
-    topicPrefix: string,
-    private debug: boolean
+    topicPrefix: string
   ) {
     super(adapter, id);
     this.deviceTopic = `${topicPrefix}/${id}`;
@@ -85,8 +87,7 @@ export class Zigbee2MqttDevice extends Device {
                   feature.name,
                   feature,
                   this.client,
-                  this.deviceTopic,
-                  this.debug
+                  this.deviceTopic
                 );
 
                 this.addProperty(property);
@@ -101,8 +102,7 @@ export class Zigbee2MqttDevice extends Device {
                   feature.name,
                   feature,
                   this.client,
-                  this.deviceTopic,
-                  this.debug
+                  this.deviceTopic
                 );
 
                 this.addProperty(property);
@@ -117,8 +117,7 @@ export class Zigbee2MqttDevice extends Device {
                   feature.name,
                   feature,
                   this.client,
-                  this.deviceTopic,
-                  this.debug
+                  this.deviceTopic
                 );
 
                 this.addProperty(property);
@@ -133,8 +132,7 @@ export class Zigbee2MqttDevice extends Device {
                   'color',
                   feature,
                   this.client,
-                  this.deviceTopic,
-                  this.debug
+                  this.deviceTopic
                 );
 
                 this.addProperty(property);
@@ -196,8 +194,7 @@ export class Zigbee2MqttDevice extends Device {
         expose.name,
         expose,
         this.client,
-        this.deviceTopic,
-        this.debug
+        this.deviceTopic
       );
 
       this.addProperty(property);
@@ -220,7 +217,7 @@ export class Zigbee2MqttDevice extends Device {
 
         if (property) {
           property.update(value, update);
-        } else if (this.debug) {
+        } else if (debug) {
           console.log(`Could not find property with name ${key}`);
         }
       }
@@ -234,7 +231,7 @@ export class Zigbee2MqttDevice extends Device {
       const writeTopic = `${this.deviceTopic}/set`;
       const json = { [name]: input };
 
-      if (this.debug) {
+      if (debug) {
         console.log(`Sending ${JSON.stringify(json)} to ${writeTopic}`);
       }
 

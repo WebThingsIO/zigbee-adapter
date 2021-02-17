@@ -11,6 +11,9 @@ import { Adapter, AddonManagerProxy, Device } from 'gateway-addon';
 import { Config, Zigbee2MQTTAdapter } from '../config';
 import mqtt from 'mqtt';
 import { Zigbee2MqttDevice } from './zigbee2mqtt-device';
+import DEBUG_FLAG from '../zb-debug';
+
+const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('../../manifest.json');
@@ -41,8 +44,6 @@ const LOGGING_POSTFIX = '/bridge/logging';
 export class Zigbee2MqttAdapter extends Adapter {
   private prefix: string;
 
-  private debug: boolean;
-
   private client?: mqtt.Client;
 
   constructor(
@@ -52,7 +53,6 @@ export class Zigbee2MqttAdapter extends Adapter {
   ) {
     super(addonManager, manifest.id, manifest.id);
     this.prefix = adapterConfig.topicPrefix ?? 'zigbee2mqtt';
-    this.debug = config.debugLogs ?? false;
     this.connect();
   }
 
@@ -82,7 +82,7 @@ export class Zigbee2MqttAdapter extends Adapter {
     client.on('message', (topic, message) => {
       const raw = message.toString();
 
-      if (this.debug) {
+      if (debug) {
         console.log(`Received on ${topic}: ${raw}`);
       }
 
@@ -172,16 +172,9 @@ export class Zigbee2MqttAdapter extends Adapter {
           const existingDevice = this.getDevice(id);
 
           if (!existingDevice) {
-            const device = new Zigbee2MqttDevice(
-              this,
-              id,
-              deviceDefinition,
-              client,
-              this.prefix,
-              this.debug
-            );
+            const device = new Zigbee2MqttDevice(this, id, deviceDefinition, client, this.prefix);
             this.handleDeviceAdded(device);
-          } else if (this.debug) {
+          } else if (debug) {
             console.log(`Device ${id} already exists`);
           }
         } else {
@@ -214,7 +207,7 @@ export class Zigbee2MqttAdapter extends Adapter {
   }
 
   private publish(topic: string, payload: string): void {
-    if (this.debug) {
+    if (debug) {
       console.log(`Sending ${payload} to ${topic}`);
     }
 

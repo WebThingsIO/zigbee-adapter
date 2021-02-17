@@ -50,10 +50,6 @@
           "type": "string",
           "default": ""
         },
-        "debugLogs": {
-          "title": "Enable debug logs",
-          "type": "boolean"
-        },
         "zigbee2mqtt": {
           "title": "Zigbee2Mqtt",
           "type": "object",
