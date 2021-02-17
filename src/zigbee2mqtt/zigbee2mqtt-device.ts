@@ -237,6 +237,8 @@ export class Zigbee2MqttDevice extends Device {
   performAction(action: Action): Promise<void> {
     const { name, input } = action.asDict();
 
+    action.start();
+
     return new Promise<void>((resolve, reject) => {
       const writeTopic = `${this.deviceTopic}/set`;
       const json = { [name]: input };
@@ -249,6 +251,7 @@ export class Zigbee2MqttDevice extends Device {
         if (error) {
           reject(error);
         } else {
+          action.finish();
           resolve();
         }
       });
