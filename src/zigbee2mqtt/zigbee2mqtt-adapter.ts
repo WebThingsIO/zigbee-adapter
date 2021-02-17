@@ -166,7 +166,7 @@ export class Zigbee2MqttAdapter extends Adapter {
 
     for (const deviceDefinition of deviceDefinitions) {
       if (deviceDefinition.type == 'EndDevice' || deviceDefinition.type == 'Router') {
-        const id = deviceDefinition.friendly_name;
+        const id = deviceDefinition.ieee_address;
 
         if (id) {
           const existingDevice = this.getDevice(id);
