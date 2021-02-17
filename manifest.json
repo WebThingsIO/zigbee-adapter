@@ -59,7 +59,7 @@
               "type": "boolean"
             },
             "zigbee2mqttAdapters": {
-              "title": "List of Zigbee2MQTT adapter",
+              "title": "List of Zigbee2MQTT adapters",
               "type": "array",
               "items": {
                 "title": "Zigbee2MQTT adapter",
