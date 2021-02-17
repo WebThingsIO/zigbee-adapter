@@ -91,7 +91,7 @@ export class Zigbee2MqttAdapter extends Adapter {
 
         const parts = topic.split('/');
 
-        if (topic.indexOf(DEVICES_POSTFIX) > -1) {
+        if (topic.endsWith(DEVICES_POSTFIX)) {
           this.handleDevices(client, json);
         } else if (parts.length == 2) {
           const id = parts[1];
@@ -102,7 +102,7 @@ export class Zigbee2MqttAdapter extends Adapter {
           } else {
             console.log(`Could not find device with id ${id}`);
           }
-        } else if (topic.indexOf(PERMIT_RESPONSE_POSTFIX) > -1) {
+        } else if (topic.endsWith(PERMIT_RESPONSE_POSTFIX)) {
           const response: Response = json;
 
           if (response.error) {
@@ -114,7 +114,7 @@ export class Zigbee2MqttAdapter extends Adapter {
               console.log('Bridge is no longer permitting new devices to join');
             }
           }
-        } else if (topic.indexOf(REMOVE_RESPONSE_POSTFIX) > -1) {
+        } else if (topic.endsWith(REMOVE_RESPONSE_POSTFIX)) {
           const response: Response = json;
           const id = response.data?.id ?? 'unknown';
 
