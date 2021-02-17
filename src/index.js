@@ -241,14 +241,14 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
             if (!zigbee2mqttConfigured) {
               errorCallback(manifest.id, 'No Zigbee dongle found');
             } else {
-              console.warn('No Zigbee dongle found');
+              console.debug('No Zigbee dongle found');
             }
           })
           .catch((err) => {
             if (!zigbee2mqttConfigured) {
               errorCallback(manifest.id, err);
             } else {
-              console.warn(`Could not probe serial ports: ${err}`);
+              console.debug(`Could not probe serial ports: ${err}`);
             }
           });
         return;
@@ -278,7 +278,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       if (!zigbee2mqttConfigured) {
         errorCallback(manifest.id, err);
       } else {
-        console.warn(`Could not load serial drivers: ${err}`);
+        console.debug(`Could not load serial drivers: ${err}`);
       }
     });
 
