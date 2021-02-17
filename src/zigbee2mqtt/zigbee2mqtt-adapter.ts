@@ -1,6 +1,6 @@
 /**
  *
- * ZigbeeClassifier - Determines properties from Zigbee clusters.
+ * Zigbee2MqttAdapter - Adapter which communicates over MQTT with the Zigbee2Mqtt stack.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this

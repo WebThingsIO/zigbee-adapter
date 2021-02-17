@@ -1,3 +1,12 @@
+/**
+ *
+ * Zigbee2MqttProperty - A Zigbee2Mqtt property.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
+ */
+
 import Color from 'color';
 import { Property } from 'gateway-addon';
 import {

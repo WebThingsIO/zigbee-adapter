@@ -1,3 +1,12 @@
+/**
+ *
+ * Zigbee2MqttDevice - A Zigbee2Mqtt device.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.*
+ */
+
 import { Action, Device, Event } from 'gateway-addon';
 import { PropertyValue, PropertyValueType } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
