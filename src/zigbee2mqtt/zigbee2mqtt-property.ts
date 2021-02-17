@@ -219,6 +219,19 @@ export interface RGB {
   b: number;
 }
 
+/*
+I tried
+
+Color({
+  x: value.x * 100,
+  y: value.y * 100,
+  z: ((update.brightness as number) ?? 255) * 100 / 255,
+}).hex()
+
+but it seems to calculate the wrong color.
+If we send #00FF00 to zigbee2mqtt we get {"x":0.1721,"y":0.6905} as answer.
+The Color class translates this to #00FFF5.
+*/
 // https://stackoverflow.com/questions/22894498/philips-hue-convert-xy-from-api-to-hex-or-rgb
 function xyBriToRgb(x: number, y: number, bri: number): RGB {
   const z = 1.0 - x - y;
