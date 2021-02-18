@@ -55,7 +55,8 @@ export class Zigbee2MqttAdapter extends Adapter {
     super(
       addonManager,
       `zb-zigbee2mqtt-${adapterConfig.host}:${adapterConfig.port ?? DEFAULT_PORT}`,
-      manifest.id);
+      manifest.id
+    );
     this.prefix = adapterConfig.topicPrefix ?? 'zigbee2mqtt';
     this.connect();
   }
