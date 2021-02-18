@@ -131,6 +131,7 @@ export class BrightnessProperty extends Zigbee2MqttProperty<number> {
       minimum: 0,
       maximum: 100,
       type: 'number',
+      unit: 'percent',
     });
   }
 
