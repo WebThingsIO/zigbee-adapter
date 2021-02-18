@@ -21,9 +21,7 @@
       "allowFTDISerial": false,
       "allowAMASerial": false,
       "showBattery": false,
-      "debug": "",
-      "debugLogs": false,
-      "zigbee2mqttDebugLogs": false
+      "debug": ""
     },
     "schema": {
       "type": "object",
