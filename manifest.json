@@ -64,10 +64,13 @@
               "items": {
                 "title": "Zigbee2MQTT adapter",
                 "type": "object",
+                "required": [
+                  "host"
+                ],
                 "properties": {
                   "host": {
                     "type": "string",
-                    "title": "Hostname of the mqtt broker (default localhost)"
+                    "title": "Hostname of the mqtt broker (e.g. localhost)"
                   },
                   "port": {
                     "type": "number",

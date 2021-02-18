@@ -56,7 +56,7 @@ export class Zigbee2MqttAdapter extends Adapter {
   }
 
   async connect(): Promise<void> {
-    const host = this.adapterConfig.host ?? 'localhost';
+    const host = this.adapterConfig.host;
     const port = this.adapterConfig.port || 1883;
     const broker = `mqtt://${host}:${port}`;
     console.log(`Connecting to broker ${broker}`);
