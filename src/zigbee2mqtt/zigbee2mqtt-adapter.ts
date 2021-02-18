@@ -183,11 +183,9 @@ export class Zigbee2MqttAdapter extends Adapter {
             console.log(`Device ${id} already exists`);
           }
         } else {
-          // eslint-disable-next-line max-len
           console.log(`Ignoring device without id: ${JSON.stringify(deviceDefinition)}`);
         }
       } else {
-        // eslint-disable-next-line max-len
         console.log(`Ignoring device of type ${deviceDefinition.type}`);
       }
     }
