@@ -169,10 +169,10 @@ export class Zigbee2MqttDevice extends Device {
           });
         }
       } else {
-        console.log(`Expected object but got ${typeof values}`);
+        console.log(`Expected list of values but got ${JSON.stringify(values)}`);
       }
     } else {
-      console.log(`Expected object but got ${typeof values}`);
+      console.log(`Expected array but got ${typeof values}`);
     }
   }
 
