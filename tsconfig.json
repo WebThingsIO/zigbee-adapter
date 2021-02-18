@@ -31,6 +31,7 @@
   },
   "exclude": [
     "node_modules",
-    "lib"
+    "lib",
+    "generate-config-interfaces.js"
   ]
 }

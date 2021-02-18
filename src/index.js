@@ -12,6 +12,7 @@
 const { Database } = require('gateway-addon');
 const manifest = require('./manifest.json');
 const SerialProber = require('serial-prober');
+const { Zigbee2MqttDriver } = require('./zigbee2mqtt/zigbee2mqtt-driver');
 
 const XBEE_FTDI_FILTER = {
   // Devices like the UartSBee, use a generic FTDI chip and with
@@ -214,6 +215,16 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       return db.saveConfig(config);
     });
 
+  let zigbee2mqttConfigured = false;
+
+  if (
+    config.zigbee2mqtt &&
+    config.zigbee2mqtt.zigbee2mqttAdapters &&
+    config.zigbee2mqtt.zigbee2mqttAdapters.length > 0
+  ) {
+    zigbee2mqttConfigured = true;
+  }
+
   const { DEBUG_serialProber } = require('./zb-debug').default;
   SerialProber.debug(DEBUG_serialProber);
   if (allowFTDISerial) {
@@ -227,10 +238,18 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       if (matches.length == 0) {
         SerialProber.listAll()
           .then(() => {
-            errorCallback(manifest.id, 'No Zigbee dongle found');
+            if (!zigbee2mqttConfigured) {
+              errorCallback(manifest.id, 'No Zigbee dongle found');
+            } else {
+              console.debug('No Zigbee dongle found');
+            }
           })
           .catch((err) => {
-            errorCallback(manifest.id, err);
+            if (!zigbee2mqttConfigured) {
+              errorCallback(manifest.id, err);
+            } else {
+              console.debug(`Could not probe serial ports: ${err}`);
+            }
           });
         return;
       }
@@ -256,8 +275,14 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       }
     })
     .catch((err) => {
-      errorCallback(manifest.id, err);
+      if (!zigbee2mqttConfigured) {
+        errorCallback(manifest.id, err);
+      } else {
+        console.debug(`Could not load serial drivers: ${err}`);
+      }
     });
+
+  new Zigbee2MqttDriver(addonManager, config);
 }
 
 module.exports = loadZigbeeAdapters;
