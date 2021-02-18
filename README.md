@@ -27,3 +27,11 @@ This adapter is compatible with the following USB dongles:
     or using [Raspberry Pi](https://lemariva.com/blog/2019/07/zigbee-flashing-cc2531-using-raspberry-pi-without-cc-debugger)
   * Last time [ITEAD](https://www.itead.cc/cc2531-usb-dongle.html) sells them
     preprogrammed with some ZNP firmware - probably working with this plugin.
+
+Additionally, the adapter can talk to one or more [Zigbee2MQTT](https://www.zigbee2mqtt.io/) instances over MQTT.
+The supported dongles are listed [here](https://www.zigbee2mqtt.io/information/supported_adapters.html).
+To see if your devices are supported, look [here](https://www.zigbee2mqtt.io/information/supported_devices.html).
+
+To use it, just add another Zigbee2MQTT entry in the config of the adapter and update the host field with the hostname or IP of your MQTT broker.
+
+If you don't have an existing Zigbee2MQTT installation, you can follow this [guide](https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html) to set one up.
