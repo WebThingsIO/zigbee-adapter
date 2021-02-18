@@ -40,6 +40,8 @@ const REMOVE_REQUEST_POSTFIX = '/bridge/request/device/remove';
 const REMOVE_RESPONSE_POSTFIX = '/bridge/response/device/remove';
 const LOGGING_POSTFIX = '/bridge/logging';
 
+const DEFAULT_PORT = 1883;
+
 export class Zigbee2MqttAdapter extends Adapter {
   private prefix: string;
 
@@ -50,14 +52,17 @@ export class Zigbee2MqttAdapter extends Adapter {
     private config: Config,
     private adapterConfig: Zigbee2MQTTAdapter
   ) {
-    super(addonManager, manifest.id, manifest.id);
+    super(
+      addonManager,
+      `zb-zigbee2mqtt-${adapterConfig.host}:${adapterConfig.port ?? DEFAULT_PORT}`,
+      manifest.id);
     this.prefix = adapterConfig.topicPrefix ?? 'zigbee2mqtt';
     this.connect();
   }
 
   async connect(): Promise<void> {
     const host = this.adapterConfig.host;
-    const port = this.adapterConfig.port || 1883;
+    const port = this.adapterConfig.port || DEFAULT_PORT;
     const broker = `mqtt://${host}:${port}`;
     console.log(`Connecting to broker ${broker}`);
     const client = mqtt.connect(broker);
