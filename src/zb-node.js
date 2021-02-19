@@ -16,7 +16,7 @@ const zclId = require('zcl-id');
 const zcl = require('zcl-packet');
 const zdo = require('zigbee-zdo');
 const zigbeeClassifier = require('./zb-classifier');
-const ZigbeeFamily = require('./zb-family');
+const ZigbeeFamily = require('./zb-family').default;
 
 const { Device, Event, Utils } = require('gateway-addon');
 const {
