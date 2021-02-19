@@ -22,6 +22,12 @@ function map_posix_tools() {
     return $!
   }
   export -f find
+
+  cp() {
+    gcp "$@"
+    return $!
+  }
+  export -f cp
 }
 
 function install_osx_compiler() {
