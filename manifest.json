@@ -1,6 +1,6 @@
 {
   "author": "WebThingsIO",
-  "description": "Zigbee adapter plugin for WebThings Gateway",
+  "description": "Zigbee device support, via USB dongle or external Zigbee2MQTT instance.",
   "gateway_specific_settings": {
     "webthings": {
       "exec": "{nodeLoader} {path}",
@@ -85,5 +85,5 @@
     }
   },
   "short_name": "Zigbee",
-  "version": "0.15.8"
+  "version": "0.16.0"
 }

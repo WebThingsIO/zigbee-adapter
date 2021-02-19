@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.15.8",
-  "description": "Zigbee adapter plugin for WebThings Gateway",
+  "version": "0.16.0",
+  "description": "Zigbee device support, via USB dongle or external Zigbee2MQTT instance.",
   "author": "WebThingsIO",
   "main": "lib/index.js",
   "scripts": {
@@ -53,10 +53,6 @@
     "LICENSE",
     "README.md",
     "SHA256SUMS",
-    "lib/zigbee2mqtt/zigbee2mqtt-adapter.js",
-    "lib/zigbee2mqtt/zigbee2mqtt-device.js",
-    "lib/zigbee2mqtt/zigbee2mqtt-driver.js",
-    "lib/zigbee2mqtt/zigbee2mqtt-property.js",
     "lib/driver/index.js",
     "lib/driver/conbee.js",
     "lib/driver/xbee.js",
@@ -73,6 +69,10 @@
     "lib/zb-node.js",
     "lib/zb-property.js",
     "lib/zb-xiaomi.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-adapter.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-device.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-driver.js",
+    "lib/zigbee2mqtt/zigbee2mqtt-property.js",
     "manifest.json",
     "node_modules"
   ]
