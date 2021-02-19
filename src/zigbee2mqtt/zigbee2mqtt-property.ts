@@ -22,6 +22,7 @@ import DEBUG_FLAG from '../zb-debug';
 const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
 export const WRITE_BIT = 0b010;
+export const READ_BIT = 0b100;
 
 export function parseType(type?: string): PropertyValueType {
   switch (type) {
@@ -38,6 +39,10 @@ export function parseType(type?: string): PropertyValueType {
 
 function isWritable(access: number): boolean {
   return (access & WRITE_BIT) != 0;
+}
+
+export function isReadable(access: number): boolean {
+  return (access & READ_BIT) != 0;
 }
 
 export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
