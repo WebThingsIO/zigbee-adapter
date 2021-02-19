@@ -18,6 +18,7 @@ import {
   Zigbee2MqttProperty,
   WRITE_BIT,
   parseType,
+  isReadable,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
@@ -52,6 +53,56 @@ export class Zigbee2MqttDevice extends Device {
     } else {
       this.setTitle(`Zigbee2MQTT (${id})`);
     }
+
+    const exposes = deviceDefinition?.definition?.exposes;
+
+    if (Array.isArray(exposes)) {
+      const properties: Record<string, unknown> = this.getKeys(exposes);
+
+      if (Object.keys(properties).length > 0) {
+        const readTopic = `${this.deviceTopic}/get`;
+        const readPayload = JSON.stringify(properties);
+
+        client.publish(readTopic, readPayload, (error) => {
+          if (error) {
+            console.warn(`Could not send ${readPayload} to ${readTopic}: ${console.error()}`);
+          }
+        });
+      }
+    }
+  }
+
+  private getKeys(exposes: Expos[]): Record<string, unknown> {
+    let properties: Record<string, unknown> = {};
+
+    for (const expose of exposes) {
+      if (expose.name) {
+        if (this.hasReadableProperties(expose)) {
+          properties[expose.name] = '';
+        }
+      } else if (Array.isArray(expose.features)) {
+        properties = {
+          ...properties,
+          ...this.getKeys(expose.features),
+        };
+      }
+    }
+
+    return properties;
+  }
+
+  private hasReadableProperties(expose: Expos): boolean {
+    if (typeof expose.access === 'number') {
+      return isReadable(expose.access);
+    } else if (Array.isArray(expose.features)) {
+      for (const feature of expose.features) {
+        if (this.hasReadableProperties(feature)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   protected detectProperties(deviceDefinition: DeviceDefinition): void {
