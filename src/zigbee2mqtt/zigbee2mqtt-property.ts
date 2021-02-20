@@ -65,6 +65,15 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       readOnly: !isWritable(expose.access ?? 0),
       ...additionalProperties,
     });
+
+    switch (name) {
+      case 'occupancy': {
+        const device = (this.getDevice() as unknown) as { '@type': string[] };
+        device['@type'].push('MotionSensor');
+        this.setAtType('MotionProperty');
+        break;
+      }
+    }
   }
 
   update(value: unknown, _: Record<string, unknown>): void {
