@@ -1196,7 +1196,6 @@ class ZigbeeClassifier {
           maximum: 100,
           multipleOf: 0.5,
           readOnly: true,
-          visible: !!node.driver.config.showBattery,
         },
         PROFILE_ID.ZHA, // profileId
         genPowerCfgEndpoint, // endpoint
