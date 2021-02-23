@@ -212,12 +212,42 @@ export class Zigbee2MqttDevice extends Device {
   private createEvents(values: string[]): void {
     if (Array.isArray(values)) {
       if (values.length > 0) {
+        let isPushbutton = false;
+
         for (const value of values) {
           console.log(`Creating property for ${value}`);
 
+          const additionalProperties: Record<string, unknown> = {};
+
+          switch (value) {
+            case 'single':
+              additionalProperties['@type'] = 'PressedEvent';
+              isPushbutton = true;
+              break;
+            case 'double':
+              additionalProperties['@type'] = 'DoublePressedEvent';
+              isPushbutton = true;
+              break;
+            case 'release':
+              additionalProperties['@type'] = 'LongPressedEvent';
+              isPushbutton = true;
+              break;
+          }
+
           this.addEvent(value, {
             name: value,
+            ...additionalProperties,
           });
+
+          console.log({
+            name: value,
+            ...additionalProperties,
+          });
+        }
+
+        if (isPushbutton) {
+          const device = (this as unknown) as { '@type': string[] };
+          device['@type'].push('PushButton');
         }
       } else {
         console.log(`Expected list of values but got ${JSON.stringify(values)}`);
