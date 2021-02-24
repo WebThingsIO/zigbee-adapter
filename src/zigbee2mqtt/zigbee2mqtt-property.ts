@@ -73,6 +73,18 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
         this.setAtType('MotionProperty');
         break;
       }
+      case 'power': {
+        this.setAtType('InstantaneousPowerProperty');
+        break;
+      }
+      case 'voltage': {
+        this.setAtType('VoltageProperty');
+        break;
+      }
+      case 'current': {
+        this.setAtType('CurrentProperty');
+        break;
+      }
     }
   }
 

@@ -115,6 +115,9 @@ export class Zigbee2MqttDevice extends Device {
         case 'light':
           this.createLightProperties(expose);
           break;
+        case 'switch':
+          this.createSmartPlugProperties(expose);
+          break;
         default:
           if (expose.name === 'action') {
             this.createEvents(expose.values as string[]);
@@ -191,6 +194,38 @@ export class Zigbee2MqttDevice extends Device {
                 const property = new ColorProperty(
                   this,
                   'color',
+                  feature,
+                  this.client,
+                  this.deviceTopic
+                );
+
+                this.addProperty(property);
+              }
+              break;
+          }
+        } else {
+          console.log(`Ignoring property without name: ${JSON.stringify(expose, null, 0)}`);
+        }
+      }
+    } else {
+      console.warn(`Expected features array in light expose: ${JSON.stringify(expose)}`);
+    }
+  }
+
+  private createSmartPlugProperties(expose: Expos): void {
+    if (expose.features) {
+      ((this as unknown) as { '@type': string[] })['@type'].push('SmartPlug');
+
+      for (const feature of expose.features) {
+        if (feature.name) {
+          switch (feature.name) {
+            case 'state':
+              {
+                console.log(`Creating property for ${feature.name}`);
+
+                const property = new OnOffProperty(
+                  this,
+                  feature.name,
                   feature,
                   this.client,
                   this.deviceTopic
