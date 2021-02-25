@@ -62,9 +62,14 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       enum: expose.values,
       minimum: expose.value_min,
       maximum: expose.value_max,
+      multipleOf: expose.value_step,
       readOnly: !isWritable(expose.access ?? 0),
       ...additionalProperties,
     });
+
+    if (this.getUnit() == '%') {
+      this.setAtType('LevelProperty');
+    }
 
     switch (name) {
       case 'occupancy': {
@@ -83,6 +88,28 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       }
       case 'current': {
         this.setAtType('CurrentProperty');
+        break;
+      }
+      case 'local_temperature': {
+        this.setTitle('Current temperature');
+        this.setAtType('TemperatureProperty');
+        break;
+      }
+      case 'occupied_heating_setpoint': {
+        this.setTitle('Target temperature');
+        this.setAtType('TargetTemperatureProperty');
+        break;
+      }
+      case 'system_mode': {
+        this.setTitle('Mode');
+        break;
+      }
+      case 'pi_heating_demand': {
+        this.setTitle('Valve state');
+        break;
+      }
+      case 'battery': {
+        this.setTitle('Battery');
         break;
       }
     }

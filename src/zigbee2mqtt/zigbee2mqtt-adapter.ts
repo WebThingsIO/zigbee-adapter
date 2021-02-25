@@ -252,6 +252,7 @@ export interface Expos {
   unit?: string;
   value_max?: number;
   value_min?: number;
+  value_step?: number;
   values?: string[];
   features: Expos[];
 }
