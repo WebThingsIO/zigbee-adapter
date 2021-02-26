@@ -43,7 +43,7 @@
           "type": "string",
           "default": ""
         },
-        "showAging" : {
+        "showAging": {
           "type": "boolean",
           "title": "Show Aging",
           "description": "experimental - Creates an additional 'Seen' property to show when the device was last active on the Zigbee network"
