@@ -1807,6 +1807,63 @@ class ZigbeeClassifier {
     }
   }
 
+  addLastSeenProperty(node) {
+    var lastSeenTime;
+    node.updateLastSeen = () => lastSeenTime = Date.now();
+
+    if (!!node.driver.config.showAging) {
+        const lastSeen = new ZigbeeProperty(
+        node,
+        'lastSeen', // name
+        {
+          type: 'string',
+          readOnly: true,
+          label: 'Seen'
+        },
+        '', // profileId
+        '', // endPoint
+        '', // clusterId
+        '', // attr
+        null, // setAttrFromValue
+        null, // parseValueFromAttr
+      );
+      node.properties.set('lastSeen', lastSeen);
+      lastSeen.value = '';
+      lastSeen.fireAndForget = true;
+      const timings = [
+        { t: 172800000, d: 'more than 2 days ago'},
+        { t: 86400000, d: 'more than a day ago'},
+        { t: 43200000, d: 'more than 12 hours ago'},
+        { t: 21600000, d: 'more than 6 hours ago'},
+        { t: 10800000, d: 'more than 3 hours ago'},
+        { t: 3600000, d: 'more than an hour ago'},
+        { t: 1800000, d: 'more than 30 minutes ago'},
+        { t: 600000, d: 'more than 10 minutes ago'},
+        { t: 60000, d: 'more than 1 minute ago'},
+        { t: 30000, d: 'more than 30 seconds ago'},
+        { t: 10000, d: 'more than 10 seconds ago'},
+        { t: 5000, d: 'more than 5 seconds ago'},
+        { t: Number.MIN_SAFE_INTEGER, d: 'now'},
+      ];
+      const updateLastSeen = () => {
+        var display = '-';
+        if (lastSeenTime) {
+          const since = Date.now() - lastSeenTime;
+          for (let i = 0; i < timings.length; i++) {
+            if (since > timings[i].t) {
+              display = timings[i].d;
+              break;
+            }
+          }
+        }
+        if (display !== lastSeen.value) {
+          lastSeen.setCachedValueAndNotify(display);
+        }
+      };
+      setInterval(updateLastSeen, 5000);
+    }
+  }
+
   addProperty(
     node,
     name,
@@ -2082,6 +2139,8 @@ class ZigbeeClassifier {
     if (genPowerCfgEndpoint) {
       this.addPowerCfgVoltageProperty(node, genPowerCfgEndpoint);
     }
+
+    this.addLastSeenProperty(node);
   }
 
   classify(node) {

@@ -20,6 +20,7 @@
       "scanChannels": 8190,
       "allowFTDISerial": false,
       "allowAMASerial": false,
+      "showAging": false,
       "debug": ""
     },
     "schema": {
@@ -41,6 +42,11 @@
         "debug": {
           "type": "string",
           "default": ""
+        },
+        "showAging" : {
+          "type": "boolean",
+          "title": "Show Aging",
+          "description": "experimental - Creates an additional 'Seen' property to show when the device was last active on the Zigbee network"
         },
         "zigbee2mqtt": {
           "title": "Zigbee2Mqtt",

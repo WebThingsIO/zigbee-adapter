@@ -472,6 +472,9 @@ class ZigbeeAdapter extends Adapter {
       // the ZHA protocol.
       const node = this.nodes[frame.remote64];
       if (node) {
+        if (typeof node.updateLastSeen === 'function') {
+          node.updateLastSeen();
+        }
         for (const property of node.properties.values()) {
           if (DEBUG_flow) {
             console.error(node.addr64, 'bind failed - setting fireAndForget to true');
@@ -506,6 +509,9 @@ class ZigbeeAdapter extends Adapter {
     }
     const node = this.findNodeFromRxFrame(frame);
     if (node) {
+      if (typeof node.updateLastSeen === 'function') {
+        node.updateLastSeen();
+      }
       node.handleZhaResponse(frame);
     } else {
       console.log('Node:', frame.remote64, frame.remote16, 'not found');
@@ -605,6 +611,11 @@ class ZigbeeAdapter extends Adapter {
     if (!node) {
       return;
     }
+
+    if (typeof node.updateLastSeen === 'function') {
+      node.updateLastSeen();
+    }
+
     if (this.scanning) {
       if (DEBUG_flow) {
         console.log('Ignoring Match Descriptor Request - scanning in progress');
@@ -731,6 +742,9 @@ class ZigbeeAdapter extends Adapter {
     this.activeEndpointResponseCount++;
     const node = this.nodes[frame.remote64];
     if (node) {
+      if (typeof node.updateLastSeen === 'function') {
+        node.updateLastSeen();
+      }
       for (const endpointNum of frame.activeEndpoints) {
         if (!(endpointNum in node.activeEndpoints)) {
           node.activeEndpoints[endpointNum] = {};
@@ -791,6 +805,10 @@ class ZigbeeAdapter extends Adapter {
       console.log('Processing CLUSTER_ID.MANAGEMENT_LQI_RESPONSE');
     }
     const node = this.createNodeIfRequired(frame.remote64, frame.remote16);
+
+    if (node && typeof node.updateLastSeen === 'function') {
+      node.updateLastSeen();
+    }
 
     for (let i = 0; i < frame.numEntriesThisResponse; i++) {
       const neighborIndex = frame.startIndex + i;
@@ -943,6 +961,11 @@ class ZigbeeAdapter extends Adapter {
     if (!node) {
       return;
     }
+
+    if (typeof node.updateLastSeen === 'function') {
+      node.updateLastSeen();
+    }
+
     const endpoint = node.activeEndpoints[frame.endpoint];
     if (endpoint) {
       endpoint.queryingSimpleDescriptor = false;
@@ -1027,6 +1050,10 @@ class ZigbeeAdapter extends Adapter {
         console.log('handleManagementLeaveResponse:', 'node not found - returning');
       }
       return;
+    }
+
+    if (typeof node.updateLastSeen === 'function') {
+      node.updateLastSeen();
     }
 
     if (DEBUG_flow) {
