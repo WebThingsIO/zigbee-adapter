@@ -1808,10 +1808,10 @@ class ZigbeeClassifier {
   }
 
   addLastSeenProperty(node) {
-    var lastSeenTime;
+    let lastSeenTime;
     node.updateLastSeen = () => (lastSeenTime = Date.now());
 
-    if (!!node.driver.config.showAging) {
+    if (node.driver.config.showAging) {
       const lastSeen = new ZigbeeProperty(
         node,
         'lastSeen', // name
@@ -1846,12 +1846,12 @@ class ZigbeeClassifier {
         { t: Number.MIN_SAFE_INTEGER, d: 'now' },
       ];
       const updateLastSeen = () => {
-        var display = '-';
+        let display = '-';
         if (lastSeenTime) {
           const since = Date.now() - lastSeenTime;
-          for (let i = 0; i < timings.length; i++) {
-            if (since > timings[i].t) {
-              display = timings[i].d;
+          for (const timing of timings) {
+            if (since > timing.t) {
+              display = timing.d;
               break;
             }
           }
