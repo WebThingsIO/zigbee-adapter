@@ -107,16 +107,15 @@ export class Zigbee2MqttDevice extends Device {
 
   protected detectProperties(deviceDefinition: DeviceDefinition): void {
     for (const expose of deviceDefinition?.definition?.exposes ?? []) {
-      if (expose.name === 'linkquality') {
-        continue;
-      }
-
       switch (expose.type ?? '') {
         case 'light':
           this.createLightProperties(expose);
           break;
         case 'switch':
           this.createSmartPlugProperties(expose);
+          break;
+        case 'climate':
+          this.createThermostatProperties(expose);
           break;
         default:
           if (expose.name === 'action') {
@@ -244,6 +243,22 @@ export class Zigbee2MqttDevice extends Device {
     }
   }
 
+  private createThermostatProperties(expose: Expos): void {
+    if (expose.features) {
+      ((this as unknown) as { '@type': string[] })['@type'].push('Thermostat');
+
+      for (const feature of expose.features) {
+        if (feature.name) {
+          this.createProperty(feature);
+        } else {
+          console.log(`Ignoring property without name: ${JSON.stringify(expose, null, 0)}`);
+        }
+      }
+    } else {
+      console.warn(`Expected features array in thermostat expose: ${JSON.stringify(expose)}`);
+    }
+  }
+
   private createEvents(values: string[]): void {
     if (Array.isArray(values)) {
       if (values.length > 0) {
@@ -313,6 +328,13 @@ export class Zigbee2MqttDevice extends Device {
 
   private createProperty<T extends PropertyValue>(expose: Expos): void {
     if (expose.name) {
+      switch (expose.name) {
+        case 'linkquality':
+        case 'local_temperature_calibration':
+        case 'running_state':
+          return;
+      }
+
       console.log(`Creating property for ${expose.name}`);
 
       const property = new Zigbee2MqttProperty<T>(
