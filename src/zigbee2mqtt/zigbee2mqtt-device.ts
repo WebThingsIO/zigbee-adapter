@@ -8,7 +8,7 @@
  */
 
 import { Action, Device, Event } from 'gateway-addon';
-import { PropertyValue } from 'gateway-addon/lib/schema';
+import { PropertyValue, Event as EventSchema } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
   OnOffProperty,
@@ -24,6 +24,8 @@ import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
 
 const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
+
+const IGNORED_PROPERTIES = ['linkquality', 'local_temperature_calibration', 'running_state'];
 
 export class Zigbee2MqttDevice extends Device {
   private deviceTopic: string;
@@ -328,11 +330,8 @@ export class Zigbee2MqttDevice extends Device {
 
   private createProperty<T extends PropertyValue>(expose: Expos): void {
     if (expose.name) {
-      switch (expose.name) {
-        case 'linkquality':
-        case 'local_temperature_calibration':
-        case 'running_state':
-          return;
+      if (IGNORED_PROPERTIES.includes(expose.name)) {
+        return;
       }
 
       console.log(`Creating property for ${expose.name}`);
@@ -357,7 +356,27 @@ export class Zigbee2MqttDevice extends Device {
     }
 
     for (const [key, value] of Object.entries(update)) {
+      if (IGNORED_PROPERTIES.includes(key)) {
+        continue;
+      }
+
       if (key === 'action') {
+        if (typeof value !== 'string') {
+          console.log(`Expected event of type string but got ${typeof value}`);
+          continue;
+        }
+
+        const exists = ((this as unknown) as { events: Map<string, EventSchema> }).events.has(
+          value
+        );
+
+        if (!exists) {
+          if (debug) {
+            console.log(`Event '${value}' does not exist on ${this.getTitle()} (${this.getId()})`);
+          }
+          continue;
+        }
+
         const event = new Event(this, value as string);
         this.eventNotify(event);
       } else {
@@ -366,7 +385,7 @@ export class Zigbee2MqttDevice extends Device {
         if (property) {
           property.update(value, update);
         } else if (debug) {
-          console.log(`Could not find property with name ${key}`);
+          console.log(`Property '${key}' does not exist on ${this.getTitle()} (${this.getId()})`);
         }
       }
     }
