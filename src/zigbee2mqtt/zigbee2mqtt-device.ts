@@ -25,6 +25,8 @@ import DEBUG_FLAG from '../zb-debug';
 
 const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 
+const IGNORED_PROPERTIES = ['linkquality', 'local_temperature_calibration', 'running_state'];
+
 export class Zigbee2MqttDevice extends Device {
   private deviceTopic: string;
 
@@ -328,11 +330,8 @@ export class Zigbee2MqttDevice extends Device {
 
   private createProperty<T extends PropertyValue>(expose: Expos): void {
     if (expose.name) {
-      switch (expose.name) {
-        case 'linkquality':
-        case 'local_temperature_calibration':
-        case 'running_state':
-          return;
+      if (IGNORED_PROPERTIES.includes(expose.name)) {
+        return;
       }
 
       console.log(`Creating property for ${expose.name}`);
@@ -357,6 +356,10 @@ export class Zigbee2MqttDevice extends Device {
     }
 
     for (const [key, value] of Object.entries(update)) {
+      if (IGNORED_PROPERTIES.includes(key)) {
+        continue;
+      }
+
       if (key === 'action') {
         if (typeof value !== 'string') {
           console.log(`Expected event of type string but got ${typeof value}`);
