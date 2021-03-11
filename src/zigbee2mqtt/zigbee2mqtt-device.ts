@@ -8,7 +8,7 @@
  */
 
 import { Action, Device, Event } from 'gateway-addon';
-import { PropertyValue } from 'gateway-addon/lib/schema';
+import { PropertyValue, Event as EventSchema } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
   OnOffProperty,
@@ -358,6 +358,22 @@ export class Zigbee2MqttDevice extends Device {
 
     for (const [key, value] of Object.entries(update)) {
       if (key === 'action') {
+        if (typeof value !== 'string') {
+          console.log(`Expected event of type string but got ${typeof value}`);
+          continue;
+        }
+
+        const exists = ((this as unknown) as { events: Map<string, EventSchema> }).events.has(
+          value
+        );
+
+        if (!exists) {
+          if (debug) {
+            console.log(`Event '${value}' does not exist on ${this.getTitle()} (${this.getId()})`);
+          }
+          continue;
+        }
+
         const event = new Event(this, value as string);
         this.eventNotify(event);
       } else {
@@ -366,7 +382,7 @@ export class Zigbee2MqttDevice extends Device {
         if (property) {
           property.update(value, update);
         } else if (debug) {
-          console.log(`Could not find property with name ${key}`);
+          console.log(`Property '${key}' does not exist on ${this.getTitle()} (${this.getId()})`);
         }
       }
     }
