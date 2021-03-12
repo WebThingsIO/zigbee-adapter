@@ -24,10 +24,14 @@ const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
 export const WRITE_BIT = 0b010;
 export const READ_BIT = 0b100;
 
-export function parseType(type?: string): PropertyValueType {
-  switch (type) {
+export function parseType(expose: Expos): PropertyValueType {
+  switch (expose.type) {
     case 'numeric':
-      return 'number';
+      if (expose.value_step === 1) {
+        return 'integer';
+      } else {
+        return 'number';
+      }
     case 'enum':
       return 'string';
     case 'binary':
@@ -57,7 +61,7 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
     super(device, name, {
       title: expose.name,
       description: expose.description,
-      type: parseType(expose.type),
+      type: parseType(expose),
       unit: expose.unit,
       enum: expose.values,
       minimum: expose.value_min,
@@ -157,7 +161,7 @@ export class OnOffProperty extends Zigbee2MqttProperty<boolean> {
     super(device, name, expose, client, deviceTopic, {
       '@type': 'OnOffProperty',
       title: 'On',
-      type: parseType(expose.type),
+      type: parseType(expose),
     });
   }
 
