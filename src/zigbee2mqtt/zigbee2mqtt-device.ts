@@ -316,7 +316,7 @@ export class Zigbee2MqttDevice extends Device {
       this.addAction(expose.name, {
         description: expose.description,
         input: {
-          type: parseType(expose.type),
+          type: parseType(expose),
           unit: expose.unit,
           enum: expose.values,
           minimum: expose.value_min,
