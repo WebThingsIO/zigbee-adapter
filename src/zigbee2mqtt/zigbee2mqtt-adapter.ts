@@ -13,7 +13,9 @@ import mqtt from 'mqtt';
 import { Zigbee2MqttDevice } from './zigbee2mqtt-device';
 import DEBUG_FLAG from '../zb-debug';
 
-const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
+function debug(): boolean {
+  return DEBUG_FLAG.DEBUG_zigbee2mqtt;
+}
 
 import manifest from '../manifest.json';
 
@@ -87,7 +89,7 @@ export class Zigbee2MqttAdapter extends Adapter {
     client.on('message', (topic, message) => {
       const raw = message.toString();
 
-      if (debug) {
+      if (debug()) {
         console.log(`Received on ${topic}: ${raw}`);
       }
 
@@ -179,7 +181,7 @@ export class Zigbee2MqttAdapter extends Adapter {
           if (!existingDevice) {
             const device = new Zigbee2MqttDevice(this, id, deviceDefinition, client, this.prefix);
             this.handleDeviceAdded(device);
-          } else if (debug) {
+          } else if (debug()) {
             console.log(`Device ${id} already exists`);
           }
         } else {
@@ -210,7 +212,7 @@ export class Zigbee2MqttAdapter extends Adapter {
   }
 
   private publish(topic: string, payload: string): void {
-    if (debug) {
+    if (debug()) {
       console.log(`Sending ${payload} to ${topic}`);
     }
 

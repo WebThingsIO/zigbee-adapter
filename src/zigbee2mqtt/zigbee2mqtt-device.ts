@@ -23,7 +23,9 @@ import {
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
 
-const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
+function debug(): boolean {
+  return DEBUG_FLAG.DEBUG_zigbee2mqtt;
+}
 
 const IGNORED_PROPERTIES = ['linkquality', 'local_temperature_calibration', 'running_state'];
 
@@ -371,7 +373,7 @@ export class Zigbee2MqttDevice extends Device {
         );
 
         if (!exists) {
-          if (debug) {
+          if (debug()) {
             console.log(`Event '${value}' does not exist on ${this.getTitle()} (${this.getId()})`);
           }
           continue;
@@ -384,7 +386,7 @@ export class Zigbee2MqttDevice extends Device {
 
         if (property) {
           property.update(value, update);
-        } else if (debug) {
+        } else if (debug()) {
           console.log(`Property '${key}' does not exist on ${this.getTitle()} (${this.getId()})`);
         }
       }
@@ -400,7 +402,7 @@ export class Zigbee2MqttDevice extends Device {
       const writeTopic = `${this.deviceTopic}/set`;
       const json = { [name]: input };
 
-      if (debug) {
+      if (debug()) {
         console.log(`Sending ${JSON.stringify(json)} to ${writeTopic}`);
       }
 
