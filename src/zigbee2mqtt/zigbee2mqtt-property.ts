@@ -19,7 +19,9 @@ import { Zigbee2MqttDevice } from './zigbee2mqtt-device';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
 
-const debug = DEBUG_FLAG.DEBUG_zigbee2mqtt;
+function debug(): boolean {
+  return DEBUG_FLAG.DEBUG_zigbee2mqtt;
+}
 
 export const WRITE_BIT = 0b010;
 export const READ_BIT = 0b100;
@@ -135,7 +137,7 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       const writeTopic = `${this.deviceTopic}/set`;
       const json = { [this.getName()]: value };
 
-      if (debug) {
+      if (debug()) {
         console.log(`Sending ${JSON.stringify(json)} to ${writeTopic}`);
       }
 
