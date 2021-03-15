@@ -19,6 +19,7 @@ import {
   WRITE_BIT,
   parseType,
   isReadable,
+  parseUnit,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
@@ -319,7 +320,7 @@ export class Zigbee2MqttDevice extends Device {
         description: expose.description,
         input: {
           type: parseType(expose),
-          unit: expose.unit,
+          unit: parseUnit(expose.unit),
           enum: expose.values,
           minimum: expose.value_min,
           maximum: expose.value_max,
