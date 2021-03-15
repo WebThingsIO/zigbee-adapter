@@ -43,6 +43,15 @@ export function parseType(expose: Expos): PropertyValueType {
   return 'string';
 }
 
+export function parseUnit(unit?: string): string | undefined {
+  switch (unit) {
+    case '°C':
+      return 'degree celsius';
+  }
+
+  return unit;
+}
+
 function isWritable(access: number): boolean {
   return (access & WRITE_BIT) != 0;
 }
@@ -64,7 +73,7 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
       title: expose.name,
       description: expose.description,
       type: parseType(expose),
-      unit: expose.unit,
+      unit: parseUnit(expose.unit),
       enum: expose.values,
       minimum: expose.value_min,
       maximum: expose.value_max,
