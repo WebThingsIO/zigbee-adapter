@@ -53,8 +53,8 @@ export class Zigbee2MqttDevice extends Device {
       }
     });
 
-    if (deviceDefinition?.definition?.description) {
-      this.setTitle(deviceDefinition?.definition?.description);
+    if (deviceDefinition.friendly_name) {
+      this.setTitle(deviceDefinition.friendly_name);
     } else {
       this.setTitle(`Zigbee2MQTT (${id})`);
     }
