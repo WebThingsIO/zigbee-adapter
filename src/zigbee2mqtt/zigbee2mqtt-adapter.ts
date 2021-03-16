@@ -49,6 +49,8 @@ export class Zigbee2MqttAdapter extends Adapter {
 
   private client?: mqtt.Client;
 
+  private deviceByFriendlyName: Record<string, Zigbee2MqttDevice> = {};
+
   constructor(
     addonManager: AddonManagerProxy,
     private config: Config,
@@ -101,13 +103,13 @@ export class Zigbee2MqttAdapter extends Adapter {
         if (topic.endsWith(DEVICES_POSTFIX)) {
           this.handleDevices(client, json);
         } else if (parts.length == 2) {
-          const id = parts[1];
-          const device = this.getDevice(id) as Zigbee2MqttDevice;
+          const friendlyName = parts[1];
+          const device = this.deviceByFriendlyName[friendlyName];
 
           if (device) {
             device.update(json);
           } else {
-            console.log(`Could not find device with id ${id}`);
+            console.log(`Could not find device with friendlyName ${friendlyName}`);
           }
         } else if (topic.endsWith(PERMIT_RESPONSE_POSTFIX)) {
           const response: Response = json;
@@ -181,6 +183,7 @@ export class Zigbee2MqttAdapter extends Adapter {
           if (!existingDevice) {
             const device = new Zigbee2MqttDevice(this, id, deviceDefinition, client, this.prefix);
             this.handleDeviceAdded(device);
+            this.deviceByFriendlyName[deviceDefinition.friendly_name as string] = device;
           } else if (debug()) {
             console.log(`Device ${id} already exists`);
           }

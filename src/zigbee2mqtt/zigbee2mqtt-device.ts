@@ -41,7 +41,7 @@ export class Zigbee2MqttDevice extends Device {
     topicPrefix: string
   ) {
     super(adapter, id);
-    this.deviceTopic = `${topicPrefix}/${id}`;
+    this.deviceTopic = `${topicPrefix}/${deviceDefinition.friendly_name}`;
 
     this.detectProperties(deviceDefinition);
 
