@@ -274,19 +274,19 @@ export class Zigbee2MqttDevice extends Device {
 
           const additionalProperties: Record<string, unknown> = {};
 
-          switch (value) {
-            case 'single':
-              additionalProperties['@type'] = 'PressedEvent';
-              isPushbutton = true;
-              break;
-            case 'double':
-              additionalProperties['@type'] = 'DoublePressedEvent';
-              isPushbutton = true;
-              break;
-            case 'release':
-              additionalProperties['@type'] = 'LongPressedEvent';
-              isPushbutton = true;
-              break;
+          if (value.indexOf('single') > -1 || value === 'on' || value === 'toggle') {
+            additionalProperties['@type'] = 'PressedEvent';
+            isPushbutton = true;
+          }
+
+          if (value.indexOf('double') > -1) {
+            additionalProperties['@type'] = 'DoublePressedEvent';
+            isPushbutton = true;
+          }
+
+          if (value.indexOf('release') > -1) {
+            additionalProperties['@type'] = 'LongPressedEvent';
+            isPushbutton = true;
           }
 
           this.addEvent(value, {
