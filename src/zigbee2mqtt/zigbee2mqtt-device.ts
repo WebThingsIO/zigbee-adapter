@@ -20,6 +20,7 @@ import {
   parseType,
   isReadable,
   parseUnit,
+  HeatingCoolingProperty,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
@@ -254,7 +255,44 @@ export class Zigbee2MqttDevice extends Device {
 
       for (const feature of expose.features) {
         if (feature.name) {
-          this.createProperty(feature);
+          switch (feature.name) {
+            case 'system_mode': {
+              console.log(`Creating property for ${feature.name}`);
+
+              const property = new Zigbee2MqttProperty<string>(
+                this,
+                feature.name,
+                feature,
+                this.client,
+                this.deviceTopic,
+                {
+                  '@type': 'ThermostatModeProperty',
+                  type: 'string',
+                }
+              );
+
+              this.addProperty(property);
+              break;
+            }
+            case 'running_state':
+              {
+                console.log(`Creating property for ${feature.name}`);
+
+                const property = new HeatingCoolingProperty(
+                  this,
+                  feature.name,
+                  feature,
+                  this.client,
+                  this.deviceTopic
+                );
+
+                this.addProperty(property);
+              }
+              break;
+            default:
+              this.createProperty(feature);
+              break;
+          }
         } else {
           console.log(`Ignoring property without name: ${JSON.stringify(expose, null, 0)}`);
         }
