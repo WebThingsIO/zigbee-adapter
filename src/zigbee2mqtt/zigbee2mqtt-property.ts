@@ -333,3 +333,45 @@ function xyBriToRgb(x: number, y: number, bri: number): RGB {
 function limit(value: number, min: number, max: number): number {
   return Math.max(Math.min(value, max), min);
 }
+
+function convertHeatingCoolingValues(value?: string[]): string[] | undefined {
+  if (value) {
+    return value.map((x) => convertHeatingCoolingValue(x));
+  }
+
+  return value;
+}
+
+function convertHeatingCoolingValue(value: string): string {
+  switch (value) {
+    case 'idle':
+      return 'off';
+    case 'heat':
+      return 'heating';
+    case 'cool':
+      return 'cooling';
+    default:
+      throw new Error(`Invalid HeatingCoolingValue ${value}, expected idle, heat or cool`);
+  }
+}
+
+export class HeatingCoolingProperty extends Zigbee2MqttProperty<string> {
+  constructor(
+    device: Zigbee2MqttDevice,
+    name: string,
+    expose: Expos,
+    client: mqtt.Client,
+    deviceTopic: string
+  ) {
+    super(device, name, expose, client, deviceTopic, {
+      '@type': 'HeatingCoolingProperty',
+      title: 'Run Mode',
+      type: 'string',
+      enum: convertHeatingCoolingValues(expose.values),
+    });
+  }
+
+  update(value: string): void {
+    this.setCachedValueAndNotify(convertHeatingCoolingValue(value));
+  }
+}
