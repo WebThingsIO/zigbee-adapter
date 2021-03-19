@@ -127,6 +127,24 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
         this.setTitle('Battery');
         break;
       }
+      case 'temperature': {
+        device['@type'].push('TemperatureSensor');
+        this.setTitle('Temperature');
+        this.setAtType('TemperatureProperty');
+        break;
+      }
+      case 'humidity': {
+        device['@type'].push('HumiditySensor');
+        this.setTitle('Humidity');
+        this.setAtType('HumidityProperty');
+        break;
+      }
+      case 'pressure': {
+        device['@type'].push('BarometricPressureSensor');
+        this.setTitle('Barometric pressure');
+        this.setAtType('BarometricPressureProperty');
+        break;
+      }
     }
   }
 
