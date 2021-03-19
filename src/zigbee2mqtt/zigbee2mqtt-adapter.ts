@@ -184,6 +184,7 @@ export class Zigbee2MqttAdapter extends Adapter {
             const device = new Zigbee2MqttDevice(this, id, deviceDefinition, client, this.prefix);
             this.handleDeviceAdded(device);
             this.deviceByFriendlyName[deviceDefinition.friendly_name as string] = device;
+            device.fetchValues();
           } else if (debug()) {
             console.log(`Device ${id} already exists`);
           }

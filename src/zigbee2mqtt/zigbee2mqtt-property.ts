@@ -64,7 +64,7 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
   constructor(
     device: Zigbee2MqttDevice,
     name: string,
-    expose: Expos,
+    protected expose: Expos,
     private client: mqtt.Client,
     private deviceTopic: string,
     additionalProperties?: PropertySchema
@@ -154,6 +154,11 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
     }
   }
 
+  isReadable(): boolean {
+    console.log(`${this.getName()} ${this.expose.access} ${isReadable(this.expose.access ?? 0)}`);
+    return isReadable(this.expose.access ?? 0);
+  }
+
   update(value: unknown, _: Record<string, unknown>): void {
     this.setCachedValueAndNotify(value as T);
   }
@@ -213,7 +218,7 @@ export class BrightnessProperty extends Zigbee2MqttProperty<number> {
   constructor(
     device: Zigbee2MqttDevice,
     name: string,
-    private expose: Expos,
+    expose: Expos,
     client: mqtt.Client,
     deviceTopic: string
   ) {
@@ -395,7 +400,7 @@ export class HeatingCoolingProperty extends Zigbee2MqttProperty<string> {
     });
   }
 
-  update(value: string): void {
-    this.setCachedValueAndNotify(convertHeatingCoolingValue(value));
+  update(value: string, update: Record<string, unknown>): void {
+    super.update(convertHeatingCoolingValue(value), update);
   }
 }
