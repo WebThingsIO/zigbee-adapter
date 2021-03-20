@@ -151,6 +151,12 @@ export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
         this.setAtType('SmokeProperty');
         break;
       }
+      case 'contact': {
+        device['@type'].push('DoorSensor');
+        this.setTitle('Open');
+        this.setAtType('OpenProperty');
+        break;
+      }
     }
   }
 
