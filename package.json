@@ -1,6 +1,6 @@
 {
   "name": "zigbee-adapter",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "Zigbee device support, via USB dongle or external Zigbee2MQTT instance.",
   "author": "WebThingsIO",
   "main": "lib/index.js",
