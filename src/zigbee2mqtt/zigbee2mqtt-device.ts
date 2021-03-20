@@ -28,7 +28,23 @@ function debug(): boolean {
   return DEBUG_FLAG.DEBUG_zigbee2mqtt;
 }
 
-const IGNORED_PROPERTIES = ['linkquality', 'local_temperature_calibration'];
+const IGNORED_PROPERTIES = [
+  'linkquality',
+  'local_temperature_calibration',
+  'update',
+  'update_available',
+  'color_temp_startup',
+  'voltage',
+  'led_indication',
+  'occupancy_timeout',
+  'illuminance',
+  'motion_sensitivity',
+  'requested_brightness_percent',
+  'requested_brightness_level',
+  'action_side',
+  'eurotronic_trv_mode',
+  'eurotronic_valve_position',
+];
 
 export class Zigbee2MqttDevice extends Device {
   private deviceTopic: string;
