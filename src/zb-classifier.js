@@ -1808,9 +1808,6 @@ class ZigbeeClassifier {
   }
 
   addLastSeenProperty(node) {
-    let lastSeenTime;
-    node.updateLastSeen = () => (lastSeenTime = Date.now());
-
     if (node.driver.config.showAging) {
       const lastSeen = new ZigbeeProperty(
         node,
@@ -1818,7 +1815,7 @@ class ZigbeeClassifier {
         {
           type: 'string',
           readOnly: true,
-          label: 'Seen',
+          label: 'Last seen',
         },
         '', // profileId
         '', // endPoint
@@ -1830,37 +1827,17 @@ class ZigbeeClassifier {
       node.properties.set('lastSeen', lastSeen);
       lastSeen.value = '';
       lastSeen.fireAndForget = true;
-      const timings = [
-        { t: 172800000, d: 'more than 2 days ago' },
-        { t: 86400000, d: 'more than a day ago' },
-        { t: 43200000, d: 'more than 12 hours ago' },
-        { t: 21600000, d: 'more than 6 hours ago' },
-        { t: 10800000, d: 'more than 3 hours ago' },
-        { t: 3600000, d: 'more than an hour ago' },
-        { t: 1800000, d: 'more than 30 minutes ago' },
-        { t: 600000, d: 'more than 10 minutes ago' },
-        { t: 60000, d: 'more than 1 minute ago' },
-        { t: 30000, d: 'more than 30 seconds ago' },
-        { t: 10000, d: 'more than 10 seconds ago' },
-        { t: 5000, d: 'more than 5 seconds ago' },
-        { t: Number.MIN_SAFE_INTEGER, d: 'now' },
-      ];
-      const updateLastSeen = () => {
-        let display = '-';
-        if (lastSeenTime) {
-          const since = Date.now() - lastSeenTime;
-          for (const timing of timings) {
-            if (since > timing.t) {
-              display = timing.d;
-              break;
-            }
-          }
-        }
-        if (display !== lastSeen.value) {
-          lastSeen.setCachedValueAndNotify(display);
-        }
+
+      node.updateLastSeen = () => {
+        const d = new Date();
+        // there's no easy way to construct an ISO date with local timezone, so do it the hard way
+        /* eslint-disable max-len */
+        const s =
+          `${d.getFullYear()}-${(`0${d.getMonth() + 1}`).slice(-2)}-${(`0${d.getDate()}`).slice(-2)}
+${(`0${d.getHours()}`).slice(-2)}:${(`0${d.getMinutes()}`).slice(-2)}:${(`0${d.getSeconds()}`).slice(-2)}`;
+        /* eslint-enable max-len */
+        lastSeen.setCachedValueAndNotify(s);
       };
-      setInterval(updateLastSeen, 5000);
     }
   }
 
