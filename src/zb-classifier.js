@@ -1196,7 +1196,6 @@ class ZigbeeClassifier {
           maximum: 100,
           multipleOf: 0.5,
           readOnly: true,
-          visible: !!node.driver.config.showBattery,
         },
         PROFILE_ID.ZHA, // profileId
         genPowerCfgEndpoint, // endpoint
@@ -1808,6 +1807,41 @@ class ZigbeeClassifier {
     }
   }
 
+  addLastSeenProperty(node) {
+    if (node.driver.config.showAging) {
+      const lastSeen = new ZigbeeProperty(
+        node,
+        'lastSeen', // name
+        {
+          type: 'string',
+          readOnly: true,
+          label: 'Last seen',
+        },
+        '', // profileId
+        '', // endPoint
+        '', // clusterId
+        '', // attr
+        null, // setAttrFromValue
+        null // parseValueFromAttr
+      );
+      node.properties.set('lastSeen', lastSeen);
+      lastSeen.value = '';
+      lastSeen.fireAndForget = true;
+
+      node.updateLastSeen = () => {
+        const d = new Date();
+        // there's no easy way to construct an ISO date with local timezone, so do it the hard way
+        /* eslint-disable max-len */
+        // prettier-ignore
+        const s =
+          `${d.getFullYear()}-${(`0${d.getMonth() + 1}`).slice(-2)}-${(`0${d.getDate()}`).slice(-2)}
+${(`0${d.getHours()}`).slice(-2)}:${(`0${d.getMinutes()}`).slice(-2)}:${(`0${d.getSeconds()}`).slice(-2)}`;
+        /* eslint-enable max-len */
+        lastSeen.setCachedValueAndNotify(s);
+      };
+    }
+  }
+
   addProperty(
     node,
     name,
@@ -2083,6 +2117,8 @@ class ZigbeeClassifier {
     if (genPowerCfgEndpoint) {
       this.addPowerCfgVoltageProperty(node, genPowerCfgEndpoint);
     }
+
+    this.addLastSeenProperty(node);
   }
 
   classify(node) {

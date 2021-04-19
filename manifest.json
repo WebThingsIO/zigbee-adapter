@@ -20,7 +20,7 @@
       "scanChannels": 8190,
       "allowFTDISerial": false,
       "allowAMASerial": false,
-      "showBattery": false,
+      "showAging": false,
       "debug": ""
     },
     "schema": {
@@ -39,14 +39,14 @@
           "type": "boolean",
           "default": false
         },
-        "showBattery": {
-          "type": "boolean",
-          "title": "Show Battery Percentage",
-          "description": "experimental: Show the 'batteryPercentageRemaining' attribute as a property. Note that this attribute is reported from a power constrained device with possibly low quality consumer-grade batteries. Therefore, it may not represent what you expect. Particularly, it may drop in large increments and may suddenly go from, say, 50% to 1%. This attribute is reported very infrequently, maybe as little as once a day, so may take a while to appear after being enabled."
-        },
         "debug": {
           "type": "string",
           "default": ""
+        },
+        "showAging": {
+          "type": "boolean",
+          "title": "Show Aging",
+          "description": "experimental - Creates an additional 'Last seen' property to show when each device was last active on the Zigbee network"
         },
         "zigbee2mqtt": {
           "title": "Zigbee2Mqtt",
