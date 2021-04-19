@@ -25,7 +25,10 @@
     },
     "schema": {
       "type": "object",
-      "required": ["scanChannels", "allowFTDISerial"],
+      "required": [
+        "scanChannels",
+        "allowFTDISerial"
+      ],
       "properties": {
         "scanChannels": {
           "type": "integer",
@@ -62,7 +65,9 @@
               "items": {
                 "title": "Zigbee2MQTT adapter",
                 "type": "object",
-                "required": ["host"],
+                "required": [
+                  "host"
+                ],
                 "properties": {
                   "host": {
                     "type": "string",
@@ -85,5 +90,5 @@
     }
   },
   "short_name": "Zigbee",
-  "version": "0.19.0"
+  "version": "0.20.0"
 }
