@@ -13,6 +13,7 @@ const { Database } = require('gateway-addon');
 const manifest = require('./manifest.json');
 const SerialProber = require('serial-prober');
 const { Zigbee2MqttDriver } = require('./zigbee2mqtt/zigbee2mqtt-driver');
+const SerialPort = require('serialport');
 
 const XBEE_FTDI_FILTER = {
   // Devices like the UartSBee, use a generic FTDI chip and with
@@ -225,62 +226,100 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     zigbee2mqttConfigured = true;
   }
 
-  const { DEBUG_serialProber } = require('./zb-debug').default;
-  SerialProber.debug(DEBUG_serialProber);
-  if (allowFTDISerial) {
-    xbeeSerialProber.param.filter.push(XBEE_FTDI_FILTER);
+  for (const stick of config.sticks || []) {
+    console.log(`Creating ${stick.type} driver for ${stick.port}`);
+
+    switch (stick.type) {
+      case 'xbee': {
+        const XBeeDriver = require('./driver/xbee');
+        const serialPort = new SerialPort(stick.port, {
+          baudRate: 9600,
+          lock: true,
+        });
+        new XBeeDriver(addonManager, config, stick.port, serialPort);
+        break;
+      }
+      case 'conbee': {
+        const ConBeeDriver = require('./driver/conbee');
+        const serialPort = new SerialPort(stick.port, {
+          baudRate: 38400,
+          lock: true,
+        });
+        new ConBeeDriver(addonManager, config, stick.port, serialPort);
+        break;
+      }
+      case 'zstack': {
+        const ZStackDriver = require('./driver/zstack');
+        const serialPort = new SerialPort(stick.port, {
+          baudRate: 115200,
+          lock: true,
+        });
+        new ZStackDriver(addonManager, config, stick.port, serialPort);
+        break;
+      }
+    }
   }
-  if (allowAMASerial) {
-    conbeeSerialProber.param.allowAMASerial = true;
+
+  if (config.probing) {
+    console.log('Probing serial ports');
+
+    const { DEBUG_serialProber } = require('./zb-debug').default;
+    SerialProber.debug(DEBUG_serialProber);
+    if (allowFTDISerial) {
+      xbeeSerialProber.param.filter.push(XBEE_FTDI_FILTER);
+    }
+    if (allowAMASerial) {
+      conbeeSerialProber.param.allowAMASerial = true;
+    }
+    SerialProber.probeAll(PROBERS)
+      .then((matches) => {
+        if (matches.length == 0) {
+          SerialProber.listAll()
+            .then(() => {
+              if (!zigbee2mqttConfigured) {
+                errorCallback(manifest.id, 'No Zigbee dongle found');
+              } else {
+                console.debug('No Zigbee dongle found');
+              }
+            })
+            .catch((err) => {
+              if (!zigbee2mqttConfigured) {
+                errorCallback(manifest.id, err);
+              } else {
+                console.debug(`Could not probe serial ports: ${err}`);
+              }
+            });
+          return;
+        }
+        // We put the driver requires here rather than at the top of
+        // the file so that the debug config gets initialized before we
+        // import the driver class.
+        const XBeeDriver = require('./driver/xbee');
+        const ConBeeDriver = require('./driver/conbee');
+        const ZStackDriver = require('./driver/zstack');
+        const driver = {
+          [xbeeSerialProber.param.name]: XBeeDriver,
+          [conbeeSerialProber.param.name]: ConBeeDriver,
+          [cc2531SerialProber.param.name]: ZStackDriver,
+          [conbeeNewerFirmwareSerialProber.param.name]: ConBeeDriver,
+        };
+        for (const match of matches) {
+          new driver[match.prober.param.name](
+            addonManager,
+            config,
+            match.port.path,
+            match.serialPort
+          );
+        }
+      })
+      .catch((err) => {
+        if (!zigbee2mqttConfigured) {
+          errorCallback(manifest.id, err);
+        } else {
+          console.debug(`Could not load serial drivers: ${err}`);
+        }
+      });
   }
-  SerialProber.probeAll(PROBERS)
-    .then((matches) => {
-      if (matches.length == 0) {
-        SerialProber.listAll()
-          .then(() => {
-            if (!zigbee2mqttConfigured) {
-              errorCallback(manifest.id, 'No Zigbee dongle found');
-            } else {
-              console.debug('No Zigbee dongle found');
-            }
-          })
-          .catch((err) => {
-            if (!zigbee2mqttConfigured) {
-              errorCallback(manifest.id, err);
-            } else {
-              console.debug(`Could not probe serial ports: ${err}`);
-            }
-          });
-        return;
-      }
-      // We put the driver requires here rather than at the top of
-      // the file so that the debug config gets initialized before we
-      // import the driver class.
-      const XBeeDriver = require('./driver/xbee');
-      const ConBeeDriver = require('./driver/conbee');
-      const ZStackDriver = require('./driver/zstack');
-      const driver = {
-        [xbeeSerialProber.param.name]: XBeeDriver,
-        [conbeeSerialProber.param.name]: ConBeeDriver,
-        [cc2531SerialProber.param.name]: ZStackDriver,
-        [conbeeNewerFirmwareSerialProber.param.name]: ConBeeDriver,
-      };
-      for (const match of matches) {
-        new driver[match.prober.param.name](
-          addonManager,
-          config,
-          match.port.path,
-          match.serialPort
-        );
-      }
-    })
-    .catch((err) => {
-      if (!zigbee2mqttConfigured) {
-        errorCallback(manifest.id, err);
-      } else {
-        console.debug(`Could not load serial drivers: ${err}`);
-      }
-    });
 
   new Zigbee2MqttDriver(addonManager, config);
 }

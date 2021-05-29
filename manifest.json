@@ -21,7 +21,8 @@
       "allowFTDISerial": false,
       "allowAMASerial": false,
       "showAging": false,
-      "debug": ""
+      "debug": "",
+      "probing": true
     },
     "schema": {
       "type": "object",
@@ -47,6 +48,28 @@
           "type": "boolean",
           "title": "Show Aging",
           "description": "experimental - Creates an additional 'Last seen' property to show when each device was last active on the Zigbee network"
+        },
+        "probing": {
+          "type": "boolean",
+          "title": "Automatic probing of the serial ports"
+        },
+        "sticks": {
+          "type": "array",
+          "title": "List of ZigBee sticks to use",
+          "items": {
+            "type": "object",
+            "title": "ZigBee Stick",
+            "required": ["type", "port"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["xbee", "conbee", "zstack"]
+              },
+              "port": {
+                "type": "string"
+              }
+            }
+          }
         },
         "zigbee2mqtt": {
           "title": "Zigbee2Mqtt",
