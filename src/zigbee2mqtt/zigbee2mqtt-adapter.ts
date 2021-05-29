@@ -17,8 +17,6 @@ function debug(): boolean {
   return DEBUG_FLAG.DEBUG_zigbee2mqtt;
 }
 
-import manifest from '../manifest.json';
-
 interface Response {
   data?: {
     id?: string;
@@ -59,7 +57,7 @@ export class Zigbee2MqttAdapter extends Adapter {
     super(
       addonManager,
       `zb-zigbee2mqtt-${adapterConfig.host}:${adapterConfig.port ?? DEFAULT_PORT}`,
-      manifest.id
+      'zigbee-adapter'
     );
     this.prefix = adapterConfig.topicPrefix ?? 'zigbee2mqtt';
     this.connect();

@@ -18,7 +18,7 @@ npm ci
 npm run build
 npm prune --production
 
-shasum --algorithm 256 manifest.json package.json lib/*.js lib/driver/*.js lib/zigbee2mqtt/*.js lib/*.json LICENSE README.md > SHA256SUMS
+shasum --algorithm 256 manifest.json package.json lib/*.js lib/driver/*.js lib/zigbee2mqtt/*.js LICENSE README.md > SHA256SUMS
 
 find node_modules \( -type f -o -type l \) -exec shasum --algorithm 256 {} \; >> SHA256SUMS
 
