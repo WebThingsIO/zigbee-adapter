@@ -26,7 +26,10 @@
     },
     "schema": {
       "type": "object",
-      "required": ["scanChannels", "allowFTDISerial"],
+      "required": [
+        "scanChannels",
+        "allowFTDISerial"
+      ],
       "properties": {
         "scanChannels": {
           "type": "integer",
@@ -59,11 +62,18 @@
           "items": {
             "type": "object",
             "title": "ZigBee Stick",
-            "required": ["type", "port"],
+            "required": [
+              "type",
+              "port"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["xbee", "conbee", "zstack"]
+                "enum": [
+                  "xbee",
+                  "conbee",
+                  "zstack"
+                ]
               },
               "port": {
                 "type": "string"
@@ -85,7 +95,9 @@
               "items": {
                 "title": "Zigbee2MQTT adapter",
                 "type": "object",
-                "required": ["host"],
+                "required": [
+                  "host"
+                ],
                 "properties": {
                   "host": {
                     "type": "string",
@@ -108,5 +120,5 @@
     }
   },
   "short_name": "Zigbee",
-  "version": "0.20.0"
+  "version": "0.21.0"
 }
