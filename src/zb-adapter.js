@@ -10,7 +10,7 @@
 'use strict';
 
 const fs = require('fs');
-const manifest = require('./manifest.json');
+const { PACKAGE_ID } = require('./constants');
 const mkdirp = require('mkdirp');
 const os = require('os');
 const path = require('path');
@@ -67,7 +67,7 @@ class ZigbeeAdapter extends Adapter {
     // retrieve the serial number from the dongle. So we
     // set it to zb-unknown here, and fix things up later
     // just before we call addAdapter.
-    super(addonManager, 'zb-unknown', manifest.id);
+    super(addonManager, 'zb-unknown', PACKAGE_ID);
     this.config = config;
     this.driver = driver;
     console.log('this.driver =', driver);

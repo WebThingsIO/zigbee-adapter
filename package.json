@@ -57,6 +57,7 @@
     "lib/driver/conbee.js",
     "lib/driver/xbee.js",
     "lib/driver/zstack.js",
+    "lib/constants.js",
     "lib/index.js",
     "lib/manifest.json",
     "lib/zb-adapter.js",

@@ -10,7 +10,7 @@
 'use strict';
 
 const { Database } = require('gateway-addon');
-const manifest = require('./manifest.json');
+const { PACKAGE_ID } = require('./constants');
 const SerialProber = require('serial-prober');
 const { Zigbee2MqttDriver } = require('./zigbee2mqtt/zigbee2mqtt-driver');
 const SerialPort = require('serialport');
@@ -189,7 +189,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
 
   let config = {};
   // Attempt to move to new config format
-  const db = new Database(manifest.id);
+  const db = new Database(PACKAGE_ID);
   await db
     .open()
     .then(() => {
@@ -277,14 +277,14 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
           SerialProber.listAll()
             .then(() => {
               if (!zigbee2mqttConfigured) {
-                errorCallback(manifest.id, 'No Zigbee dongle found');
+                errorCallback(PACKAGE_ID, 'No Zigbee dongle found');
               } else {
                 console.debug('No Zigbee dongle found');
               }
             })
             .catch((err) => {
               if (!zigbee2mqttConfigured) {
-                errorCallback(manifest.id, err);
+                errorCallback(PACKAGE_ID, err);
               } else {
                 console.debug(`Could not probe serial ports: ${err}`);
               }
@@ -314,7 +314,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
       })
       .catch((err) => {
         if (!zigbee2mqttConfigured) {
-          errorCallback(manifest.id, err);
+          errorCallback(PACKAGE_ID, err);
         } else {
           console.debug(`Could not load serial drivers: ${err}`);
         }
