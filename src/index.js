@@ -260,7 +260,7 @@ async function loadZigbeeAdapters(addonManager, _, errorCallback) {
     }
   }
 
-  if (config.probing) {
+  if (!config.deactivateProbing) {
     console.log('Probing serial ports');
 
     const { DEBUG_serialProber } = require('./zb-debug').default;

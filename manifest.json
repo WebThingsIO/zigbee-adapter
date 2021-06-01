@@ -22,7 +22,7 @@
       "allowAMASerial": false,
       "showAging": false,
       "debug": "",
-      "probing": true
+      "deactivateProbing": false
     },
     "schema": {
       "type": "object",
@@ -52,9 +52,9 @@
           "title": "Show Aging",
           "description": "experimental - Creates an additional 'Last seen' property to show when each device was last active on the Zigbee network"
         },
-        "probing": {
+        "deactivateProbing": {
           "type": "boolean",
-          "title": "Automatic probing of the serial ports"
+          "title": "Deactivate automatic probing of the serial ports"
         },
         "sticks": {
           "type": "array",
