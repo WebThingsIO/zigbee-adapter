@@ -178,14 +178,14 @@
    }
  
    update(value: unknown, _: Record<string, unknown>): void {
-     this.setCachedValueAndNotify(value as T);
+    if (this.invertBooleans === true && typeof value === 'boolean') {
+      value = <T>(<unknown>!value);
+    }
+
+    this.setCachedValueAndNotify(value as T);
    }
  
    async setValue(value: T): Promise<T> {
-     if (this.invertBooleans === true && typeof value === 'boolean') {
-       value = <T>(<unknown>!value);
-     }
- 
      const newValue = await super.setValue(value);
      await this.sendValue(newValue);
  
