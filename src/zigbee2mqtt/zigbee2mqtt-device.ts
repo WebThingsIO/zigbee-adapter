@@ -20,6 +20,7 @@ import {
   parseType,
   parseUnit,
   HeatingCoolingProperty,
+  ContactProperty,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
@@ -342,15 +343,29 @@ export class Zigbee2MqttDevice extends Device {
 
       console.log(`Creating property for ${expose.name}`);
 
-      const property = new Zigbee2MqttProperty<T>(
-        this,
-        expose.name,
-        expose,
-        this.client,
-        this.deviceTopic
-      );
-
-      this.addProperty(property);
+      switch (expose.name) {
+        case 'contact': {
+          const property = new ContactProperty(
+            this,
+            expose.name,
+            expose,
+            this.client,
+            this.deviceTopic);
+          this.addProperty(property);
+        }
+          break;
+        default: {
+          const property = new Zigbee2MqttProperty<T>(
+            this,
+            expose.name,
+            expose,
+            this.client,
+            this.deviceTopic
+          );
+          this.addProperty(property);
+        }
+          break;
+      }
     } else {
       console.log(`Ignoring property without name: ${JSON.stringify(expose, null, 0)}`);
     }
