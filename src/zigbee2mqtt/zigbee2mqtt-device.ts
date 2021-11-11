@@ -11,19 +11,18 @@ import { Action, Device, Event } from 'gateway-addon';
 import { PropertyValue, Event as EventSchema } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
-  OnOffProperty,
-  BrightnessProperty,
-  ColorTemperatureProperty,
-  ColorProperty,
   Zigbee2MqttProperty,
   WRITE_BIT,
-  parseType,
-  parseUnit,
-  HeatingCoolingProperty,
-  ContactProperty,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
+import { OnOffProperty } from './properties/onOffProperty';
+import { BrightnessProperty } from './properties/brightnessProperty';
+import { ColorTemperatureProperty } from './properties/colorTemperatureProperty';
+import { ColorProperty } from './properties/colorProperty';
+import { ContactProperty } from './properties/contactProperty';
+import { HeatingCoolingProperty } from './properties/heatingCoolingProperty';
+import { parseType, parseUnit } from './utils';
 
 function debug(): boolean {
   return DEBUG_FLAG.DEBUG_zigbee2mqtt;
