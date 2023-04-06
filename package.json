@@ -74,6 +74,13 @@
     "lib/zigbee2mqtt/zigbee2mqtt-device.js",
     "lib/zigbee2mqtt/zigbee2mqtt-driver.js",
     "lib/zigbee2mqtt/zigbee2mqtt-property.js",
+    "lib/zigbee2mqtt/utils.js",
+    "lib/zigbee2mqtt/properties/brightnessProperty.js",
+    "lib/zigbee2mqtt/properties/colorProperty.js",
+    "lib/zigbee2mqtt/properties/colorTemperatureProperty.js",
+    "lib/zigbee2mqtt/properties/contactProperty.js",
+    "lib/zigbee2mqtt/properties/heatingCoolingProperty.js",
+    "lib/zigbee2mqtt/properties/onOffProperty.js",
     "manifest.json",
     "node_modules"
   ]

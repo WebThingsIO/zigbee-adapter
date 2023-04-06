@@ -11,18 +11,18 @@ import { Action, Device, Event } from 'gateway-addon';
 import { PropertyValue, Event as EventSchema } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
-  OnOffProperty,
-  BrightnessProperty,
-  ColorTemperatureProperty,
-  ColorProperty,
   Zigbee2MqttProperty,
   WRITE_BIT,
-  parseType,
-  parseUnit,
-  HeatingCoolingProperty,
 } from './zigbee2mqtt-property';
 import mqtt from 'mqtt';
 import DEBUG_FLAG from '../zb-debug';
+import { OnOffProperty } from './properties/onOffProperty';
+import { BrightnessProperty } from './properties/brightnessProperty';
+import { ColorTemperatureProperty } from './properties/colorTemperatureProperty';
+import { ColorProperty } from './properties/colorProperty';
+import { ContactProperty } from './properties/contactProperty';
+import { HeatingCoolingProperty } from './properties/heatingCoolingProperty';
+import { parseType, parseUnit } from './utils';
 
 function debug(): boolean {
   return DEBUG_FLAG.DEBUG_zigbee2mqtt;
@@ -342,15 +342,29 @@ export class Zigbee2MqttDevice extends Device {
 
       console.log(`Creating property for ${expose.name}`);
 
-      const property = new Zigbee2MqttProperty<T>(
-        this,
-        expose.name,
-        expose,
-        this.client,
-        this.deviceTopic
-      );
-
-      this.addProperty(property);
+      switch (expose.name) {
+        case 'contact': {
+          const property = new ContactProperty(
+            this,
+            expose.name,
+            expose,
+            this.client,
+            this.deviceTopic);
+          this.addProperty(property);
+        }
+          break;
+        default: {
+          const property = new Zigbee2MqttProperty<T>(
+            this,
+            expose.name,
+            expose,
+            this.client,
+            this.deviceTopic
+          );
+          this.addProperty(property);
+        }
+          break;
+      }
     } else {
       console.log(`Ignoring property without name: ${JSON.stringify(expose, null, 0)}`);
     }
