@@ -8,7 +8,7 @@
  */
 
 import { Action, Device, Event } from 'gateway-addon';
-import { PropertyValue, Event as EventSchema } from 'gateway-addon/lib/schema';
+import { Any, Event as EventSchema } from 'gateway-addon/lib/schema';
 import { Zigbee2MqttAdapter, DeviceDefinition, Expos } from './zigbee2mqtt-adapter';
 import {
   OnOffProperty,
@@ -334,7 +334,7 @@ export class Zigbee2MqttDevice extends Device {
     }
   }
 
-  private createProperty<T extends PropertyValue>(expose: Expos): void {
+  private createProperty<T extends Any>(expose: Expos): void {
     if (expose.name) {
       if (IGNORED_PROPERTIES.includes(expose.name)) {
         return;
@@ -356,7 +356,7 @@ export class Zigbee2MqttDevice extends Device {
     }
   }
 
-  update(update: Record<string, PropertyValue>): void {
+  update(update: Record<string, Any>): void {
     if (typeof update !== 'object') {
       console.log(`Expected object but got ${typeof update}`);
     }
@@ -386,7 +386,7 @@ export class Zigbee2MqttDevice extends Device {
         const event = new Event(this, value as string);
         this.eventNotify(event);
       } else {
-        const property = this.findProperty(key) as Zigbee2MqttProperty<PropertyValue>;
+        const property = this.findProperty(key) as Zigbee2MqttProperty<Any>;
 
         if (property) {
           property.update(value, update);
@@ -424,7 +424,7 @@ export class Zigbee2MqttDevice extends Device {
 
   fetchValues(): void {
     const { properties } = (this as unknown) as {
-      properties: Map<string, Zigbee2MqttProperty<PropertyValue>>;
+      properties: Map<string, Zigbee2MqttProperty<Any>>;
     };
 
     const payload: Record<string, string> = {};

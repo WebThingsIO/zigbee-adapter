@@ -9,11 +9,7 @@
 
 import Color from 'color';
 import { Property } from 'gateway-addon';
-import {
-  PropertyValue,
-  PropertyValueType,
-  Property as PropertySchema,
-} from 'gateway-addon/lib/schema';
+import { Any, PropertyValueType, Property as PropertySchema } from 'gateway-addon/lib/schema';
 import { Expos } from './zigbee2mqtt-adapter';
 import { Zigbee2MqttDevice } from './zigbee2mqtt-device';
 import mqtt from 'mqtt';
@@ -60,7 +56,7 @@ export function isReadable(access: number): boolean {
   return (access & READ_BIT) != 0;
 }
 
-export class Zigbee2MqttProperty<T extends PropertyValue> extends Property<T> {
+export class Zigbee2MqttProperty<T extends Any> extends Property<T> {
   constructor(
     device: Zigbee2MqttDevice,
     name: string,
