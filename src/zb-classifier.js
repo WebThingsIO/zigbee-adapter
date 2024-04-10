@@ -1933,6 +1933,9 @@ ${(`0${d.getHours()}`).slice(-2)}:${(`0${d.getMinutes()}`).slice(-2)}:${(`0${d.g
 
     if (name[0] == '_') {
       property.visible = false;
+      // Invisible properties are no longer exposed in Thing Descriptions so
+      // should eventually be removed entirely.
+      // See https://github.com/WebThingsIO/zigbee-adapter/issues/334
     }
     property.setInitialReadNeeded();
     property.defaultValue = defaultValue;

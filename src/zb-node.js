@@ -236,8 +236,10 @@ class ZigbeeNode extends Device {
       }
     }
 
+    // Remove invisible properties from the Thing Description
+    // See https://github.com/WebThingsIO/zigbee-adapter/issues/334
     for (const prop of Object.values(dict.properties)) {
-      if (!prop.visible) {
+      if (prop.hasOwnProperty('visible') && prop.visible === false) {
         delete dict.properties[prop.name];
       }
     }

@@ -871,7 +871,11 @@ class ZigbeeProperty extends Property {
       // and there is nothing that we can actually read.
       return;
     }
-    if (!this.visible && typeof this.value != 'undefined') {
+    if (
+      this.hasOwnProperty('visible') &&
+      this.visible === false &&
+      typeof this.value != 'undefined'
+    ) {
       // We already know the value for this invisible property,
       // no need to read it again.
       return;
