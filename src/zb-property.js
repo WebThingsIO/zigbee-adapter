@@ -125,6 +125,9 @@ class ZigbeeProperty extends Property {
     dict.bindNeeded = this.bindNeeded;
     dict.configReportNeeded = this.configReportNeeded;
     dict.initialReadNeeded = this.initialReadNeeded;
+    if (this.hasOwnProperty('visible')) {
+      dict.visible = this.visible;
+    }
     if (this.hasOwnProperty('level')) {
       dict.level = this.level;
     }
