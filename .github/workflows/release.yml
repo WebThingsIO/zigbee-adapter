@@ -35,7 +35,6 @@ jobs:
           'linux-arm',
           'linux-arm64',
           'linux-x64',
-          'darwin-x64',
         ]
         pair: [
           'node:10',
@@ -49,8 +48,6 @@ jobs:
             host-os: 'ubuntu-latest'
           - platform: 'linux-x64'
             host-os: 'ubuntu-latest'
-          - platform: 'darwin-x64'
-            host-os: 'macos-latest'
           - pair: 'node:10'
             language: 'node'
             version: '10'
@@ -74,7 +71,7 @@ jobs:
       run: echo "RELEASE_VERSION=${GITHUB_REF:10}" >> $GITHUB_ENV
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.version }}
     - name: Build adapter
