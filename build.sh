@@ -43,11 +43,11 @@ function install_osx_compiler() {
 }
 
 function install_linux_cross_compiler() {
-  sudo apt -qq update
-  sudo apt install --no-install-recommends -y \
-    binfmt-support \
-    qemu \
-    qemu-user-static
+  #sudo apt -qq update
+  #sudo apt install --no-install-recommends -y \
+  #  binfmt-support \
+  #  qemu \
+  #  qemu-user-static
   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 }
 
@@ -56,6 +56,10 @@ function build_native() {
 }
 
 function build_cross_compiled() {
+  echo $UID
+  whoami
+  echo webthingsio/toolchain-${ADDON_ARCH}-${LANGUAGE_NAME}-${LANGUAGE_VERSION}
+  docker run --rm -t -v $PWD:/build webthingsio/toolchain-${ADDON_ARCH}-${LANGUAGE_NAME}-${LANGUAGE_VERSION} bash -c 'echo $UID'
   docker run --rm -t -v $PWD:/build webthingsio/toolchain-${ADDON_ARCH}-${LANGUAGE_NAME}-${LANGUAGE_VERSION} bash -c "cd /build; ADDON_ARCH=${ADDON_ARCH} ./package.sh"
 }
 

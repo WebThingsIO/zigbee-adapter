@@ -2,6 +2,7 @@
 
 # Setup environment for building inside Dockerized toolchain
 export NVM_DIR="${HOME}/.nvm"
+printenv
 [ -s "${NVM_DIR}/nvm.sh" ] && source "${NVM_DIR}/nvm.sh"
 [ $(id -u) = 0 ] && umask 0
 
@@ -14,7 +15,7 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-${NODE_VERSION/\.*/}"
 fi
 
-npm ci
+npm ci --loglevel verbose
 npm run build
 npm prune --production
 
