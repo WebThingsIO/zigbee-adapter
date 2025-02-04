@@ -18,12 +18,8 @@ const { Utils } = require('gateway-addon');
 
 const { PROFILE_ID } = require('../zb-constants');
 
-const {
-  DEBUG_flow,
-  DEBUG_frames,
-  DEBUG_frameDetail,
-  DEBUG_frameParsing,
-} = require('../zb-debug').default;
+const { DEBUG_flow, DEBUG_frames, DEBUG_frameDetail, DEBUG_frameParsing } =
+  require('../zb-debug').default;
 
 const WAIT_TIMEOUT_DELAY = 1 * 1000;
 const EXTENDED_TIMEOUT_DELAY = 10 * 1000;

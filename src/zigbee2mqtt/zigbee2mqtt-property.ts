@@ -84,7 +84,7 @@ export class Zigbee2MqttProperty<T extends Any> extends Property<T> {
 
     switch (name) {
       case 'occupancy': {
-        const device = (this.getDevice() as unknown) as { '@type': string[] };
+        const device = this.getDevice() as unknown as { '@type': string[] };
         device['@type'].push('MotionSensor');
         this.setAtType('MotionProperty');
         break;
