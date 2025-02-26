@@ -160,10 +160,7 @@ const cc2531SerialProber = new SerialProber({
   ],
 
   probeRsp: [
-    0xfe,
-    0x02,
-    0x61,
-    0x01,
+    0xfe, 0x02, 0x61, 0x01,
     // CAPABILITIES
   ],
 

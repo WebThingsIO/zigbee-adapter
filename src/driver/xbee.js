@@ -22,12 +22,8 @@ const {
   ZigbeeDriver,
 } = require('./index');
 
-const {
-  DEBUG_flow,
-  DEBUG_frameDetail,
-  DEBUG_frames,
-  DEBUG_rawFrames,
-} = require('../zb-debug').default;
+const { DEBUG_flow, DEBUG_frameDetail, DEBUG_frames, DEBUG_rawFrames } =
+  require('../zb-debug').default;
 
 const C = xbeeApi.constants;
 const AT_CMD = at.AT_CMD;

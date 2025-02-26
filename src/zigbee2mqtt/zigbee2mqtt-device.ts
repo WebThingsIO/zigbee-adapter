@@ -107,7 +107,7 @@ export class Zigbee2MqttDevice extends Device {
 
   private createLightProperties(expose: Expos): void {
     if (expose.features) {
-      ((this as unknown) as { '@type': string[] })['@type'].push('Light');
+      (this as unknown as { '@type': string[] })['@type'].push('Light');
 
       for (const feature of expose.features) {
         if (feature.name) {
@@ -184,7 +184,7 @@ export class Zigbee2MqttDevice extends Device {
 
   private createSmartPlugProperties(expose: Expos): void {
     if (expose.features) {
-      ((this as unknown) as { '@type': string[] })['@type'].push('SmartPlug');
+      (this as unknown as { '@type': string[] })['@type'].push('SmartPlug');
 
       for (const feature of expose.features) {
         if (feature.name) {
@@ -216,7 +216,7 @@ export class Zigbee2MqttDevice extends Device {
 
   private createThermostatProperties(expose: Expos): void {
     if (expose.features) {
-      ((this as unknown) as { '@type': string[] })['@type'].push('Thermostat');
+      (this as unknown as { '@type': string[] })['@type'].push('Thermostat');
 
       for (const feature of expose.features) {
         if (feature.name) {
@@ -304,7 +304,7 @@ export class Zigbee2MqttDevice extends Device {
         }
 
         if (isPushbutton) {
-          const device = (this as unknown) as { '@type': string[] };
+          const device = this as unknown as { '@type': string[] };
           device['@type'].push('PushButton');
         }
       } else {
@@ -372,9 +372,7 @@ export class Zigbee2MqttDevice extends Device {
           continue;
         }
 
-        const exists = ((this as unknown) as { events: Map<string, EventSchema> }).events.has(
-          value
-        );
+        const exists = (this as unknown as { events: Map<string, EventSchema> }).events.has(value);
 
         if (!exists) {
           if (debug()) {
@@ -423,7 +421,7 @@ export class Zigbee2MqttDevice extends Device {
   }
 
   fetchValues(): void {
-    const { properties } = (this as unknown) as {
+    const { properties } = this as unknown as {
       properties: Map<string, Zigbee2MqttProperty<Any>>;
     };
 
