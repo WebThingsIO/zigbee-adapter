@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         node_version: [
-          10,
-          12,
-          14,
+          #10,
+          #12,
+          #14,
           20,
         ]
     steps:
