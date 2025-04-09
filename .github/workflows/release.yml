@@ -22,7 +22,7 @@ jobs:
     - name: Dump upload url to file
       run: echo '${{ steps.create_release.outputs.upload_url }}' > upload_url
     - name: Upload upload_url
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: upload_url
         path: upload_url
@@ -37,9 +37,9 @@ jobs:
           'linux-x64',
         ]
         pair: [
-          #'node:10',
-          #'node:12',
-          #'node:14',
+          'node:10',
+          'node:12',
+          'node:14',
           'node:20',
         ]
         include:
@@ -49,15 +49,15 @@ jobs:
             host-os: 'ubuntu-latest'
           - platform: 'linux-x64'
             host-os: 'ubuntu-latest'
-          #- pair: 'node:10'
-          #  language: 'node'
-          #  version: '10'
-          #- pair: 'node:12'
-          #  language: 'node'
-          #  version: '12'
-          #- pair: 'node:14'
-          #  language: 'node'
-          #  version: '14'
+          - pair: 'node:10'
+            language: 'node'
+            version: '10'
+          - pair: 'node:12'
+            language: 'node'
+            version: '12'
+          - pair: 'node:14'
+            language: 'node'
+            version: '14'
           - pair: 'node:20'
             language: 'node'
             version: '20'
@@ -66,7 +66,7 @@ jobs:
 
     steps:
     - name: Download upload_url
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: upload_url
     - name: Set upload_url
