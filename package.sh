@@ -18,6 +18,9 @@ npm ci
 npm run build
 npm prune --production
 
+# Remove internal package-lock cache which can cause checksum errors at runtime
+rm -f node_modules/.package-lock.json
+
 shasum --algorithm 256 manifest.json package.json lib/*.js lib/driver/*.js lib/zigbee2mqtt/*.js LICENSE README.md > SHA256SUMS
 
 find node_modules \( -type f -o -type l \) -exec shasum --algorithm 256 {} \; >> SHA256SUMS
