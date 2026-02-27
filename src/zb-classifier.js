@@ -1036,7 +1036,7 @@ class ZigbeeClassifier {
       'occupied', // name
       {
         // property description
-        '@type': 'BooleanProperty',
+        '@type': 'OccupiedProperty',
         type: 'boolean',
         label: 'Occupied',
         description: 'Occupancy Sensor',
@@ -1066,6 +1066,9 @@ class ZigbeeClassifier {
       '', // setAttrFromValue
       'parseOccupancySensorTypeAttr' // parseValueFromAttr
     );
+    if (!node['@type'].includes('OccupancySensor')) {
+      node['@type'].push('OccupancySensor');
+    }
   }
 
   addIlluminanceMeasurementProperty(node, msMeasurementEndpoint) {
@@ -2120,6 +2123,9 @@ ${(`0${d.getHours()}`).slice(-2)}:${(`0${d.getMinutes()}`).slice(-2)}:${(`0${d.g
     if (genPowerCfgEndpoint) {
       this.addPowerCfgVoltageProperty(node, genPowerCfgEndpoint);
     }
+    if (msOccupancySensingEndpoint) {
+      this.addOccupancySensorProperty(node, msOccupancySensingEndpoint);
+    }
 
     this.addLastSeenProperty(node);
   }
@@ -2215,7 +2221,7 @@ ${(`0${d.getHours()}`).slice(-2)}:${(`0${d.getMinutes()}`).slice(-2)}:${(`0${d.g
   }
 
   initOccupancySensor(node, msOccupancySensingEndpoint) {
-    node['@type'] = ['BinarySensor'];
+    node['@type'] = ['OccupancySensor'];
     node.type = 'sensor';
     node.name = `${node.id}-occupancy`;
 
