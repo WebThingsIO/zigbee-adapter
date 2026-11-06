@@ -41,6 +41,7 @@ jobs:
           #'node:12',
           #'node:14',
           'node:20',
+          'node:24',
         ]
         include:
           - platform: 'linux-arm'
