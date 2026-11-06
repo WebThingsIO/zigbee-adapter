@@ -62,6 +62,9 @@ jobs:
           - pair: 'node:20'
             language: 'node'
             version: '20'
+          - pair: 'node:24'
+            language: 'node'
+            version: '24'
 
     runs-on: ${{ matrix.host-os }}
 
