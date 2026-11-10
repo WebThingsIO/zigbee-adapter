@@ -43,6 +43,9 @@ jobs:
           'node:20',
           'node:24',
         ]
+        exclude:
+          - platform: 'linux-arm'
+            pair: 'node:24'
         include:
           - platform: 'linux-arm'
             host-os: 'ubuntu-latest'
