@@ -14,7 +14,9 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-${NODE_VERSION/\.*/}"
 fi
 
-npm ci
+uname -m
+node -p 'process.arch'
+npm ci --foreground-scripts --loglevel verbose
 npm run build
 npm prune --production
 
